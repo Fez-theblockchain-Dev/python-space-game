@@ -2,6 +2,8 @@
 
 import pygame
 import sys
+import time
+import os
 import random
 from pygame.locals import *
 
@@ -24,7 +26,10 @@ RED = (255, 0, 0)
 def main():
     clock = pygame.time.Clock()
     running = True
-    
+# new nested function inside of main game loop function to change the background color/pictures on game play window
+    def redraw_window():
+        pygame.display.update()
+        
     while running:
         for event in pygame.event.get():
             if event.type == QUIT:
@@ -39,6 +44,10 @@ def main():
     
     pygame.quit()
     sys.exit()
+
+
+
+
 
 if __name__ == "__main__":
     main()
