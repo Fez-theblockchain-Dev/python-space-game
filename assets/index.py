@@ -22,21 +22,24 @@ WHITE = (255, 255, 255)
 GREEN = (0, 255, 0)
 RED = (255, 0, 0)
 
+# Window background space image
+nebula_image = pygame.image.load('512x512_purple_nebula_1.png').convert()
+nebula_bg = pygame.transform.scale(nebula_image, (SCREEN_WIDTH, SCREEN_HEIGHT))
+
 # Game loop
 def main():
     clock = pygame.time.Clock()
     running = True
-# new nested function inside of main game loop function to change the background color/pictures on game play window
-    def redraw_window():
-        pygame.display.update()
-        
+    level = 0
+    lives = 5
+
     while running:
         for event in pygame.event.get():
             if event.type == QUIT:
                 running = False
         
-        # Fill screen with black
-        screen.fill(BLACK)
+        # Draw background
+        screen.blit(nebula_bg, (0, 0))
         
         # Update display
         pygame.display.flip()
