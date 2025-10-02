@@ -1,6 +1,7 @@
 # this file will house the fundamental game play logic of new space invaders python web app game
 
-from logging import _Level
+# from logging import _Level
+import numbers
 from re import S
 from unittest import result
 import pygame
@@ -12,7 +13,7 @@ from pygame.locals import *
 
 # os.path import to safely load assets to window from dif folder
 img_path = os.path.join("assets", "images", "player.png")
-player_img = pygame.image.load(img_path)
+player_img = pygame.image.load('512x512_purple_nebula_1.png')
 
 # Initialize pygame
 pygame.init()
@@ -37,12 +38,8 @@ nebula_bg = pygame.transform.scale(nebula_image, (SCREEN_WIDTH, SCREEN_HEIGHT))
 def main():
     clock = pygame.time.Clock()
     running = True
-    levels = [0-12]
+    levels = [0,1,2,3,4,5,6,7,8,9,10,11,12]
     lives = 5
-
-# custom exception defined
-class StrictStartError(Exception):
-    pass
 
     while running:
         for event in pygame.event.get():
@@ -55,13 +52,23 @@ class StrictStartError(Exception):
         # Update display
         pygame.display.flip()
         clock.tick(60)
+        
+        # sleep for 1 second
+        time.sleep(1)
+        # print the levels and lives
+        print(levels)
+        print(lives)
     
     pygame.quit()
     sys.exit()
 
-
-
+# custom exception defined
+class StrictStartError(Exception):
+    pass
 
 
 if __name__ == "__main__":
     main()
+
+
+
