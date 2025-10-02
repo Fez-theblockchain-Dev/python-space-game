@@ -7,6 +7,10 @@ import os
 import random
 from pygame.locals import *
 
+# os.path import to safely load assets to window from dif folder
+img_path = os.path.join("assets", "images", "player.png")
+player_img = pygame.image.load(img_path)
+
 # Initialize pygame
 pygame.init()
 
