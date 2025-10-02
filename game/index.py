@@ -1,5 +1,8 @@
 # this file will house the fundamental game play logic of new space invaders python web app game
 
+from logging import _Level
+from re import S
+from unittest import result
 import pygame
 import sys
 import time
@@ -34,8 +37,12 @@ nebula_bg = pygame.transform.scale(nebula_image, (SCREEN_WIDTH, SCREEN_HEIGHT))
 def main():
     clock = pygame.time.Clock()
     running = True
-    level = 0
+    levels = [0-12]
     lives = 5
+
+# custom exception defined
+class StrictStartError(Exception):
+    pass
 
     while running:
         for event in pygame.event.get():
