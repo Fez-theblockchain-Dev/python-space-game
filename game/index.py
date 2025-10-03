@@ -13,7 +13,7 @@ from pygame.locals import *
 
 # os.path import to safely load assets to window from dif folder
 img_path = os.path.join("assets", "images", "player.png")
-player_img = pygame.image.load('512x512_purple_nebula_1.png')
+player_img = pygame.image.load('') # need too add image path here for player ship
 
 # Initialize pygame
 pygame.init()
