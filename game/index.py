@@ -13,7 +13,7 @@ from pygame.locals import *
 
 # os.path import to safely load assets to window from dif folder
 img_path = os.path.join("assets", "images", "player.png")
-player_img = pygame.image.load('') # need too add image path here for player ship
+player_space_ship = pygame.image.load('') # need too add image path here for player ship
 
 # Initialize pygame
 pygame.init()
@@ -31,8 +31,31 @@ GREEN = (0, 255, 0)
 RED = (255, 0, 0)
 
 # Window background space image
-nebula_image = pygame.image.load('512x512_purple_nebula_1.png').convert()
+nebula_image = pygame.image.load('assets/512x512_purple_nebula_1.png').convert()
 nebula_bg = pygame.transform.scale(nebula_image, (SCREEN_WIDTH, SCREEN_HEIGHT))
+
+# HeroShip class definition
+class HeroShip:
+    def __init__(self, x, y, width, height, lives, health=100):
+        self.x = x
+        self.y = y
+        self.width = width
+        self.height = height
+        self.health = health
+        self.lives = 3
+        self.laser = []
+        self.laser_cool_down = 0.5
+        self.level = 0
+        self.points = 0
+        self.speed = 5
+        # Create a simple colored rectangle instead of loading an image
+        self.image = pygame.Surface((width, height))
+        self.image.fill(GREEN)
+        self.rect = self.image.get_rect()
+        self.rect.center = (x, y)
+    
+    def draw(self, screen):
+        screen.blit(self.image, self.rect)
 
 # Game loop
 def main():
@@ -48,16 +71,14 @@ def main():
         
         # Draw background
         screen.blit(nebula_bg, (0, 0))
+
+        # redraw window with new components
+        hero_ship = HeroShip(50, 0, 100, 100, 3, 100)
+        hero_ship.draw(screen)
         
         # Update display
         pygame.display.flip()
         clock.tick(60)
-        
-        # sleep for 1 second
-        time.sleep(1)
-        # print the levels and lives
-        print(levels)
-        print(lives)
     
     pygame.quit()
     sys.exit()
