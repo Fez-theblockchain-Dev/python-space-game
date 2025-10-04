@@ -57,6 +57,13 @@ class HeroShip:
     def draw(self, screen):
         screen.blit(self.image, self.rect)
 
+
+# creating new group for all space ships (hero & enemies)
+spaceship = HeroShip(50, 0, 100, 100, 3, 100)
+spaceship_group = pygame.sprite.GroupSingle()
+spaceship_group.add(spaceship) 
+
+
 # Game loop
 def main():
     clock = pygame.time.Clock()
@@ -70,11 +77,14 @@ def main():
                 running = False
         
         # Draw background
-        screen.blit(nebula_bg, (0, 0))
+        screen.blit(nebula_bg, (0, 0)) 
+        spaceship_group.draw(screen)
 
         # redraw window with new components
         hero_ship = HeroShip(50, 0, 100, 100, 3, 100)
         hero_ship.draw(screen)
+
+
         
         # Update display
         pygame.display.flip()
