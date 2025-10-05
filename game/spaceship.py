@@ -5,4 +5,5 @@ class SpaceShip(pygame.sprite.Sprite):
         super().__init__()
         self.screen_width = Screen_width
         self.screen_height = Screen_height
+        self.image = pygame.image.load('assets/spaceship.png')
        

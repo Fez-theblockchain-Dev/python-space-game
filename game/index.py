@@ -13,7 +13,7 @@ from pygame.locals import *
 
 # os.path import to safely load assets to window from dif folder
 img_path = os.path.join("assets", "images", "player.png")
-player_space_ship = pygame.image.load('assets/spaceship.png') # SVG not supported by pygame
+player_space_ship = pygame.image.load('assets/spaceship.png')
 
 # Initialize pygame
 pygame.init()
@@ -107,6 +107,7 @@ class StrictStartError(Exception):
 
 if __name__ == "__main__":
     main()
+
 
 
 
