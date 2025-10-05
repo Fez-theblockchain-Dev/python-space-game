@@ -13,7 +13,7 @@ from pygame.locals import *
 
 # os.path import to safely load assets to window from dif folder
 img_path = os.path.join("assets", "images", "player.png")
-player_space_ship = pygame.image.load('') # need too add image path here for player ship
+player_space_ship = pygame.image.load('assets/spaceship.png') # SVG not supported by pygame
 
 # Initialize pygame
 pygame.init()
@@ -63,6 +63,8 @@ spaceship = HeroShip(50, 0, 100, 100, 3, 100)
 spaceship_group = pygame.sprite.GroupSingle()
 spaceship_group.add(spaceship) 
 
+# creating new group for all lasers
+laser_group = pygame.sprite.Group()
 
 # Game loop
 def main():
@@ -78,14 +80,19 @@ def main():
         
         # Draw background
         screen.blit(nebula_bg, (0, 0)) 
-        spaceship_group.draw(screen)
 
         # redraw window with new components
         hero_ship = HeroShip(50, 0, 100, 100, 3, 100)
         hero_ship.draw(screen)
+        spaceship_group.draw(screen)
+        laser_group.draw(screen)
+        print(laser_group)
 
 
-        
+        # Update groups
+        spaceship_group.update()
+        laser_group.update()
+
         # Update display
         pygame.display.flip()
         clock.tick(60)
