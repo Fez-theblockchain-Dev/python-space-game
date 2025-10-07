@@ -33,10 +33,12 @@ nebula_image = pygame.image.load('assets/512x512_purple_nebula_1.png').convert()
 nebula_bg = pygame.transform.scale(nebula_image, (SCREEN_WIDTH, SCREEN_HEIGHT))
 
 # HeroShip class definition
-class HeroShip:
+class HeroShip(pygame.sprite.Sprite):
     def __init__(self, x, y, width, height, lives, health=100):
-        self.x = x
-        self.y = y
+        super().__init__()
+        self.image = pygame.image.load('assets/spaceship.png')
+        self.rect = self.image.get_rect()
+        self.rect.center = (x, y)
         self.width = width
         self.height = height
         self.health = health
@@ -47,7 +49,6 @@ class HeroShip:
         self.points = 0
         self.speed = 5
 
-    
     def draw(self, screen):
         screen.blit(self.image, self.rect)
 
@@ -60,34 +61,66 @@ spaceship_group.add(spaceship)
 # creating new group for all lasers
 laser_group = pygame.sprite.Group()
 
+# Create hero ship once (not in the game loop!)
+hero_ship = HeroShip(SCREEN_WIDTH // 2, SCREEN_HEIGHT - 100, 100, 100, 3, 100)
+hero_group = pygame.sprite.GroupSingle()
+hero_group.add(hero_ship)
+
 # Game loop
 def main():
     clock = pygame.time.Clock()
     running = True
     levels = [0,1,2,3,4,5,6,7,8,9,10,11,12]
     lives = 5
+    # the player has 30 seconds/level to eliminate all the aliens
+    time_seconds = 30 
+
 
     while running:
         for event in pygame.event.get():
             if event.type == QUIT:
                 running = False
+            elif event.type == KEYDOWN:
+                if event.key == K_ESCAPE:
+                    running = False
+        
+        # Handle continuous key presses
+        keys = pygame.key.get_pressed()
+        if keys[K_LEFT] and hero_ship.rect.left > 0:
+            hero_ship.rect.x -= hero_ship.speed
+        if keys[K_RIGHT] and hero_ship.rect.right < SCREEN_WIDTH:
+            hero_ship.rect.x += hero_ship.speed
+        if keys[K_UP] and hero_ship.rect.top > 0:
+            hero_ship.rect.y -= hero_ship.speed
+        if keys[K_DOWN] and hero_ship.rect.bottom < SCREEN_HEIGHT:
+            hero_ship.rect.y += hero_ship.speed
         
         # Draw background
         screen.blit(nebula_bg, (0, 0)) 
 
-        # redraw window with new components
-        hero_ship = HeroShip(50, 0, 100, 100, 3, 100)
-        hero_ship.draw(screen)
+        # Draw all game objects
+        hero_group.draw(screen)
         spaceship_group.draw(screen)
         laser_group.draw(screen)
 
         # Update groups
+        hero_group.update()
         spaceship_group.update()
         laser_group.update()
 
         # Update display
         pygame.display.flip()
         clock.tick(60)
+
+        # update ship damage rules
+
+        spaceship_health = 100
+        laser_damage = 10
+
+        current_spaceship_health = spaceship_health - laser_damage
+
+        print(current_spaceship_health)
+
     
     pygame.quit()
     sys.exit()
