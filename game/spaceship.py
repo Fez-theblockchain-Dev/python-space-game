@@ -1,17 +1,14 @@
 import pygame
-import index as index
-import laser as laser
 
 class SpaceShip(pygame.sprite.Sprite):
-    def __init__(self, screen_width, screen_height, health):
+    def __init__(self, x, y, health=10):
         super().__init__()
-        self.screen_width = screen_width
-        self.screen_height = screen_height
         self.image = pygame.image.load('assets/spaceship.png')
+        self.rect = self.image.get_rect()
+        self.rect.center = (x, y)
         self.health = health
-
-
-index.hero_ship = SpaceShip(pygame.sprite.Sprite)
-
-if index.hero.ship.health <= 0:
-     print("life has been lost.")
+        self.speed = 5
+    
+    def update(self):
+        # Add any spaceship update logic here
+        pass

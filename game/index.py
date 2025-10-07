@@ -10,10 +10,8 @@ import time
 import os
 import random
 from pygame.locals import *
-
-# os.path import to safely load assets to window from dif folder
-img_path = os.path.join("assets", "images", "player.png")
-player_space_ship = pygame.image.load('assets/spaceship.png')
+from spaceship import SpaceShip
+from laser import Laser
 
 # Initialize pygame
 pygame.init()
@@ -48,18 +46,14 @@ class HeroShip:
         self.level = 0
         self.points = 0
         self.speed = 5
-        # Create a simple colored rectangle instead of loading an image
-        self.image = pygame.Surface((width, height))
-        self.image.fill(GREEN)
-        self.rect = self.image.get_rect()
-        self.rect.center = (x, y)
+
     
     def draw(self, screen):
         screen.blit(self.image, self.rect)
 
 
 # creating new group for all space ships (hero & enemies)
-spaceship = HeroShip(50, 0, 100, 100, 3, 100)
+spaceship = SpaceShip(100, SCREEN_HEIGHT - 100, 100)
 spaceship_group = pygame.sprite.GroupSingle()
 spaceship_group.add(spaceship) 
 
@@ -86,8 +80,6 @@ def main():
         hero_ship.draw(screen)
         spaceship_group.draw(screen)
         laser_group.draw(screen)
-        print(laser_group)
-
 
         # Update groups
         spaceship_group.update()
