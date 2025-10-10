@@ -9,9 +9,10 @@ import sys
 import time
 import os
 import random
-from pygame.locals import *
+from pygame.locals import * #For useful variables
 from spaceship import SpaceShip
 from laser import Laser
+
 
 # Initialize pygame
 pygame.init()
@@ -65,6 +66,34 @@ laser_group = pygame.sprite.Group()
 hero_ship = HeroShip(SCREEN_WIDTH // 2, SCREEN_HEIGHT - 100, 100, 100, 3, 100)
 hero_group = pygame.sprite.GroupSingle()
 hero_group.add(hero_ship)
+
+# creating levels class OOP elements for game loop functionality
+class Level (pygame.sprite.Sprite):
+    def __init__(self, level_number):
+        super().__init__()
+        self.level_number = level_number
+    
+    def show_level_up_celebration(self, screen, font, level_number):
+        """Display animated level-up celebration"""
+    # Create celebration overlay
+    overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
+    overlay.set_alpha(128)
+    overlay.fill((0, 0, 0))
+    
+    # Level up text
+    level_number = [[0,1,2,3,4,5,6,7,8,9,10,11,12]]
+    font = "Ariel"
+    level_text = font.render(f"LEVEL {level_number} COMPLETE!", True, (255, 255, 0))
+    text_rect = level_text.get_rect(center=(SCREEN_WIDTH//2, SCREEN_HEIGHT//2))
+    
+    # Draw celebration elements
+    screen.blit(overlay, (0, 0))
+    screen.blit(level_text, text_rect)
+    
+    # Add particle effects, animations, etc.
+    pygame.display.flip()
+    pygame.time.wait(2000)  # Show for 2 seconds
+
 
 # Game loop
 def main():
