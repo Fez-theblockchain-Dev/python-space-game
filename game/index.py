@@ -73,12 +73,13 @@ class Level (pygame.sprite.Sprite):
         super().__init__()
         self.level_number = level_number
     
-    def show_level_up_celebration(self, screen, font, level_number):
+    def show_level_up_message(self, screen, font, level_number):
         """Display animated level-up celebration"""
     # Create celebration overlay
     overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
     overlay.set_alpha(128)
     overlay.fill((0, 0, 0))
+    
     
     # Level up text
     level_number = [[0,1,2,3,4,5,6,7,8,9,10,11,12]]
@@ -99,7 +100,7 @@ class Level (pygame.sprite.Sprite):
 def main():
     clock = pygame.time.Clock()
     running = True
-    levels = [0,1,2,3,4,5,6,7,8,9,10,11,12]
+    Level = [0,1,2,3,4,5,6,7,8,9,10,11,12]
     lives = 5
     # the player has 30 seconds/level to eliminate all the aliens
     time_seconds = 30 
