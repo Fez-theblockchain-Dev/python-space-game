@@ -2,6 +2,7 @@
 
 # from logging import _Level
 import numbers
+from pickle import TRUE
 from re import S
 from unittest import result
 import pygame
@@ -72,6 +73,8 @@ class Level (pygame.sprite.Sprite):
     def __init__(self, level_number):
         super().__init__()
         self.level_number = level_number
+        self.lives = 5
+
     
     def show_level_up_message(self, screen, font, level_number):
         """Display animated level-up celebration"""
@@ -79,13 +82,15 @@ class Level (pygame.sprite.Sprite):
     overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
     overlay.set_alpha(128)
     overlay.fill((0, 0, 0))
-    
+  
     
     # Level up text
     level_number = [[0,1,2,3,4,5,6,7,8,9,10,11,12]]
     font = "Ariel"
     level_text = font.render(f"LEVEL {level_number} COMPLETE!", True, (255, 255, 0))
     text_rect = level_text.get_rect(center=(SCREEN_WIDTH//2, SCREEN_HEIGHT//2))
+
+    
     
     # Draw celebration elements
     screen.blit(overlay, (0, 0))
@@ -97,14 +102,14 @@ class Level (pygame.sprite.Sprite):
 
 
 # Game loop
-def main():
-    clock = pygame.time.Clock()
-    running = True
-    Level = [0,1,2,3,4,5,6,7,8,9,10,11,12]
-    lives = 5
-    # the player has 30 seconds/level to eliminate all the aliens
-    time_seconds = 30 
-
+    def main():
+        clock = pygame.time.Clock()
+        running = True
+        Level = [0,1,2,3,4,5,6,7,8,9,10,11,12]
+        lives = 5
+        current_level_index = 0
+        # the player has 30 seconds/level to eliminate all the aliens
+        time_seconds = 30 
 
     while running:
         for event in pygame.event.get():
@@ -113,6 +118,24 @@ def main():
             elif event.type == KEYDOWN:
                 if event.key == K_ESCAPE:
                     running = False
+
+        # New level function that resets level back to 0 when a new game commences
+new_game = bool
+
+def level ():
+        if new_game == TRUE:
+            print(f'New game started. Set level{0}')
+            
+
+            
+
+
+        current_level_index = 0 
+        # loosing lives game logic
+        lives = [1,2,3,4,5]
+
+        if lives < 1:
+            print("Game Over! you've lost all your lives")
         
         # Handle continuous key presses
         keys = pygame.key.get_pressed()
@@ -140,7 +163,7 @@ def main():
 
         # Update display
         pygame.display.flip()
-        clock.tick(60)
+        # clock.tick(60)
 
         # update ship damage rules
 
@@ -152,8 +175,8 @@ def main():
         print(current_spaceship_health)
 
     
-    pygame.quit()
-    sys.exit()
+        pygame.quit()
+        sys.exit()
 
 # custom exception defined
 class StrictStartError(Exception):
