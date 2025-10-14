@@ -21,7 +21,7 @@ class Player(pygame.sprite.Sprite):
 		self.laser_sound = pygame.mixer.Sound('../audio/laser.wav')
 		self.laser_sound.set_volume(0.5)
 
-HeroShip = Player()
+Player = HeroShip()
 cool_down_time = 600 # just over half a sec cool down between shots
 Last_shot_time = 0
 running = True
