@@ -14,6 +14,7 @@ from pygame.locals import * #For useful variables
 from spaceship import SpaceShip
 from laser import Laser
 from index import __name__
+from player import Player
 
 
 # Initialize pygame
@@ -104,9 +105,9 @@ class Level (pygame.sprite.Sprite):
 
 # Game loop
     def main():
-        player.sprite = hero_ship
-        player_group = pygame.sprite.GroupSingle(player)
-
+        print("game is starting...")
+        Player.sprite = Player(SCREEN_WIDTH /2, SCREEN_HEIGHT, 5)
+        player_group = pygame.sprite.GroupSingle(Player)
         clock = pygame.time.Clock()
         # running = True
         Level = [0,1,2,3,4,5,6,7,8,9,10,11,12]
@@ -187,7 +188,8 @@ def level ():
 # custom exception defined
 class StrictStartError(Exception):
     pass
-
+# importing main function from game.py, needed to use a 'from module import function' to call fuction from outside of game loop
+from game import main
 
 if __name__ == "__main__":
     main()
