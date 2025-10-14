@@ -13,6 +13,7 @@ import random
 from pygame.locals import * #For useful variables
 from spaceship import SpaceShip
 from laser import Laser
+from index import __name__
 
 
 # Initialize pygame
@@ -21,7 +22,7 @@ pygame.init()
 # Set up the display
 SCREEN_WIDTH = 800
 SCREEN_HEIGHT = 600
-screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+screen = pygame.display.set_mode((SCREEN_WIDTH /2 , SCREEN_HEIGHT))
 pygame.display.set_caption("Space Invaders")
 
 # Colors
@@ -103,8 +104,11 @@ class Level (pygame.sprite.Sprite):
 
 # Game loop
     def main():
+        player.sprite = hero_ship
+        player_group = pygame.sprite.GroupSingle(player)
+
         clock = pygame.time.Clock()
-        running = True
+        # running = True
         Level = [0,1,2,3,4,5,6,7,8,9,10,11,12]
         lives = 5
         current_level_index = 0
@@ -125,6 +129,8 @@ new_game = bool
 def level ():
         if new_game == TRUE:
             print(f'New game started. Set level{0}')
+
+
             
 
             
