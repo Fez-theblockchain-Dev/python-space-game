@@ -3,7 +3,7 @@ import pygame
 import sys
 from pygame.locals import * #For useful variables
 from laser import Laser
-from index import HeroShip
+# from index import HeroShip
 
 
 

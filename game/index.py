@@ -13,8 +13,8 @@ import random
 from pygame.locals import * #For useful variables
 from spaceship import SpaceShip
 from laser import Laser
-from index import __name__
-from player import Player
+# from index import __name__
+# from player import Player
 
 
 # Initialize pygame
@@ -104,6 +104,10 @@ class Level (pygame.sprite.Sprite):
 
 
 # Game loop
+
+if __name__ == "__main__":
+    main()
+
     def main():
         print("game is starting...")
         Player.sprite = Player(SCREEN_WIDTH /2, SCREEN_HEIGHT, 5)
@@ -130,11 +134,6 @@ new_game = bool
 def level ():
         if new_game == TRUE:
             print(f'New game started. Set level{0}')
-
-
-            
-
-            
 
 
         current_level_index = 0 
@@ -191,8 +190,8 @@ class StrictStartError(Exception):
 # importing main function from game.py, needed to use a 'from module import function' to call fuction from outside of game loop
 from game import main
 
-if __name__ == "__main__":
-    main()
+# if __name__ == "__main__":
+#     main()
 
 
 
