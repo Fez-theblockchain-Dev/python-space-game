@@ -13,6 +13,7 @@ import random
 from pygame.locals import * #For useful variables
 from spaceship import SpaceShip
 from laser import Laser
+from player import Player
 # from index import __name__
 # from player import Player
 
@@ -169,7 +170,8 @@ def level ():
 
         # Update display
         pygame.display.flip()
-        # clock.tick(60)
+        clock = pygame.time.Clock()
+        clock.tick(60)
 
         # update ship damage rules
 
