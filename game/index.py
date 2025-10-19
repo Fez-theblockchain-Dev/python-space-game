@@ -192,8 +192,8 @@ class StrictStartError(Exception):
 # importing main function from game.py, needed to use a 'from module import function' to call fuction from outside of game loop
 from game import main
 
-# if __name__ == "__main__":
-#     main()
+if __name__ == "__main__":
+    main()
 
 
 
