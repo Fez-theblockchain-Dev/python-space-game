@@ -14,9 +14,7 @@ from pygame.locals import * #For useful variables
 from spaceship import SpaceShip
 from laser import Laser
 from player import Player
-# from index import __name__
-# from player import Player
-
+from alien import Alien
 
 # Initialize pygame
 pygame.init()
@@ -108,7 +106,6 @@ class Level (pygame.sprite.Sprite):
 
 if __name__ == "__main__":
     main()
-
     def main():
         print("game is starting...")
         Player.sprite = Player(SCREEN_WIDTH /2, SCREEN_HEIGHT, 5)
@@ -120,14 +117,6 @@ if __name__ == "__main__":
         current_level_index = 0
         # the player has 30 seconds/level to eliminate all the aliens
         time_seconds = 30 
-
-    while running:
-        for event in pygame.event.get():
-            if event.type == QUIT:
-                running = False
-            elif event.type == KEYDOWN:
-                if event.key == K_ESCAPE:
-                    running = False
 
         # New level function that resets level back to 0 when a new game commences
 new_game = bool
@@ -198,3 +187,20 @@ if __name__ == "__main__":
 
 
 
+hits = pygame.sprite.groupcollide(hero_bullets, Mystery_Ship, True, True)
+
+for hit in hits:
+    # When a mystery ship is destroyed
+    key = Key(hit.rect.centerx, hit.rect.centery)
+    all_sprites.add(key)
+    
+    hero_ship.has_key = True  # flag for later access
+    print("🔑 Hero gained a Key!")
+
+    while running:
+        for event in pygame.event.get():
+            if event.type == QUIT:
+                running = False
+            elif event.type == KEYDOWN:
+                if event.key == K_ESCAPE:
+                    running = False
