@@ -187,12 +187,12 @@ if __name__ == "__main__":
 
 
 
-hits = pygame.sprite.groupcollide(hero_bullets, Mystery_Ship, True, True)
-
+# hits = pygame.sprite.groupcollide(hero_bullets, Mystery_Ship, True, True)
+hits = []
 for hit in hits:
     # When a mystery ship is destroyed
-    key = Key(hit.rect.centerx, hit.rect.centery)
-    all_sprites.add(key)
+    # key = Key(hit.rect.centerx, hit.rect.centery)
+    # all_sprites.add(key)
     
     hero_ship.has_key = True  # flag for later access
     print("🔑 Hero gained a Key!")
