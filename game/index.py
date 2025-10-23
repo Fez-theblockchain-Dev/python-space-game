@@ -2,7 +2,7 @@
 
 # from logging import _Level
 import numbers
-from pickle import TRUE
+# from pickle import TRUE
 from re import S
 from unittest import result
 import pygame
@@ -13,8 +13,8 @@ import random
 from pygame.locals import * #For useful variables
 from spaceship import SpaceShip
 from laser import Laser
-from player import Player
 from alien import Alien
+
 
 # Initialize pygame
 pygame.init()
@@ -100,6 +100,30 @@ class Level (pygame.sprite.Sprite):
     # Add particle effects, animations, etc.
     pygame.display.flip()
     pygame.time.wait(2000)  # Show for 2 seconds
+
+    # alien 'collisions' w/ laser logic
+
+def collision_checks(self):
+		# player lasers 
+    if self.player.sprite.lasers:
+        for laser in self.player.sprite.lasers:
+        # obstacle collisions
+            if pygame.sprite.spritecollide(laser,self.blocks,True):
+                laser.kill()
+            
+
+				# alien collisions
+aliens_hit = pygame.sprite.spritecollide(laser,self.aliens,True)
+if aliens_hit:
+    for alien in aliens_hit:
+        self.score += alien.value
+        laser.kill()
+        self.explosion_sound.play()
+
+# extra collision
+if pygame.sprite.spritecollide(laser,self.extra,True):
+    self.score += 500
+    laser.kill()
 
 
 # Game loop
