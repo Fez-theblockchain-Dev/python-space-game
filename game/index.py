@@ -4,6 +4,7 @@
 import numbers
 # from pickle import TRUE
 from re import S
+import string
 from unittest import result
 import pygame
 import sys
@@ -14,6 +15,8 @@ from pygame.locals import * #For useful variables
 from spaceship import SpaceShip
 from laser import Laser
 from alien import Alien
+# from HeroShip import self
+
 
 
 # Initialize pygame
@@ -36,7 +39,7 @@ nebula_image = pygame.image.load('assets/512x512_purple_nebula_1.png').convert()
 nebula_bg = pygame.transform.scale(nebula_image, (SCREEN_WIDTH, SCREEN_HEIGHT))
 
 # HeroShip class definition
-class HeroShip(pygame.sprite.Sprite):
+class HeroShip(pygame.sprite.Sprite.self ):
     def __init__(self, x, y, width, height, lives, health=100):
         super().__init__()
         self.image = pygame.image.load('assets/spaceship.png')
@@ -111,8 +114,12 @@ def collision_checks(self):
             if pygame.sprite.spritecollide(laser,self.blocks,True):
                 laser.kill()
             
+            
 
 				# alien collisions
+laser = Laser() #setting laser variable to the Laser class that I have in the it's respective file
+alien = Alien(1, 2, 100, 100)  # Create an alien instance
+
 aliens_hit = pygame.sprite.spritecollide(laser,self.aliens,True)
 if aliens_hit:
     for alien in aliens_hit:
@@ -210,13 +217,13 @@ if __name__ == "__main__":
 
 
 
-
+key = bool
 # hits = pygame.sprite.groupcollide(hero_bullets, Mystery_Ship, True, True)
 hits = []
 for hit in hits:
     # When a mystery ship is destroyed
-    # key = Key(hit.rect.centerx, hit.rect.centery)
-    # all_sprites.add(key)
+    key = Key(hit.rect.centerx, hit.rect.centery)
+    sprite.add(key)
     
     hero_ship.has_key = True  # flag for later access
     print("🔑 Hero gained a Key!")
@@ -228,3 +235,14 @@ for hit in hits:
             elif event.type == KEYDOWN:
                 if event.key == K_ESCAPE:
                     running = False
+                    quit()
+            
+try:
+    from pygame.locals import QUIT
+except ImportError:
+    print("Could not import QUIT from pygame.locals. Check if pygame is installed.")
+
+
+    
+
+
