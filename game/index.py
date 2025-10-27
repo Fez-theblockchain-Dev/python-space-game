@@ -5,6 +5,7 @@ import numbers
 # from pickle import TRUE
 from re import S
 import string
+import symbol
 from unittest import result
 import pygame
 import sys
@@ -135,12 +136,14 @@ if pygame.sprite.spritecollide(laser,self.extra,True):
 
 # Game loop
 
+player = HeroShip
+
 if __name__ == "__main__":
     main()
     def main():
         print("game is starting...")
-        Player.sprite = Player(SCREEN_WIDTH /2, SCREEN_HEIGHT, 5)
-        player_group = pygame.sprite.GroupSingle(Player)
+        player.sprite = player(SCREEN_WIDTH /2, SCREEN_HEIGHT, 5)
+        player_group = pygame.sprite.GroupSingle(player)
         clock = pygame.time.Clock()
         # running = True
         Level = [0,1,2,3,4,5,6,7,8,9,10,11,12]
@@ -153,7 +156,7 @@ if __name__ == "__main__":
 new_game = bool
 
 def level ():
-        if new_game == TRUE:
+        if new_game == true:
             print(f'New game started. Set level{0}')
 
 
@@ -222,7 +225,7 @@ key = bool
 hits = []
 for hit in hits:
     # When a mystery ship is destroyed
-    key = Key(hit.rect.centerx, hit.rect.centery)
+    key = symbol(hit.rect.centerx, hit.rect.centery)
     sprite.add(key)
     
     hero_ship.has_key = True  # flag for later access
@@ -241,6 +244,8 @@ try:
     from pygame.locals import QUIT
 except ImportError:
     print("Could not import QUIT from pygame.locals. Check if pygame is installed.")
+
+
 
 
     
