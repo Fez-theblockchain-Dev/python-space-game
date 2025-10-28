@@ -1,9 +1,9 @@
-from tkinter import RIGHT
+
 import pygame
 import sys
 from pygame.locals import * #For useful variables
 from laser import Laser
-from index import HeroShip
+from index import HeroShip, hero_ship
 
 
 
@@ -61,6 +61,21 @@ def update(self):
 	self.constraint()
 	self.recharge()
 	self.lasers.update()
+
+# conditional statements to control gameplay of player
+i = hero_ship.lives
+
+while (hero_ship.lives > 0 ):
+	print(i)
+	if i == 0:
+		print("hero_ship has lost all Lives. Game is over")
+		i -= 1	
+		break
+
+# when player logs back into a game that was paused from earlier
+is_logged_in = True
+if is_logged_in:
+  print("Welcome back!")
 
 
 		
