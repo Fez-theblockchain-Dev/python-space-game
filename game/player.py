@@ -67,9 +67,8 @@ i = hero_ship.lives
 
 while (hero_ship.lives > 0 ):
 	print(i)
-	if i == 0:
+	if hero_ship.lives <= 0:
 		print("hero_ship has lost all Lives. Game is over")
-		i -= 1	
 		break
 
 # when player logs back into a game that was paused from earlier
