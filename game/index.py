@@ -1,6 +1,7 @@
 # this file will house the fundamental game play logic of new space invaders python web app game
 
 # from logging import _Level
+from cgi import print_arguments
 import numbers
 # from pickle import TRUE
 from re import S
@@ -155,7 +156,7 @@ if __name__ == "__main__":
 new_game = bool
 
 def level ():
-        if new_game == true:
+        if new_game (True):
             print(f'New game started. Set level{0}')
 
 
@@ -217,9 +218,13 @@ from game import main
 if __name__ == "__main__":
     main()
 
+def mystery_ship_destroyed(self):
+    if self.mystery_ship_alive is False:
+        return 'mystery ship has been destroyed'
+    else:
+        return None
+        
 
-
-key = bool
 # hits = pygame.sprite.groupcollide(hero_bullets, Mystery_Ship, True, True)
 hits = []
 for hit in hits:
@@ -228,7 +233,7 @@ for hit in hits:
     sprite.add(key)
     
     hero_ship.has_key = True  # flag for later access
-    print("🔑 Hero gained a Key!")
+    print("Hero gained a Key!🔑")
 
     while running:
         for event in pygame.event.get():
