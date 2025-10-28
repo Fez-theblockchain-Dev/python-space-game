@@ -121,17 +121,16 @@ def collision_checks(self):
 laser = Laser() #setting laser variable to the Laser class that I have in the it's respective file
 alien = Alien(1, 2, 100, 100)  # Create an alien instance
 
-aliens_hit = pygame.sprite.spritecollide(laser,self.aliens,True)
+# Initialize score and create aliens group
+score = 0
+aliens_group = pygame.sprite.Group()
+
+aliens_hit = pygame.sprite.spritecollide(laser, aliens_group, True)
 if aliens_hit:
     for alien in aliens_hit:
-        self.score += alien.value
+        score += alien.value
         laser.kill()
-        self.explosion_sound.play()
-
-# extra collision
-if pygame.sprite.spritecollide(laser,self.extra,True):
-    self.score += 500
-    laser.kill()
+        # explosion_sound.play()  # Uncomment when sound is available
 
 
 # Game loop
