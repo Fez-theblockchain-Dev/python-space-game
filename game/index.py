@@ -218,11 +218,13 @@ from game import main
 if __name__ == "__main__":
     main()
 
-def mystery_ship_destroyed(self):
-    if self.mystery_ship_alive is False:
-        return 'mystery ship has been destroyed'
-    else:
-        return None
+# new 'Key' class that will hold the object that appears on the players screen when the mystery_ship is destroyed
+class Key:
+    def mystery_ship_destroyed(self, x, y,):
+        if self.mystery_ship_alive is False:
+            return 'mystery ship has been destroyed'
+        else:
+            return None
         
 
 # hits = pygame.sprite.groupcollide(hero_bullets, Mystery_Ship, True, True)
