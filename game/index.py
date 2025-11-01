@@ -233,6 +233,9 @@ for hit in hits:
     # When a mystery ship is destroyed
     key = symbol(hit.rect.centerx, hit.rect.centery)
     sprite.add(key)
+
+    sprite = laser .
+    
     
     hero_ship.has_key = True  # flag for later access
     print("Hero gained a Key!🔑")
@@ -245,11 +248,14 @@ for hit in hits:
                 if event.key == K_ESCAPE:
                     running = False
                     quit()
+                    
             
 try:
     from pygame.locals import QUIT
 except ImportError:
     print("Could not import QUIT from pygame.locals. Check if pygame is installed.")
+
+from collections import deque
 
 
 
