@@ -17,7 +17,7 @@ from pygame.locals import * #For useful variables
 from spaceship import SpaceShip
 from laser import Laser
 from alien import Alien
-# from HeroShip import self
+
 
 
 
@@ -31,17 +31,16 @@ screen = pygame.display.set_mode((SCREEN_WIDTH /2 , SCREEN_HEIGHT))
 pygame.display.set_caption("Space Invaders")
 
 # Colors
-BLACK = (0, 0, 0)
-WHITE = (255, 255, 255)
-GREEN = (0, 255, 0)
-RED = (255, 0, 0)
+YELLOW = (255, 255, 100) #Yellow for alien_ships
+RED = (255, 0, 0) #red for laser
+ROYAL_BLUE = (65, 105, 225) 
 
 # Window background space image
 nebula_image = pygame.image.load('assets/512x512_purple_nebula_1.png').convert()
 nebula_bg = pygame.transform.scale(nebula_image, (SCREEN_WIDTH, SCREEN_HEIGHT))
 
 # HeroShip class definition
-class HeroShip(pygame.sprite.Sprite.self ):
+class HeroShip(pygame.sprite.Sprite):
     def __init__(self, x, y, width, height, lives, health=100):
         super().__init__()
         self.image = pygame.image.load('assets/spaceship.png')
@@ -76,25 +75,44 @@ hero_group.add(hero_ship)
 
 # creating levels class OOP elements for game loop functionality
 class Level (pygame.sprite.Sprite):
-    def __init__(self, level_number):
+    # Class variable to track current level index across instances
+    current_level_index = 0
+    level_array = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+    
+    def __init__(self, level_number=None):
         super().__init__()
-        self.level_number = level_number
+        self.level_number = level_number if level_number is not None else Level.current_level_index
         self.lives = 5
 
     
-    def show_level_up_message(self, screen, font, level_number):
+    def show_level_up_message(self, screen, font):
         """Display animated level-up celebration"""
-    # Create celebration overlay
-    overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
-    overlay.set_alpha(128)
-    overlay.fill((0, 0, 0))
-  
+        # Create celebration overlay
+        overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
+        overlay.set_alpha(128)
+        overlay.fill((0, 0, 0))
+      
+        # Level up text
+        current_level = Level.level_array[Level.current_level_index]
+        level_text = font.render(f"LEVEL {current_level} COMPLETE!", True, (255, 255, 0))
+        text_rect = level_text.get_rect(center=(SCREEN_WIDTH//2, SCREEN_HEIGHT//2))
+
+    def get_current_level(self, new_game = False):
+        """Get current level index, reset to 0 if new game, otherwise return last level"""
+        if new_game:
+            Level.current_level_index = 0
+            return Level.current_level_index
+        else:
+            return Level.current_level_index
     
-    # Level up text
-    level_number = [[0,1,2,3,4,5,6,7,8,9,10,11,12]]
-    font = "Ariel"
-    level_text = font.render(f"LEVEL {level_number} COMPLETE!", True, (255, 255, 0))
-    text_rect = level_text.get_rect(center=(SCREEN_WIDTH//2, SCREEN_HEIGHT//2))
+    def increment_level(self):
+        """Move to next level if available"""
+        if Level.current_level_index < len(Level.level_array) - 1:
+            Level.current_level_index += 1
+        return Level.current_level_index
+            
+
+
 
     
     
@@ -234,8 +252,8 @@ for hit in hits:
     key = symbol(hit.rect.centerx, hit.rect.centery)
     sprite.add(key)
 
-    sprite = laser .
-    
+    sprite = laser 
+
     
     hero_ship.has_key = True  # flag for later access
     print("Hero gained a Key!🔑")
@@ -256,6 +274,7 @@ except ImportError:
     print("Could not import QUIT from pygame.locals. Check if pygame is installed.")
 
 from collections import deque
+
 
 
 

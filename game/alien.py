@@ -1,6 +1,5 @@
 import pygame, random
 
-from game.index import hero_ship
 
 aliens = pygame.sprite.Group()
 
