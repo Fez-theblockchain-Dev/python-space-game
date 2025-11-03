@@ -1,12 +1,16 @@
 # this file will house the fundamental game play logic of new space invaders python web app game
 
 # from logging import _Level
+from _typeshed import Self
 from cgi import print_arguments
+from ctypes import resize
+from nt import kill
 import numbers
 # from pickle import TRUE
 from re import S
 import string
 import symbol
+from turtle import screensize
 from unittest import result
 import pygame
 import sys
@@ -17,6 +21,7 @@ from pygame.locals import * #For useful variables
 from spaceship import SpaceShip
 from laser import Laser
 from alien import Alien
+import tkinter as tk
 
 
 
@@ -79,7 +84,7 @@ class Level (pygame.sprite.Sprite):
     current_level_index = 0
     level_array = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
     
-    def __init__(self, level_number=None):
+    def __init__(self, level_number = None):
         super().__init__()
         self.level_number = level_number if level_number is not None else Level.current_level_index
         self.lives = 5
@@ -96,6 +101,14 @@ class Level (pygame.sprite.Sprite):
         current_level = Level.level_array[Level.current_level_index]
         level_text = font.render(f"LEVEL {current_level} COMPLETE!", True, (255, 255, 0))
         text_rect = level_text.get_rect(center=(SCREEN_WIDTH//2, SCREEN_HEIGHT//2))
+        
+        # responsive screen size handeling
+        root = tk.Tk()
+        screen_width = root.winfo_screenwidth()
+        screen_height = root.winfo_screenheight()
+        print(f"Screen size:{screen_width}x{screen_height}")
+        root.destroy()
+    
 
     def get_current_level(self, new_game = False):
         """Get current level index, reset to 0 if new game, otherwise return last level"""
@@ -112,13 +125,14 @@ class Level (pygame.sprite.Sprite):
         return Level.current_level_index
             
 
-
-
     
     
     # Draw celebration elements
+    overlay = int
     screen.blit(overlay, (0, 0))
+    level_text and text_rect = bool
     screen.blit(level_text, text_rect)
+    pygame.display.set_mode((400, 300))
     
     # Add particle effects, animations, etc.
     pygame.display.flip()
@@ -220,6 +234,7 @@ def level ():
         laser_damage = 10
 
         current_spaceship_health = spaceship_health - laser_damage
+        print (current_spaceship_health)
 
         print(current_spaceship_health)
 
