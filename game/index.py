@@ -22,6 +22,8 @@ from spaceship import SpaceShip
 from laser import Laser
 from alien import Alien
 import tkinter as tk
+import font 
+from level import Level
 
 
 
@@ -97,11 +99,6 @@ class Level (pygame.sprite.Sprite):
         overlay.set_alpha(128)
         overlay.fill((0, 0, 0))
       
-        # Level up text
-        current_level = Level.level_array[Level.current_level_index]
-        level_text = font.render(f"LEVEL {current_level} COMPLETE!", True, (255, 255, 0))
-        text_rect = level_text.get_rect(center=(SCREEN_WIDTH//2, SCREEN_HEIGHT//2))
-        
         # responsive screen size handeling
         root = tk.Tk()
         screen_width = root.winfo_screenwidth()
@@ -127,13 +124,23 @@ class Level (pygame.sprite.Sprite):
 
     
     
-    # Draw celebration elements
-    overlay = int
-    screen.blit(overlay, (0, 0))
-    level_text and text_rect = bool
-    screen.blit(level_text, text_rect)
-    pygame.display.set_mode((400, 300))
+    # Level up text
+    current_level = Level.level_array[Level.current_level_index]
+    level_text = font.render(f"LEVEL {current_level} COMPLETE!", True, (255, 255, 0))
+    text_rect = level_text.get_rect(center=(SCREEN_WIDTH//2, SCREEN_HEIGHT//2))
     
+    # Draw celebration elements
+
+    screen.blit(overlay, (0, 0))
+    level_text and text_rect = True
+    screen.blit(level_text, text_rect)
+    pygame.display.set_mode((400, 400)),pygame.RESIZABLE
+    
+    # conditional statement to handle the logic of when level_text & text_rect will render on screen
+    total_aliens = 5 
+    if total_aliens == 0:
+        print(f"Congrats! you've beaten all the enemies & now reached level {Level.current_level_index}")
+
     # Add particle effects, animations, etc.
     pygame.display.flip()
     pygame.time.wait(2000)  # Show for 2 seconds
