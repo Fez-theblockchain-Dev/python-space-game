@@ -8,4 +8,20 @@ class Button():
         self.text_input = text_input
         self.text = self.font.render(self.text_input, True, self.base_color)
 
-        
+        if self.image is None:
+            self.image = self.text
+        self.rect = self.image.get_rect(center=(self.x_pos, self.y_pos))
+        self.text_rect = self.text.get_rect(center=(self.x_pos, self.y_pos))
+
+
+        # screen display default settings
+    def update(self, screen):
+        if self.image is not None:
+            # if there is an image rendering from the assets fold, render it on the rectangular pygame window
+            screen.blit(self.image, self.rect)
+            screen.blit(self.text, self.text_rect)
+            
+
+
+
+
