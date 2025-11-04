@@ -22,7 +22,6 @@ from spaceship import SpaceShip
 from laser import Laser
 from alien import Alien
 import tkinter as tk
-import font 
 from level import Level
 
 
@@ -30,6 +29,7 @@ from level import Level
 
 # Initialize pygame
 pygame.init()
+
 
 # Set up the display
 SCREEN_WIDTH = 800
@@ -41,7 +41,9 @@ pygame.display.set_caption("Space Invaders")
 YELLOW = (255, 255, 100) #Yellow for alien_ships
 RED = (255, 0, 0) #red for laser
 ROYAL_BLUE = (65, 105, 225) 
+BLACK = (0, 0, 0) #screen overlay to create multiple screens illusion
 
+screen.fill('black')
 # Window background space image
 nebula_image = pygame.image.load('assets/512x512_purple_nebula_1.png').convert()
 nebula_bg = pygame.transform.scale(nebula_image, (SCREEN_WIDTH, SCREEN_HEIGHT))
