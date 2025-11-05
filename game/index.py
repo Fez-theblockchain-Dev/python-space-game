@@ -23,6 +23,7 @@ from laser import Laser
 from alien import Alien
 import tkinter as tk
 from level import Level
+from button import Button
 
 
 
@@ -48,9 +49,12 @@ screen.fill('black')
 nebula_image = pygame.image.load('assets/512x512_purple_nebula_1.png').convert()
 nebula_bg = pygame.transform.scale(nebula_image, (SCREEN_WIDTH, SCREEN_HEIGHT))
 
+# Font link
+font = pygame.font.Font('assets/Fonts/hyperspace/Hyperspace Bold Italic.otf', 20)
+
 # HeroShip class definition
 class HeroShip(pygame.sprite.Sprite):
-    def __init__(self, x, y, width, height, lives, health=100):
+    def __init__(self, x, y, width, height, lives,level, health=100, ):
         super().__init__()
         self.image = pygame.image.load('assets/spaceship.png')
         self.rect = self.image.get_rect()
@@ -64,6 +68,7 @@ class HeroShip(pygame.sprite.Sprite):
         self.level = 0
         self.points = 0
         self.speed = 5
+        
 
     def draw(self, screen):
         screen.blit(self.image, self.rect)
@@ -133,7 +138,6 @@ class Level (pygame.sprite.Sprite):
     
     # Draw celebration elements
 
-    screen.blit(overlay, (0, 0))
     level_text and text_rect = True
     screen.blit(level_text, text_rect)
     pygame.display.set_mode((400, 400)),pygame.RESIZABLE

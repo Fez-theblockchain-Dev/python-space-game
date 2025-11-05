@@ -20,7 +20,10 @@ class Button():
             # if there is an image rendering from the assets fold, render it on the rectangular pygame window
             screen.blit(self.image, self.rect)
             screen.blit(self.text, self.text_rect)
-            
+
+        if self.text is None:
+            screen.blit()
+
 
 
 

@@ -1,11 +1,13 @@
 import pygame
 
 SCREEN = pygame.display.set_mode((1280, 720))
+BG = pygame.color.load("black")
 
-def main_menu(): #Main menu screen
+def main_menu(font): #Main menu screen
     pygame.display.set_caption("Menu")
+    font = pygame.font.Font("assets/Fonts/hyperspace/Hyperspace Bold Italic.otf")
 
-    BG = pygame.color.load("black")
+
 
     while True:
         SCREEN.blit(BG, (0, 0))
@@ -13,7 +15,7 @@ def main_menu(): #Main menu screen
 def play():
     while True:
         PLAY_MOUSE_POS = pygame.mouse.get_pos()
-
+        font = pygame.font.Font("assets/Fonts/hyperspace/Hyperspace Bold Italic.otf")
         SCREEN.fill("black")
 
         PLAY_TEXT = get_font(45).render("This is the PLAY screen.", True, "White")
@@ -21,7 +23,7 @@ def play():
         SCREEN.blit(PLAY_TEXT, PLAY_RECT)
 
         PLAY_BACK = Button(image=None, pos=(640, 460), 
-                            text_input="BACK", font=get_font(75), base_color="White", hovering_color="Green")
+        text_input="BACK", font=get_font(75), base_color="White", hovering_color="Green")
 
         PLAY_BACK.changeColor(PLAY_MOUSE_POS)
         PLAY_BACK.update(SCREEN)
