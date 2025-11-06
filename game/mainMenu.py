@@ -25,7 +25,7 @@ def get_font(size): #font size function
 def play():
     while True:
         PLAY_MOUSE_POS = pygame.mouse.get_pos()
-        font = pygame.font.Font("assets/Fonts/hyperspace/Hyperspace Bold Italic.otf")
+        font_path = pygame.font.__path__("assets/Fonts/hyperspace/Hyperspace Bold Italic.otf")
         SCREEN.fill("black")
 
         PLAY_TEXT = get_font(45).render("This is the PLAY screen.", True, "White")
@@ -47,6 +47,7 @@ for event in pygame.event.get():
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if PLAY_BACK.checkForInput(PLAY_BACK_POS):
                     main_menu()
+                
             
 
 pygame.display.update()
