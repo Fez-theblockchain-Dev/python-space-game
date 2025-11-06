@@ -1,5 +1,6 @@
 class Button():
     def __init__(self, image, pos, text_input, font, base_color, hovering_color):
+        super().__init__()
         self.image = image 
         self.x_pos = pos[0]
         self.y_pos = pos[1]
@@ -20,9 +21,16 @@ class Button():
             # if there is an image rendering from the assets fold, render it on the rectangular pygame window
             screen.blit(self.image, self.rect)
             screen.blit(self.text, self.text_rect)
+            # check if the mouse is hovering over the button
+    def check_input(self, position):
+        if self.rect.collidepoint(position):
+            return True
+        return False
 
-        if self.text is None:
-            screen.blit()
+    def check_color_change(self, false)
+
+    
+
 
 
 
