@@ -45,7 +45,7 @@ for event in pygame.event.get():
                 pygame.quit()
                 sys.exit()
             if event.type == pygame.MOUSEBUTTONDOWN:
-                if PLAY_BACK.checkForInput(PLAY_MOUSE_POS):
+                if PLAY_BACK.checkForInput(PLAY_BACK_POS):
                     main_menu()
             
 
