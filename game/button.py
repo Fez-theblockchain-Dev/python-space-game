@@ -27,10 +27,11 @@ class Button():
             return True
         return False
 
-    def check_color_change(self, false)
-
-    
-
+    def change_color(self, position):
+        if self.rect.collidepoint(position):
+            self.text = self.font.render(self.text_input, True, self.hovering_color)
+        else:
+            self.text = self.font.render(self.text_input, True, self.base_color)
 
 
 
