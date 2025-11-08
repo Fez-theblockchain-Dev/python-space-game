@@ -2,6 +2,7 @@
 
 # from logging import _Level
 from _typeshed import Self
+from ast import Global
 from cgi import print_arguments
 from ctypes import resize
 from nt import kill
@@ -22,7 +23,6 @@ from spaceship import SpaceShip
 from laser import Laser
 from alien import Alien
 import tkinter as tk
-from level import Level
 from button import Button
 import PySimpleGUI as sg
 
@@ -91,14 +91,16 @@ hero_group.add(hero_ship)
 
 # creating levels class OOP elements for game loop functionality
 class Level (pygame.sprite.Sprite):
+    def __init__(self):
     # Class variable to track current level index across instances
-    current_level_index = 0
-    level_array = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+        current_level_index = 0
+        level_array = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+        self.level = level
     
     def __init__(self, level_number = None):
         super().__init__()
         self.level_number = level_number if level_number is not None else Level.current_level_index
-        self.lives = 5
+        self.lives = 5 
 
     
     def show_level_up_message(self, screen, font):
@@ -107,6 +109,7 @@ class Level (pygame.sprite.Sprite):
         overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
         overlay.set_alpha(128)
         overlay.fill((0, 0, 0))
+
       
         # responsive screen size handeling
         root = tk.Tk()
@@ -134,7 +137,7 @@ class Level (pygame.sprite.Sprite):
     
     
     # Level up text
-    current_level = Level.level_array[Level.current_level_index]
+    current_level = level_array[Level.current_level_index]
     level_text = font.render(f"LEVEL {current_level} COMPLETE!", True, (255, 255, 0))
     text_rect = level_text.get_rect(center=(SCREEN_WIDTH//2, SCREEN_HEIGHT//2))
     
