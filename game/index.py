@@ -94,8 +94,13 @@ class Level (pygame.sprite.Sprite):
     def __init__(self):
     # Class variable to track current level index across instances
         current_level_index = 0
-        level_array = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+        arr = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
         self.level = level
+        # conditional statement to dictate how the 'Level" class behaves
+        if current_level_index != 0:
+            print(f'Resume where you left off! {arr}')
+        else:
+            return self.level
     
     def __init__(self, level_number = None):
         super().__init__()
