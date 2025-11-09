@@ -142,7 +142,7 @@ class Level (pygame.sprite.Sprite):
     
     
     # Level up text
-    current_level = level_array[Level.current_level_index]
+    current_level = current_level_index[Level.current_level_index]
     level_text = font.render(f"LEVEL {current_level} COMPLETE!", True, (255, 255, 0))
     text_rect = level_text.get_rect(center=(SCREEN_WIDTH//2, SCREEN_HEIGHT//2))
     
