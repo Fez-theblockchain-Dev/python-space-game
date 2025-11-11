@@ -25,7 +25,7 @@ from laser import Laser
 from alien import Alien
 import tkinter as tk
 from button import Button
-import PySimpleGUI as sg
+
 
 
 
@@ -83,7 +83,7 @@ spaceship_group = pygame.sprite.GroupSingle()
 spaceship_group.add(spaceship) 
 
 # creating new group for all lasers
-# laser_group = pygame.sprite.Group()
+laser_group = pygame.sprite.Group()
 
 # Create hero ship once (not in the game loop!)
 hero_ship = HeroShip(SCREEN_WIDTH // 2, SCREEN_HEIGHT - 100, 100, 100, 3, 100)
@@ -175,7 +175,7 @@ def collision_checks(self):
             
 
 				# alien collisions
-laser = Laser() #setting laser variable to the Laser class that I have in the it's respective file
+# Laser instances should be created dynamically when shooting, not as a static variable
 alien = Alien(1, 2, 100, 100)  # Create an alien instance
 laser_audio = os.path("audio/audio_laser.wav")
 
@@ -187,11 +187,12 @@ def shoot_laser(self):
 score = 0
 aliens_group = pygame.sprite.Group()
 
-aliens_hit = pygame.sprite.spritecollide(laser, aliens_group, True)
+# Check for collisions between lasers and aliens
+aliens_hit = pygame.sprite.groupcollide(laser_group, aliens_group, True, True)
 if aliens_hit:
-    for alien in aliens_hit:
-        score += alien.value
-        laser.kill()
+    for laser, hit_aliens in aliens_hit.items():
+        for alien in hit_aliens:
+            score += alien.value
 
 
 # Game loop
@@ -239,13 +240,19 @@ def level ():
             hero_ship.rect.y += hero_ship.speed
 
 
-        for event in pygame.event.get()
-            if event.type == pygame.KEYDOWN():
+        for event in pygame.event.get():
+            if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_SPACE:
-                    player.laser() = True
-                    player.shoot_laser()
-                    
-        
+                    # Create a new laser at the hero ship's position, moving upward
+                    laser = Laser(
+                        position=(hero_ship.rect.centerx, hero_ship.rect.top),
+                        speed=-8,  # Negative speed moves upward
+                        screen_height=SCREEN_HEIGHT,
+                        false=False
+                    )
+                    laser_group.add(laser)
+
+
         # Draw background
         screen.blit(nebula_bg, (0, 0)) 
 
@@ -258,7 +265,6 @@ def level ():
         hero_group.update()
         spaceship_group.update()
         laser_group.update()
-
         # Update display
         pygame.display.flip()
         clock = pygame.time.Clock()
@@ -301,10 +307,9 @@ hits = []
 for hit in hits:
     # When a mystery ship is destroyed
     key = symbol(hit.rect.centerx, hit.rect.centery)
-    sprite.add(key)
+    pygame.sprite.add(key)
 
-    sprite = laser 
-
+    
     
     hero_ship.has_key = True  # flag for later access
     print("Hero gained a Key!🔑")
