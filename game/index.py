@@ -9,7 +9,7 @@ from ctypes import resize
 from nt import kill
 import numbers
 # from pickle import TRUE
-from re import S
+from re import S, T
 import string
 import symbol
 from turtle import screensize
@@ -237,6 +237,14 @@ def level ():
             hero_ship.rect.y -= hero_ship.speed
         if keys[K_DOWN] and hero_ship.rect.bottom < SCREEN_HEIGHT:
             hero_ship.rect.y += hero_ship.speed
+
+
+        for event in pygame.event.get()
+            if event.type == pygame.KEYDOWN():
+                if event.key == pygame.K_SPACE:
+                    player.laser() = True
+                    player.shoot_laser()
+                    
         
         # Draw background
         screen.blit(nebula_bg, (0, 0)) 
