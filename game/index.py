@@ -3,6 +3,7 @@
 # from logging import _Level
 from _typeshed import Self
 from ast import Global
+import audioop
 from cgi import print_arguments
 from ctypes import resize
 from nt import kill
@@ -82,7 +83,7 @@ spaceship_group = pygame.sprite.GroupSingle()
 spaceship_group.add(spaceship) 
 
 # creating new group for all lasers
-laser_group = pygame.sprite.Group()
+# laser_group = pygame.sprite.Group()
 
 # Create hero ship once (not in the game loop!)
 hero_ship = HeroShip(SCREEN_WIDTH // 2, SCREEN_HEIGHT - 100, 100, 100, 3, 100)
@@ -142,7 +143,7 @@ class Level (pygame.sprite.Sprite):
     
     
     # Level up text
-    current_level = current_level_index[Level.current_level_index]
+    current_level = current_text.get_rect(Level.current_level_index)
     level_text = font.render(f"LEVEL {current_level} COMPLETE!", True, (255, 255, 0))
     text_rect = level_text.get_rect(center=(SCREEN_WIDTH//2, SCREEN_HEIGHT//2))
     
@@ -176,6 +177,11 @@ def collision_checks(self):
 				# alien collisions
 laser = Laser() #setting laser variable to the Laser class that I have in the it's respective file
 alien = Alien(1, 2, 100, 100)  # Create an alien instance
+laser_audio = os.path("audio/audio_laser.wav")
+
+def shoot_laser(self):
+    if self.laser == True: #if laser is fired, play the laser audio
+        laser_audio.play("audio/audio_laser.wav")
 
 # Initialize score and create aliens group
 score = 0
@@ -186,12 +192,11 @@ if aliens_hit:
     for alien in aliens_hit:
         score += alien.value
         laser.kill()
-        # explosion_sound.play()  # Uncomment when sound is available
 
 
 # Game loop
 
-player = HeroShip
+player = HeroShip()
 
 if __name__ == "__main__":
     main()
