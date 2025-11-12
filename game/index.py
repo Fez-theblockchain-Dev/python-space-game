@@ -9,6 +9,7 @@ from ctypes import resize
 from nt import kill
 import numbers
 # from pickle import TRUE
+from operator import index
 from re import S, T
 import string
 import symbol
@@ -126,6 +127,7 @@ class Level (pygame.sprite.Sprite):
     
 
     def get_current_level(self, new_game = False):
+        pygame.init(self)
         """Get current level index, reset to 0 if new game, otherwise return last level"""
         if new_game:
             Level.current_level_index = 0
@@ -141,22 +143,26 @@ class Level (pygame.sprite.Sprite):
             
 
     
-    
-    # Level up text
-    current_level = current_text.get_rect(Level.current_level_index)
-    level_text = font.render(f"LEVEL {current_level} COMPLETE!", True, (255, 255, 0))
-    text_rect = level_text.get_rect(center=(SCREEN_WIDTH//2, SCREEN_HEIGHT//2))
-    
+    #function for screen messages
+def screen_msg(self, arr): 
     # Draw celebration elements
-
     level_text and text_rect = True
-    screen.blit(level_text, text_rect)
+    screen.blit(level_text, text_rect)   
+    if level_text == True:
+        print(f"Currently on Lvl: {arr}")
+
     pygame.display.set_mode((400, 400)),pygame.RESIZABLE
     
     # conditional statement to handle the logic of when level_text & text_rect will render on screen
+       # Level up text 
+    
+    def current_level(self, arr):
+        return (Level.current_level_index)
+    level_text = font.render(f"LEVEL {current_level} COMPLETE!", True, (255, 255, 0))
+    text_rect = level_text.get_rect(center=(SCREEN_WIDTH//2, SCREEN_HEIGHT//2))
     total_aliens = 5 
     if total_aliens == 0:
-        print(f"Congrats! you've beaten all the enemies & now reached level {Level.current_level_index}")
+        print(f"Congrats! you've beaten all the enemies & now reached level {arr.add}")
 
     # Add particle effects, animations, etc.
     pygame.display.flip()
