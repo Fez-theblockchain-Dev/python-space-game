@@ -19,9 +19,6 @@ def get_font(size): #font size function
 
 
 
-    # while True:
-    #     SCREEN.blit(BG, (0, 0))
-
 def play():
     while True:
         PLAY_MOUSE_POS = pygame.mouse.get_pos()
@@ -40,12 +37,15 @@ def play():
         PLAY_BACK.update(SCREEN)
         PLAY_BACK.restart_game(SCREEN)
 
+PLAY_BACK = main()
+
+
 for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
             if event.type == pygame.MOUSEBUTTONDOWN:
-                if PLAY_BACK.checkForInput(PLAY_BACK_POS):
+                if PLAY_BACK.checkForInput(self):
                     main_menu()
                 
             
