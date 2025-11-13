@@ -37,6 +37,14 @@ def play():
         PLAY_BACK.update(SCREEN)
         PLAY_BACK.restart_game(SCREEN)
 
+    
+def options():
+    while True:
+        OPTIONS_MOUSE_POS = pygame.mouse.get_pos()
+        
+
+
+
 PLAY_BACK = main()
 
 
