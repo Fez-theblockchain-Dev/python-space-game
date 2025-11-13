@@ -146,12 +146,13 @@ class Level (pygame.sprite.Sprite):
     #function for screen messages
 def screen_msg(self, arr): 
     # Draw celebration elements
-    level_text and text_rect = True
+    level_text = font.render(f"LEVEL {arr} COMPLETE!", True, (255, 255, 0))
+    text_rect = level_text.get_rect(center=(SCREEN_WIDTH//2, SCREEN_HEIGHT//2))
     screen.blit(level_text, text_rect)   
-    if level_text == True:
+    if level_text:
         print(f"Currently on Lvl: {arr}")
 
-    pygame.display.set_mode((400, 400)),pygame.RESIZABLE
+    pygame.display.set_mode((400, 400), pygame.RESIZABLE)
     
     # conditional statement to handle the logic of when level_text & text_rect will render on screen
        # Level up text 
