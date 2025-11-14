@@ -4,6 +4,8 @@ import pygame
 from button import Button
 from index import main
 from config import SCREEN_WIDTH, SCREEN_HEIGHT
+from sys import argv
+
 
 SCREEN = pygame.display.set_mode((1280, 720))
 BG = pygame.color.load("black")
@@ -41,23 +43,28 @@ def play():
 def options():
     while True:
         OPTIONS_MOUSE_POS = pygame.mouse.get_pos()
-        
+
 
 
 
 PLAY_BACK = main()
 
 
-for event in pygame.event.get():
+for event in pygame.event.get(self, function):
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if PLAY_BACK.checkForInput(self):
                     main_menu()
+                if not(self.game_over):
+                        function()
+                else:
+                        self.game_over = False
+                if event.key == pygame.K_ESCAPE:
                 
             
 
-pygame.display.update()
+                    pygame.display.update()
 
 sys.exit()
