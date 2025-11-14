@@ -1,6 +1,11 @@
+from socket import gaierror
+
+
 class Button():
     def __init__(self, image, pos, text_input, font, base_color, hovering_color):
         super().__init__()
+        global g
+        g = Button
         self.image = image 
         self.x_pos = pos[0]
         self.y_pos = pos[1]
