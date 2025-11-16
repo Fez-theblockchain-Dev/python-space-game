@@ -14,6 +14,7 @@ from re import S, T
 import string
 import symbol
 from turtle import screensize
+from typing import Any
 from unittest import result
 import pygame
 import sys
@@ -339,9 +340,32 @@ except ImportError:
 from collections import deque
 
 
+x_start = int()
+y_start = int()
+
+self.aliens = pygame.sprite.Group()
+self.alien_setup()
+
+def alien_setup(self,rows,cols):
+    for row_index, row in enumerate[int](rows):
+        for col_index, col in enumerate[int](cols):
+
+def create_obstacle(self, x_start, y_start, offset_x):
+    for row_index, row in enumerate[](self.shape):
+        for col_index,col in enumerate(row):
+            if col == 'x':
+                x = x_start + col_index * self.block_size + offset_x
+                y = y_start + row_index * self.block_size
+                block = obstacle.Block(self.block_size,(241,79,80),x,y)
+                self.blocks.add(block)
 
 
+def create_multiple_obstacles(self,*offset,x_start,y_start):
+		for offset_x in offset:
+			self.create_obstacle(x_start,y_start,offset_x)
+            x = cols_index
+            y = rows_index
+            alien_sprite = Alien('red',x,y)
+            self.aliens.add(alien_sprite)
 
-    
-
-
+        def run(self):
