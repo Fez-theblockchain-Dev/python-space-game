@@ -208,6 +208,47 @@ if aliens_hit:
 
 player = HeroShip()
 
+
+class Game:
+	def __init__(self):
+		# Player setup
+		player_sprite = Player((screen_width / 2,screen_height),screen_width,5)
+		self.player = pygame.sprite.GroupSingle(player_sprite)
+
+		# health and score setup
+		self.lives = 3
+		self.live_surf = pygame.image.load('../graphics/player.png').convert_alpha()
+		self.live_x_start_pos = screen_width - (self.live_surf.get_size()[0] * 2 + 20)
+		self.score = 0
+		self.font = pygame.font.Font('../font/Pixeled.ttf',20)
+
+		# Obstacle setup
+		self.shape = obstacle.shape
+		self.block_size = 6
+		self.blocks = pygame.sprite.Group()
+		self.obstacle_amount = 4
+		self.obstacle_x_positions = [num * (screen_width / self.obstacle_amount) for num in range(self.obstacle_amount)]
+		self.create_multiple_obstacles(*self.obstacle_x_positions, x_start = screen_width / 15, y_start = 480)
+
+		# Alien setup
+		self.aliens = pygame.sprite.Group()
+		self.alien_lasers = pygame.sprite.Group()
+		self.alien_setup(rows = 6, cols = 8)
+		self.alien_direction = 1
+
+		# Extra setup
+		self.extra = pygame.sprite.GroupSingle()
+		self.extra_spawn_time = randint(40,80)
+
+		# Audio
+		music = pygame.mixer.Sound('../audio/music.wav')
+		music.set_volume(0.2)
+		music.play(loops = -1)
+		self.laser_sound = pygame.mixer.Sound('../audio/laser.wav')
+		self.laser_sound.set_volume(0.5)
+		self.explosion_sound = pygame.mixer.Sound('../audio/explosion.wav')
+		self.explosion_sound.set_volume(0.3)
+        
 if __name__ == "__main__":
     main()
     def main():
@@ -367,6 +408,27 @@ if aliens_hit:
         self.score += alien.value
     laser.kill()
     self.explosion_sound.play()
+
+
+if self.alien_lasers:
+    for laser in self.alien_lasers:
+        if pygame.sprite.spritecollide(laser,self.blocks,True):
+            laser.kill()
+
+
+if pygame.sprite.spritecollide(laser,self.player,False):
+    laser.kill()
+    self.lives -= 1
+    if self.lives <= 0:
+        pygame.quit()
+        sys.exit()
+
+if self.aliens:
+    for aliens in self.aliens:
+        pygame.sprite.spritecollide(alien,self.blocks, True)
+
+
+
 
 def run(self):
     self.player.update()
