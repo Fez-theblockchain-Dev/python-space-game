@@ -182,7 +182,8 @@ def collision_checks(self):
             
             
 
-				# alien collisions
+# alien collisions
+aliens_hit = pygame.sprite.spritecollide(laser,self.aliens,True):
 # Laser instances should be created dynamically when shooting, not as a static variable
 alien = Alien(1, 2, 100, 100)  # Create an alien instance
 laser_audio = os.path("audio/audio_laser.wav")
@@ -308,15 +309,6 @@ class Key:
             return 'mystery ship has been destroyed'
         else:
             return None
-        
-
-# hits = pygame.sprite.groupcollide(hero_bullets, Mystery_Ship, True, True)
-hits = []
-for hit in hits:
-    # When a mystery ship is destroyed
-    key = symbol(hit.rect.centerx, hit.rect.centery)
-    pygame.sprite.add(key)
-
     
     
     hero_ship.has_key = True  # flag for later access
@@ -370,23 +362,29 @@ def alien_setup(self,rows,cols, x_distance = 60, y_distance = 48, x_offset = 70,
             alien_sprite = Alien('red',x,y)
             self.aliens.add(alien_sprite)
 
-        def run(self):
-            self.player.update()
-            
-            self.alien_lasers.update()
-            self.extra.update()
-            
-            self.aliens.update(self.alien_direction)
-            self.alien_position_checker()
-            self.extra_alien_timer()
-            self.collision_checks()
-            
-            self.player.sprite.lasers.draw(screen)
-            self.player.draw(screen)
-            self.blocks.draw(screen)
-            self.aliens.draw(screen)
-            self.alien_lasers.draw(screen)
-            self.extra.draw(screen)
-            self.display_lives()
-            self.display_score()
-            self.victory_message()
+if aliens_hit:
+    for alien in aliens_hit:
+        self.score += alien.value
+    laser.kill()
+    self.explosion_sound.play()
+
+def run(self):
+    self.player.update()
+    
+    self.alien_lasers.update()
+    self.extra.update()
+    
+    self.aliens.update(self.alien_direction)
+    self.alien_position_checker()
+    self.extra_alien_timer()
+    self.collision_checks()
+    
+    self.player.sprite.lasers.draw(screen)
+    self.player.draw(screen)
+    self.blocks.draw(screen)
+    self.aliens.draw(screen)
+    self.alien_lasers.draw(screen)
+    self.extra.draw(screen)
+    self.display_lives()
+    self.display_score()
+    self.victory_message()
