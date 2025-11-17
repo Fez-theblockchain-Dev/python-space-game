@@ -346,13 +346,11 @@ y_start = int()
 self.aliens = pygame.sprite.Group()
 self.alien_setup()
 
-def alien_setup(self,rows,cols):
-    for row_index, row in enumerate[int](rows):
-        for col_index, col in enumerate[int](cols):
+
 
 def create_obstacle(self, x_start, y_start, offset_x):
-    for row_index, row in enumerate[](self.shape):
-        for col_index,col in enumerate(row):
+    for row_index, row in enumerate[Any](self.shape):
+        for col_index,col in enumerate[Any](row):
             if col == 'x':
                 x = x_start + col_index * self.block_size + offset_x
                 y = y_start + row_index * self.block_size
@@ -363,9 +361,32 @@ def create_obstacle(self, x_start, y_start, offset_x):
 def create_multiple_obstacles(self,*offset,x_start,y_start):
 		for offset_x in offset:
 			self.create_obstacle(x_start,y_start,offset_x)
-            x = cols_index
-            y = rows_index
+
+def alien_setup(self,rows,cols, x_distance = 60, y_distance = 48, x_offset = 70, y_offset = 100):
+    for row_index, row in enumerate(self.shape):
+        for col_index, col in enumerate(rows):
+            x = cols_index * x_distance + x_offset
+            y = row_index * y_distance + y_offset
             alien_sprite = Alien('red',x,y)
             self.aliens.add(alien_sprite)
 
         def run(self):
+            self.player.update()
+            
+            self.alien_lasers.update()
+            self.extra.update()
+            
+            self.aliens.update(self.alien_direction)
+            self.alien_position_checker()
+            self.extra_alien_timer()
+            self.collision_checks()
+            
+            self.player.sprite.lasers.draw(screen)
+            self.player.draw(screen)
+            self.blocks.draw(screen)
+            self.aliens.draw(screen)
+            self.alien_lasers.draw(screen)
+            self.extra.draw(screen)
+            self.display_lives()
+            self.display_score()
+            self.victory_message()
