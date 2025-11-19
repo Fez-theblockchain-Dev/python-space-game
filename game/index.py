@@ -143,6 +143,9 @@ class Level (pygame.sprite.Sprite):
         return Level.current_level_index
             
 
+
+
+
     
     #function for screen messages
 def screen_msg(self, arr): 
@@ -183,7 +186,7 @@ def collision_checks(self):
             
 
 # alien collisions
-aliens_hit = pygame.sprite.spritecollide(laser,self.aliens,True):
+aliens_hit = pygame.sprite.spritecollide(laser,self.aliens,True)
 # Laser instances should be created dynamically when shooting, not as a static variable
 alien = Alien(1, 2, 100, 100)  # Create an alien instance
 laser_audio = os.path("audio/audio_laser.wav")
@@ -212,7 +215,7 @@ player = HeroShip()
 class Game:
 	def __init__(self):
 		# Player setup
-		player_sprite = Player((screen_width / 2,screen_height),screen_width,5)
+		player_sprite =
 		self.player = pygame.sprite.GroupSingle(player_sprite)
 
 		# health and score setup
@@ -248,7 +251,7 @@ class Game:
 		self.laser_sound.set_volume(0.5)
 		self.explosion_sound = pygame.mixer.Sound('../audio/explosion.wav')
 		self.explosion_sound.set_volume(0.3)
-        
+
 if __name__ == "__main__":
     main()
     def main():
@@ -263,8 +266,6 @@ if __name__ == "__main__":
         # the player has 30 seconds/level to eliminate all the aliens
         time_seconds = 30 
 
-        # New level function that resets level back to 0 when a new game commences
-new_game = bool
 
 def level ():
         if new_game (True):
