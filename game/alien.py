@@ -4,6 +4,18 @@ from index import SCREEN_WIDTH, SCREEN_HEIGHT
 
 aliens = pygame.sprite.Group()
 
+def check_alien_edges(alien_group, direction):
+    """Check if any alien hits screen edge. Returns reversed direction if edge hit, otherwise returns same direction."""
+    edge_hit = False
+    for alien in alien_group:
+        if alien.rect.left <= 0 or alien.rect.right >= SCREEN_WIDTH:
+            edge_hit = True
+            break
+    
+    if edge_hit:
+        return -direction  # Reverse direction
+    return direction  # Keep same direction
+
 class Alien(pygame.sprite.Sprite):
     def __init__(self, type, speed, x, y):
         super().__init__()
@@ -16,10 +28,28 @@ class Alien(pygame.sprite.Sprite):
         self.speed = speed 
 
 # function to remove the alien from game once it leaves the screen
-    def update(self):
-        self.rect.y += 2 
-        if self.rec.top > SCREEN_HEIGHT:
-            self.kill()
+    def update(self, direction=None):
+        """Update alien position. If direction is provided, move horizontally."""
+        if direction is not None:
+            # Move horizontally
+            self.rect.x += direction * self.speed
+        else:
+            # Default vertical movement (for backward compatibility)
+            self.rect.y += 2 
+            if self.rect.top > SCREEN_HEIGHT:
+                self.kill()
+
+
+    def update_horizontal(self, direction):
+        """Move alien horizontally. Returns True if alien hits screen edge."""
+        self.rect.x += direction * self.speed
+        
+        # Check if alien hits left or right edge
+        if self.rect.left <= 0 or self.rect.right >= SCREEN_WIDTH:
+            return True  # Signal that edge was hit
+        return False
+
+
 
     # Spawn timer variables
     SPAWN_INTERVAL = 2000  # milliseconds
