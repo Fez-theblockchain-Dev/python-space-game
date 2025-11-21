@@ -1,4 +1,5 @@
 import pygame, random
+from index import SCREEN_WIDTH, SCREEN_HEIGHT
 
 
 aliens = pygame.sprite.Group()
@@ -16,8 +17,8 @@ class Alien(pygame.sprite.Sprite):
 
 # function to remove the alien from game once it leaves the screen
     def update(self):
-        self.rect.y += self.speed 
-        if self.rec.top > 600:
+        self.rect.y += 2 
+        if self.rec.top > SCREEN_HEIGHT:
             self.kill()
 
     # Spawn timer variables

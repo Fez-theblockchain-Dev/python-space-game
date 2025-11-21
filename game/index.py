@@ -265,6 +265,7 @@ if __name__ == "__main__":
         current_level_index = 0
         # the player has 30 seconds/level to eliminate all the aliens
         time_seconds = 30 
+        new_game:bool == False
 
 
 def level ():
