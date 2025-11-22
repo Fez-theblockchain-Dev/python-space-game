@@ -16,6 +16,7 @@ import symbol
 from turtle import screensize
 from typing import Any
 from unittest import result
+from xxlimited import Null
 import pygame
 import sys
 import time
@@ -266,22 +267,23 @@ if __name__ == "__main__":
         lives = 5
         current_level_index = 0
         # the player has 30 seconds/level to eliminate all the aliens
-        time_seconds = 30 
-        new_game:bool == False
+        time = 30 
+        new_game = bool
 
 
-def level ():
-        if new_game (True):
+def level (false,self):
+        if new_game == True:
             print(f'New game started. Set level{0}')
+        else:
 
-
-        current_level_index = 0 
         # loosing lives game logic
         lives = [1,2,3,4,5]
 
         if lives < 1:
             print("Game Over! you've lost all your lives")
-        
+        else:
+            self.kill
+
         # Handle continuous key presses
         keys = pygame.key.get_pressed()
         if keys[K_LEFT] and hero_ship.rect.left > 0:
