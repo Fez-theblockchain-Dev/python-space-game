@@ -41,11 +41,11 @@ def get_input (self):
 		self.recharge_time = pygame.time.get_ticks()
 		self.laser_sound.play()
 
-		def recharge(self): 
-			if not self.ready:
-				current_time = pygame.time.get_ticks()
-				if current_time - self.recharge_time >= self.cool_down_time:
-					self.ready = True
+def recharge(self): 
+	if not self.ready:
+		current_time = pygame.time.get_ticks()
+		if current_time - self.recharge_time >= self.cool_down_time:
+			self.ready = True
 # 'margin' comnstraints for setting boundaries for where the player can move to 
 def constraint(self):
 	if self.rect.left <= 0:

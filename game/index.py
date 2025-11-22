@@ -24,9 +24,11 @@ import random
 from pygame.locals import * #For useful variables
 from spaceship import SpaceShip
 from laser import Laser
-from alien import Alien
+from alien import Alien, check_alien_edges
 import tkinter as tk
 from button import Button
+from player import Player
+
 
 
 
@@ -186,7 +188,7 @@ def collision_checks(self):
             
 
 # alien collisions
-aliens_hit = pygame.sprite.spritecollide(laser,self.aliens,True)
+aliens_hit = pygame.sprite.spritecollide(laser,self,True)
 # Laser instances should be created dynamically when shooting, not as a static variable
 alien = Alien(1, 2, 100, 100)  # Create an alien instance
 laser_audio = os.path("audio/audio_laser.wav")
@@ -211,15 +213,15 @@ if aliens_hit:
 
 player = HeroShip()
 
-
 class Game:
-	def __init__(self):
+	    
+    def __init__(self):
 		# Player setup
-		player_sprite =
-		self.player = pygame.sprite.GroupSingle(player_sprite)
+        player.sprite = Player((screen_width / 2,screen_height),screen_width,5)
+        self.player = pygame.sprite.GroupSingle(player.sprite)
 
 		# health and score setup
-		self.lives = 3
+        self.lives = 3
 		self.live_surf = pygame.image.load('../graphics/player.png').convert_alpha()
 		self.live_x_start_pos = screen_width - (self.live_surf.get_size()[0] * 2 + 20)
 		self.score = 0
@@ -330,8 +332,6 @@ def level ():
         current_spaceship_health = spaceship_health - laser_damage
         print (current_spaceship_health)
 
-        print(current_spaceship_health)
-
     
         pygame.quit()
         sys.exit()
@@ -418,7 +418,7 @@ if self.alien_lasers:
             laser.kill()
 
 
-if pygame.sprite.spritecollide(laser,self.player,False):
+if pygame.sprite.spritecollide(self,laser,player,False):
     laser.kill()
     self.lives -= 1
     if self.lives <= 0:
