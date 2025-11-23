@@ -187,10 +187,8 @@ def collision_checks(self):
                 laser.kill()
             
             
-
+from laser import Laser
 # alien collisions
-aliens_hit = pygame.sprite.spritecollide(laser,self,True)
-# Laser instances should be created dynamically when shooting, not as a static variable
 alien = Alien(1, 2, 100, 100)  # Create an alien instance
 laser_audio = os.path("audio/audio_laser.wav")
 
@@ -233,7 +231,7 @@ class Game:
 		self.block_size = 6
 		self.blocks = pygame.sprite.Group()
 		self.obstacle_amount = 4
-		self.obstacle_x_positions = [num * (screen_width / self.obstacle_amount) for num in range(self.obstacle_amount)]
+ 		self.obstacle_x_positions = [num * (screen_width / self.obstacle_amount) for num in range(self.obstacle_amount)]
 		self.create_multiple_obstacles(*self.obstacle_x_positions, x_start = screen_width / 15, y_start = 480)
 
 		# Alien setup
@@ -275,9 +273,12 @@ def level (false,self):
         if new_game == True:
             print(f'New game started. Set level{0}')
         else:
+    
+    
+            new_game = False
 
         # loosing lives game logic
-        lives = [1,2,3,4,5]
+            lives = [1,2,3,4,5]
 
         if lives < 1:
             print("Game Over! you've lost all your lives")
@@ -391,7 +392,7 @@ def create_obstacle(self, x_start, y_start, offset_x):
             if col == 'x':
                 x = x_start + col_index * self.block_size + offset_x
                 y = y_start + row_index * self.block_size
-                block = obstacle.Block(self.block_size,(241,79,80),x,y)
+                block = create_obstacle.Block(self.block_size,(241,79,80),x,y)
                 self.blocks.add(block)
 
 
@@ -454,3 +455,6 @@ def run(self):
     self.display_lives()
     self.display_score()
     self.victory_message()
+
+
+        
