@@ -1,5 +1,5 @@
 import pygame, random
-from index import SCREEN_WIDTH, SCREEN_HEIGHT
+from config import SCREEN_WIDTH, SCREEN_HEIGHT
 
 
 aliens = pygame.sprite.Group()

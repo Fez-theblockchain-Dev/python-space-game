@@ -1,28 +1,13 @@
 # this file will house the fundamental game play logic of new space invaders python web app game
 
-# from logging import _Level
-from _typeshed import Self
-from ast import Global
-import audioop
-from cgi import print_arguments
-from ctypes import resize
-from nt import kill
-import numbers
-# from pickle import TRUE
-from operator import index
-from re import S, T
-import string
-import symbol
-from turtle import screensize
-from typing import Any
-from unittest import result
-from xxlimited import Null
 import pygame
 import sys
 import time
 import os
 import random
 from pygame.locals import * #For useful variables
+from typing import Any
+from config import SCREEN_WIDTH, SCREEN_HEIGHT
 from spaceship import SpaceShip
 from laser import Laser
 from alien import Alien, check_alien_edges
@@ -41,8 +26,6 @@ pygame.init()
 
 
 # Set up the display
-SCREEN_WIDTH = 800
-SCREEN_HEIGHT = 600
 screen = pygame.display.set_mode((SCREEN_WIDTH /2 , SCREEN_HEIGHT))
 pygame.display.set_caption("Space Invaders")
 
@@ -213,45 +196,45 @@ if aliens_hit:
 player = HeroShip()
 
 class Game:
-	    
+    
     def __init__(self):
-		# Player setup
+        # Player setup
         player.sprite = Player((screen_width / 2,screen_height),screen_width,5)
         self.player = pygame.sprite.GroupSingle(player.sprite)
 
-		# health and score setup
+        # health and score setup
         self.lives = 3
-		self.live_surf = pygame.image.load('../graphics/player.png').convert_alpha()
-		self.live_x_start_pos = screen_width - (self.live_surf.get_size()[0] * 2 + 20)
-		self.score = 0
-		self.font = pygame.font.Font('../font/Pixeled.ttf',20)
+        self.live_surf = pygame.image.load('../graphics/player.png').convert_alpha()
+        self.live_x_start_pos = screen_width - (self.live_surf.get_size()[0] * 2 + 20)
+        self.score = 0
+        self.font = pygame.font.Font('../font/Pixeled.ttf',20)
 
-		# Obstacle setup
-		self.shape = obstacle.shape
-		self.block_size = 6
-		self.blocks = pygame.sprite.Group()
-		self.obstacle_amount = 4
- 		self.obstacle_x_positions = [num * (screen_width / self.obstacle_amount) for num in range(self.obstacle_amount)]
-		self.create_multiple_obstacles(*self.obstacle_x_positions, x_start = screen_width / 15, y_start = 480)
+        # Obstacle setup
+        self.shape = obstacle.shape
+        self.block_size = 6
+        self.blocks = pygame.sprite.Group()
+        self.obstacle_amount = 4
+        self.obstacle_x_positions = [num * (screen_width / self.obstacle_amount) for num in range(self.obstacle_amount)]
+        self.create_multiple_obstacles(*self.obstacle_x_positions, x_start = screen_width / 15, y_start = 480)
 
-		# Alien setup
-		self.aliens = pygame.sprite.Group()
-		self.alien_lasers = pygame.sprite.Group()
-		self.alien_setup(rows = 6, cols = 8)
-		self.alien_direction = 1
+        # Alien setup
+        self.aliens = pygame.sprite.Group()
+        self.alien_lasers = pygame.sprite.Group()
+        self.alien_setup(rows = 6, cols = 8)
+        self.alien_direction = 1
 
-		# Extra setup
-		self.extra = pygame.sprite.GroupSingle()
-		self.extra_spawn_time = randint(40,80)
+        # Extra setup
+        self.extra = pygame.sprite.GroupSingle()
+        self.extra_spawn_time = randint(40,80)
 
-		# Audio
-		music = pygame.mixer.Sound('../audio/music.wav')
-		music.set_volume(0.2)
-		music.play(loops = -1)
-		self.laser_sound = pygame.mixer.Sound('../audio/laser.wav')
-		self.laser_sound.set_volume(0.5)
-		self.explosion_sound = pygame.mixer.Sound('../audio/explosion.wav')
-		self.explosion_sound.set_volume(0.3)
+        # Audio
+        music = pygame.mixer.Sound('../audio/music.wav')
+        music.set_volume(0.2)
+        music.play(loops = -1)
+        self.laser_sound = pygame.mixer.Sound('../audio/laser.wav')
+        self.laser_sound.set_volume(0.5)
+        self.explosion_sound = pygame.mixer.Sound('../audio/explosion.wav')
+        self.explosion_sound.set_volume(0.3)
 
 if __name__ == "__main__":
     main()

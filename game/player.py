@@ -3,7 +3,6 @@ import pygame
 import sys
 from pygame.locals import * #For useful variables
 from laser import Laser
-from index import HeroShip, hero_ship
 
 
 
@@ -21,7 +20,6 @@ class Player(pygame.sprite.Sprite):
 		self.laser_sound = pygame.mixer.Sound('../audio/laser.wav')
 		self.laser_sound.set_volume(0.5)
 
-Player = HeroShip()
 cool_down_time = 600 # just over half a sec cool down between shots
 Last_shot_time = 0
 running = True
@@ -63,13 +61,6 @@ def update(self):
 	self.lasers.update()
 
 # conditional statements to control gameplay of player
-i = hero_ship.lives
-
-while (hero_ship.lives > 0 ):
-	print(i)
-	if hero_ship.lives <= 0:
-		print("hero_ship has lost all Lives. Game is over")
-		break
 
 # when player logs back into a game that was paused from earlier
 is_logged_in = True
