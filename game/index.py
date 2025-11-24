@@ -325,8 +325,8 @@ class Key:
     
     
     # Key functionality can be added later
-    # hero_ship.has_key = True  # flag for later access
-    # print("Hero gained a Key!🔑")
+    hero_ship.has_key = True  # flag for later access
+    print("Hero gained a Key!🔑")
                     
             
 try:
