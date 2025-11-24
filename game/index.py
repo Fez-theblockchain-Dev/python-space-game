@@ -26,7 +26,7 @@ pygame.init()
 
 
 # Set up the display
-screen = pygame.display.set_mode((SCREEN_WIDTH /2 , SCREEN_HEIGHT))
+screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption("Space Invaders")
 
 # Colors
@@ -173,11 +173,12 @@ def collision_checks(self):
 from laser import Laser
 # alien collisions
 alien = Alien(1, 2, 100, 100)  # Create an alien instance
-laser_audio = os.path("audio/audio_laser.wav")
+laser_audio_path = "audio/audio_laser.wav"
 
 def shoot_laser(self):
     if self.laser == True: #if laser is fired, play the laser audio
-        laser_audio.play("audio/audio_laser.wav")
+        laser_sound = pygame.mixer.Sound(laser_audio_path)
+        laser_sound.play()
 
 # Initialize score and create aliens group
 score = 0
@@ -191,82 +192,80 @@ if aliens_hit:
             score += alien.value
 
 
-# Game loop
-
-player = HeroShip()
+# Game loop setup
 
 class Game:
     
     def __init__(self):
-        # Player setup
-        player.sprite = Player((screen_width / 2,screen_height),screen_width,5)
-        self.player = pygame.sprite.GroupSingle(player.sprite)
+        # Player setup - commented out for now as it references undefined variables
+        # player.sprite = Player((SCREEN_WIDTH / 2, SCREEN_HEIGHT), SCREEN_WIDTH, 5)
+        # self.player = pygame.sprite.GroupSingle(player.sprite)
 
         # health and score setup
         self.lives = 3
-        self.live_surf = pygame.image.load('../graphics/player.png').convert_alpha()
-        self.live_x_start_pos = screen_width - (self.live_surf.get_size()[0] * 2 + 20)
+        # self.live_surf = pygame.image.load('../graphics/player.png').convert_alpha()
+        # self.live_x_start_pos = SCREEN_WIDTH - (self.live_surf.get_size()[0] * 2 + 20)
         self.score = 0
-        self.font = pygame.font.Font('../font/Pixeled.ttf',20)
+        self.font = pygame.font.Font('assets/Fonts/hyperspace/Hyperspace Bold Italic.otf', 20)
 
-        # Obstacle setup
-        self.shape = obstacle.shape
-        self.block_size = 6
-        self.blocks = pygame.sprite.Group()
-        self.obstacle_amount = 4
-        self.obstacle_x_positions = [num * (screen_width / self.obstacle_amount) for num in range(self.obstacle_amount)]
-        self.create_multiple_obstacles(*self.obstacle_x_positions, x_start = screen_width / 15, y_start = 480)
+        # Obstacle setup - commented out as obstacle class not fully defined
+        # self.shape = obstacle.shape
+        # self.block_size = 6
+        # self.blocks = pygame.sprite.Group()
+        # self.obstacle_amount = 4
+        # self.obstacle_x_positions = [num * (SCREEN_WIDTH / self.obstacle_amount) for num in range(self.obstacle_amount)]
+        # self.create_multiple_obstacles(*self.obstacle_x_positions, x_start = SCREEN_WIDTH / 15, y_start = 480)
 
         # Alien setup
         self.aliens = pygame.sprite.Group()
         self.alien_lasers = pygame.sprite.Group()
-        self.alien_setup(rows = 6, cols = 8)
+        # self.alien_setup(rows = 6, cols = 8)
         self.alien_direction = 1
 
         # Extra setup
         self.extra = pygame.sprite.GroupSingle()
-        self.extra_spawn_time = randint(40,80)
+        # self.extra_spawn_time = random.randint(40,80)
 
-        # Audio
-        music = pygame.mixer.Sound('../audio/music.wav')
-        music.set_volume(0.2)
-        music.play(loops = -1)
-        self.laser_sound = pygame.mixer.Sound('../audio/laser.wav')
-        self.laser_sound.set_volume(0.5)
-        self.explosion_sound = pygame.mixer.Sound('../audio/explosion.wav')
-        self.explosion_sound.set_volume(0.3)
-
-if __name__ == "__main__":
-    main()
-    def main():
-        print("game is starting...")
-        player.sprite = player(SCREEN_WIDTH /2, SCREEN_HEIGHT, 5)
-        player_group = pygame.sprite.GroupSingle(player)
-        clock = pygame.time.Clock()
-        # running = True
-        Level = [0,1,2,3,4,5,6,7,8,9,10,11,12]
-        lives = 5
-        current_level_index = 0
-        # the player has 30 seconds/level to eliminate all the aliens
-        time = 30 
-        new_game = bool
+        # Audio - commented out as files may not exist
+        # music = pygame.mixer.Sound('../audio/music.wav')
+        # music.set_volume(0.2)
+        # music.play(loops = -1)
+        # self.laser_sound = pygame.mixer.Sound('../audio/laser.wav')
+        # self.laser_sound.set_volume(0.5)
+        # self.explosion_sound = pygame.mixer.Sound('../audio/explosion.wav')
+        # self.explosion_sound.set_volume(0.3)
 
 
-def level (false,self):
-        if new_game == True:
-            print(f'New game started. Set level{0}')
-        else:
-    
-    
-            new_game = False
+def main():
+    print("game is starting...")
+    clock = pygame.time.Clock()
+    running = True
+    Level = [0,1,2,3,4,5,6,7,8,9,10,11,12]
+    lives = 5
+    current_level_index = 0
+    # the player has 30 seconds/level to eliminate all the aliens
+    time_limit = 30 
+    new_game = False
 
-        # loosing lives game logic
-            lives = [1,2,3,4,5]
 
-        if lives < 1:
-            print("Game Over! you've lost all your lives")
-        else:
-            self.kill
+    # Game loop
+    while running:
+        # Handle events
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    running = False
+                if event.key == pygame.K_SPACE:
+                    # Create a new laser at the hero ship's position, moving upward
+                    laser = Laser(
+                        position=(hero_ship.rect.centerx, hero_ship.rect.top),
+                        speed=-8,  # Negative speed moves upward
+                        screen_height=SCREEN_HEIGHT,
+                        false=False
+                    )
+                    laser_group.add(laser)
 
         # Handle continuous key presses
         keys = pygame.key.get_pressed()
@@ -279,20 +278,6 @@ def level (false,self):
         if keys[K_DOWN] and hero_ship.rect.bottom < SCREEN_HEIGHT:
             hero_ship.rect.y += hero_ship.speed
 
-
-        for event in pygame.event.get():
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_SPACE:
-                    # Create a new laser at the hero ship's position, moving upward
-                    laser = Laser(
-                        position=(hero_ship.rect.centerx, hero_ship.rect.top),
-                        speed=-8,  # Negative speed moves upward
-                        screen_height=SCREEN_HEIGHT,
-                        false=False
-                    )
-                    laser_group.add(laser)
-
-
         # Draw background
         screen.blit(nebula_bg, (0, 0)) 
 
@@ -300,34 +285,24 @@ def level (false,self):
         hero_group.draw(screen)
         spaceship_group.draw(screen)
         laser_group.draw(screen)
+        aliens_group.draw(screen)
 
         # Update groups
         hero_group.update()
         spaceship_group.update()
         laser_group.update()
+        aliens_group.update()
+        
         # Update display
         pygame.display.flip()
-        clock = pygame.time.Clock()
         clock.tick(60)
 
-        # update ship damage rules
-
-        spaceship_health = 100
-        laser_damage = 10
-
-        current_spaceship_health = spaceship_health - laser_damage
-        print (current_spaceship_health)
-
-    
-        pygame.quit()
-        sys.exit()
+    pygame.quit()
+    sys.exit()
 
 # custom exception defined
 class StrictStartError(Exception):
     pass
-# importing main function from game.py, needed to use a 'from module import function' to call fuction from outside of game loop
-from game import main
-
 if __name__ == "__main__":
     main()
 
@@ -340,17 +315,9 @@ class Key:
             return None
     
     
-    hero_ship.has_key = True  # flag for later access
-    print("Hero gained a Key!🔑")
-
-    while running:
-        for event in pygame.event.get():
-            if event.type == QUIT:
-                running = False
-            elif event.type == KEYDOWN:
-                if event.key == K_ESCAPE:
-                    running = False
-                    quit()
+    # Key functionality can be added later
+    # hero_ship.has_key = True  # flag for later access
+    # print("Hero gained a Key!🔑")
                     
             
 try:
