@@ -1,4 +1,4 @@
-import pygame, random
+import pygame, random, os
 from config import SCREEN_WIDTH, SCREEN_HEIGHT
 
 
@@ -21,9 +21,11 @@ class Alien(pygame.sprite.Sprite):
         super().__init__()
         self.type = type
         self.health = 100 # default health for all aliens
-        path = f"assets/alien_{type}.png"
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        project_root = os.path.dirname(script_dir)
+        path = os.path.join(project_root, f"assets/alien_{type}.png")
         self.image = pygame.image.load(path)
-        self.rect = self.image.get_rect(center = (x,0))
+        self.rect = self.image.get_rect(center = (x, y))
         self.value = 100 # default value for all aliens
         self.speed = speed 
 

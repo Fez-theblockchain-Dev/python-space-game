@@ -36,18 +36,22 @@ ROYAL_BLUE = (65, 105, 225)
 BLACK = (0, 0, 0) #screen overlay to create multiple screens illusion
 
 screen.fill('black')
+# Get the directory of this script to handle paths correctly
+script_dir = os.path.dirname(os.path.abspath(__file__))
+project_root = os.path.dirname(script_dir)
+
 # Window background space image
-nebula_image = pygame.image.load('assets/512x512_purple_nebula_1.png').convert()
+nebula_image = pygame.image.load(os.path.join(project_root, 'assets/512x512_purple_nebula_1.png')).convert()
 nebula_bg = pygame.transform.scale(nebula_image, (SCREEN_WIDTH, SCREEN_HEIGHT))
 
 # Font link
-font = pygame.font.Font('assets/Fonts/hyperspace/Hyperspace Bold Italic.otf', 20)
+font = pygame.font.Font(os.path.join(project_root, 'assets/Fonts/hyperspace/Hyperspace Bold Italic.otf'), 20)
 
 # HeroShip class definition
 class HeroShip(pygame.sprite.Sprite):
     def __init__(self, x, y, width, height, lives,level, health=100, ):
         super().__init__()
-        self.image = pygame.image.load('assets/spaceship.png')
+        self.image = pygame.image.load(os.path.join(project_root, 'assets/spaceship.png'))
         self.rect = self.image.get_rect()
         self.rect.center = (x, y)
         self.width = width
@@ -80,16 +84,9 @@ hero_group.add(hero_ship)
 
 # creating levels class OOP elements for game loop functionality
 class Level (pygame.sprite.Sprite):
-    def __init__(self):
     # Class variable to track current level index across instances
-        current_level_index = 0
-        arr = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
-        self.level = level
-        # conditional statement to dictate how the 'Level" class behaves
-        if current_level_index != 0:
-            print(f'Resume where you left off! {arr}')
-        else:
-            return self.level
+    current_level_index = 0
+    level_array = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
     
     def __init__(self, level_number = None):
         super().__init__()
@@ -122,7 +119,8 @@ class Level (pygame.sprite.Sprite):
         else:
             return Level.current_level_index
     
-    def increment_level(self):
+    @staticmethod
+    def increment_level():
         """Move to next level if available"""
         if Level.current_level_index < len(Level.level_array) - 1:
             Level.current_level_index += 1
@@ -132,15 +130,14 @@ class Level (pygame.sprite.Sprite):
 
 
 
-    
     #function for screen messages
-def screen_msg(self, arr): 
-    # Draw celebration elements
-    level_text = font.render(f"LEVEL {arr} COMPLETE!", True, (255, 255, 0))
-    text_rect = level_text.get_rect(center=(SCREEN_WIDTH//2, SCREEN_HEIGHT//2))
-    screen.blit(level_text, text_rect)   
-    if level_text:
-        print(f"Currently on Lvl: {arr}")
+    def screen_msg(self, arr): 
+        # Draw celebration elements
+        level_text = font.render(f"LEVEL {arr} COMPLETE!", True, (255, 255, 0))
+        text_rect = level_text.get_rect(center=(SCREEN_WIDTH//2, SCREEN_HEIGHT//2))
+        screen.blit(level_text, text_rect)   
+        if level_text:
+            print(f"Currently on Lvl: {arr}")
 
     pygame.display.set_mode((400, 400), pygame.RESIZABLE)
     
@@ -173,7 +170,7 @@ def collision_checks(self):
 from laser import Laser
 # alien collisions
 alien = Alien(1, 2, 100, 100)  # Create an alien instance
-laser_audio_path = "audio/audio_laser.wav"
+laser_audio_path = os.path.join(project_root, "audio/audio_laser.wav")
 
 def shoot_laser(self):
     if self.laser == True: #if laser is fired, play the laser audio
@@ -184,12 +181,13 @@ def shoot_laser(self):
 score = 0
 aliens_group = pygame.sprite.Group()
 
-# Check for collisions between lasers and aliens
-aliens_hit = pygame.sprite.groupcollide(laser_group, aliens_group, True, True)
-if aliens_hit:
-    for laser, hit_aliens in aliens_hit.items():
-        for alien in hit_aliens:
-            score += alien.value
+# Create some aliens to display
+for row in range(3):
+    for col in range(8):
+        x = 100 + col * 80
+        y = 50 + row * 60
+        alien = Alien(1, 2, x, y)
+        aliens_group.add(alien)
 
 
 # Game loop setup
@@ -224,16 +222,16 @@ class Game:
 
         # Extra setup
         self.extra = pygame.sprite.GroupSingle()
-        # self.extra_spawn_time = random.randint(40,80)
+        self.extra_spawn_time = random.randint(40,80)
 
-        # Audio - commented out as files may not exist
-        # music = pygame.mixer.Sound('../audio/music.wav')
-        # music.set_volume(0.2)
-        # music.play(loops = -1)
-        # self.laser_sound = pygame.mixer.Sound('../audio/laser.wav')
-        # self.laser_sound.set_volume(0.5)
-        # self.explosion_sound = pygame.mixer.Sound('../audio/explosion.wav')
-        # self.explosion_sound.set_volume(0.3)
+        Audio - commented out as files may not exist
+        music = pygame.mixer.Sound('../audio/music.wav')
+        music.set_volume(0.2)
+        music.play(loops = -1)
+        self.laser_sound = pygame.mixer.Sound('../audio/laser.wav')
+        self.laser_sound.set_volume(0.5)
+        self.explosion_sound = pygame.mixer.Sound('../audio/explosion.wav')
+        self.explosion_sound.set_volume(0.3)
 
 
 def main():
@@ -281,6 +279,13 @@ def main():
         # Draw background
         screen.blit(nebula_bg, (0, 0)) 
 
+        # Check for collisions between lasers and aliens
+        aliens_hit = pygame.sprite.groupcollide(laser_group, aliens_group, True, True)
+        if aliens_hit:
+            for laser, hit_aliens in aliens_hit.items():
+                for alien in hit_aliens:
+                    score += alien.value
+
         # Draw all game objects
         hero_group.draw(screen)
         spaceship_group.draw(screen)
@@ -291,7 +296,11 @@ def main():
         hero_group.update()
         spaceship_group.update()
         laser_group.update()
-        aliens_group.update()
+        aliens_group.update(1)  # Pass direction for alien movement
+        
+        # Display score
+        score_text = font.render(f"Score: {score}", True, (255, 255, 255))
+        screen.blit(score_text, (10, 10))
         
         # Update display
         pygame.display.flip()
@@ -328,11 +337,11 @@ except ImportError:
 from collections import deque
 
 
-x_start = int()
-y_start = int()
+# These functions and code blocks are part of the Game class and should be moved there
+# when the Game class is fully implemented. Commented out for now to avoid errors.
 
-self.aliens = pygame.sprite.Group()
-self.alien_setup()
+# x_start = int()
+# y_start = int()
 
 
 
