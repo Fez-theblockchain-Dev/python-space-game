@@ -8,6 +8,7 @@ import random
 from pygame.locals import * #For useful variables
 from typing import Any
 from config import SCREEN_WIDTH, SCREEN_HEIGHT
+from game import obstacle
 from spaceship import SpaceShip
 from laser import Laser
 from alien import Alien, check_alien_edges
@@ -198,6 +199,8 @@ class Game:
         # Player setup
         player_sprite = Player((SCREEN_WIDTH / 2, SCREEN_HEIGHT), SCREEN_WIDTH, 5)
         self.player = pygame.sprite.GroupSingle(player_sprite)
+        x_start = int()
+        y_start = int()
 
         # health and score setup
         self.lives = 3
@@ -207,12 +210,12 @@ class Game:
         self.font = pygame.font.Font('assets/Fonts/hyperspace/Hyperspace Bold Italic.otf', 20)
 
         # Obstacle setup - commented out as obstacle class not fully defined
-        self.shape = Block.shape
+        self.shape = obstacle.shape
         self.block_size = 6
         self.blocks = pygame.sprite.Group()
         self.obstacle_amount = 4
         self.obstacle_x_positions = [num * (SCREEN_WIDTH / self.obstacle_amount) for num in range(self.obstacle_amount)]
-        self.create_multiple_obstacles(*self.obstacle_x_positions, x_start = SCREEN_WIDTH / 15, y_start = 480)
+        self.create_multiple_obstacles[Any](*self.obstacle_x_positions, x_start = SCREEN_WIDTH / 15, y_start = 480)
 
         # Alien setup
         self.aliens = pygame.sprite.Group()
@@ -332,15 +335,6 @@ try:
     from pygame.locals import QUIT
 except ImportError:
     print("Could not import QUIT from pygame.locals. Check if pygame is installed.")
-
-from collections import deque
-
-
-# These functions and code blocks are part of the Game class and should be moved there
-# when the Game class is fully implemented. Commented out for now to avoid errors.
-
-# x_start = int()
-# y_start = int()
 
 
 
