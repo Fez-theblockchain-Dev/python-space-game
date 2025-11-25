@@ -195,24 +195,24 @@ for row in range(3):
 class Game:
     
     def __init__(self):
-        # Player setup - commented out for now as it references undefined variables
-        # player.sprite = Player((SCREEN_WIDTH / 2, SCREEN_HEIGHT), SCREEN_WIDTH, 5)
-        # self.player = pygame.sprite.GroupSingle(player.sprite)
+        # Player setup
+        player_sprite = Player((SCREEN_WIDTH / 2, SCREEN_HEIGHT), SCREEN_WIDTH, 5)
+        self.player = pygame.sprite.GroupSingle(player_sprite)
 
         # health and score setup
         self.lives = 3
-        # self.live_surf = pygame.image.load('../graphics/player.png').convert_alpha()
-        # self.live_x_start_pos = SCREEN_WIDTH - (self.live_surf.get_size()[0] * 2 + 20)
+        self.live_surf = pygame.image.load('../graphics/player.png').convert_alpha()
+        self.live_x_start_pos = SCREEN_WIDTH - (self.live_surf.get_size()[0] * 2 + 20)
         self.score = 0
         self.font = pygame.font.Font('assets/Fonts/hyperspace/Hyperspace Bold Italic.otf', 20)
 
         # Obstacle setup - commented out as obstacle class not fully defined
-        # self.shape = obstacle.shape
-        # self.block_size = 6
-        # self.blocks = pygame.sprite.Group()
-        # self.obstacle_amount = 4
-        # self.obstacle_x_positions = [num * (SCREEN_WIDTH / self.obstacle_amount) for num in range(self.obstacle_amount)]
-        # self.create_multiple_obstacles(*self.obstacle_x_positions, x_start = SCREEN_WIDTH / 15, y_start = 480)
+        self.shape = Block.shape
+        self.block_size = 6
+        self.blocks = pygame.sprite.Group()
+        self.obstacle_amount = 4
+        self.obstacle_x_positions = [num * (SCREEN_WIDTH / self.obstacle_amount) for num in range(self.obstacle_amount)]
+        self.create_multiple_obstacles(*self.obstacle_x_positions, x_start = SCREEN_WIDTH / 15, y_start = 480)
 
         # Alien setup
         self.aliens = pygame.sprite.Group()
@@ -224,7 +224,6 @@ class Game:
         self.extra = pygame.sprite.GroupSingle()
         self.extra_spawn_time = random.randint(40,80)
 
-        Audio - commented out as files may not exist
         music = pygame.mixer.Sound('../audio/music.wav')
         music.set_volume(0.2)
         music.play(loops = -1)
@@ -360,12 +359,14 @@ def create_multiple_obstacles(self,*offset,x_start,y_start):
 			self.create_obstacle(x_start,y_start,offset_x)
 
 def alien_setup(self,rows,cols, x_distance = 60, y_distance = 48, x_offset = 70, y_offset = 100):
-    for row_index, row in enumerate(self.shape):
-        for col_index, col in enumerate(rows):
+    for row_index, row in enumerate[Any](self.shape):
+        for col_index, col in enumerate[Any](rows):
             x = cols_index * x_distance + x_offset
             y = row_index * y_distance + y_offset
             alien_sprite = Alien('red',x,y)
             self.aliens.add(alien_sprite)
+
+
 
 if aliens_hit:
     for alien in aliens_hit:
@@ -373,11 +374,14 @@ if aliens_hit:
     laser.kill()
     self.explosion_sound.play()
 
+    aliens_hit = False
+    
 
-if self.alien_lasers:
-    for laser in self.alien_lasers:
-        if pygame.sprite.spritecollide(laser,self.blocks,True):
-            laser.kill()
+
+# if self.alien_lasers:
+#     for laser in self.alien_lasers:
+#         if pygame.sprite.spritecollide(laser,self.blocks,True):
+#             laser.kill()
 
 
 if pygame.sprite.spritecollide(self,laser,player,False):
