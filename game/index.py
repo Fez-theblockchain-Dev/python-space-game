@@ -199,8 +199,8 @@ class Game:
         # Player setup
         player_sprite = Player((SCREEN_WIDTH / 2, SCREEN_HEIGHT), SCREEN_WIDTH, 5)
         self.player = pygame.sprite.GroupSingle(player_sprite)
-        x_start = int()
-        y_start = int()
+        x_start = (0,0)
+        y_start = (0,100)
 
         # health and score setup
         self.lives = 3
