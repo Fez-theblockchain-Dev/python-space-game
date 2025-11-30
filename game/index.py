@@ -8,7 +8,7 @@ import random
 from pygame.locals import * #For useful variables
 from typing import Any
 from config import SCREEN_WIDTH, SCREEN_HEIGHT
-from game import obstacle
+from obstacle import Block
 from spaceship import SpaceShip
 from laser import Laser
 from alien import Alien, check_alien_edges
