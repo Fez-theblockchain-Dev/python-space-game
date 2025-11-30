@@ -128,9 +128,6 @@ class Level (pygame.sprite.Sprite):
         return Level.current_level_index
             
 
-
-
-
     #function for screen messages
     def screen_msg(self, arr): 
         # Draw celebration elements
@@ -159,15 +156,6 @@ class Level (pygame.sprite.Sprite):
 
     # alien 'collisions' w/ laser logic
 
-def collision_checks(self):
-		# player lasers 
-    if self.player.sprite.lasers:
-        for laser in self.player.sprite.lasers:
-        # obstacle collisions
-            if pygame.sprite.spritecollide(laser,self.blocks,True):
-                laser.kill()
-            
-            
 from laser import Laser
 # alien collisions
 alien = Alien(1, 2, 100, 100)  # Create an alien instance
@@ -234,6 +222,34 @@ class Game:
         self.laser_sound.set_volume(0.5)
         self.explosion_sound = pygame.mixer.Sound('../audio/explosion.wav')
         self.explosion_sound.set_volume(0.3)
+
+    def collision_checks(self):
+        # player lasers 
+        if self.player.sprite.lasers:
+            for laser in self.player.sprite.lasers:
+                # obstacle collisions
+                if pygame.sprite.spritecollide(laser, self.blocks, True):
+                    laser.kill()
+                
+                # alien collisions
+                aliens_hit = pygame.sprite.spritecollide(laser, self.aliens, True)
+                if aliens_hit:
+                    for alien in aliens_hit:
+                        self.score += alien.value
+                    laser.kill()
+                    self.explosion_sound.play()
+        
+        # direct alien collision with player (aliens touching player)
+        aliens_touching_player = pygame.sprite.spritecollide(self.player.sprite, self.aliens, True)
+        if aliens_touching_player:
+            # Remove all aliens that touched the player
+            for alien in aliens_touching_player:
+                self.explosion_sound.play()
+            self.lives -= 1
+            if self.lives <= 0:
+                return False  # Signal game over
+        
+        return True  # Game continues
 
 
 def main():
@@ -395,7 +411,7 @@ if self.aliens:
 def run(self):
     self.player.update()
     
-    self.alien_lasers.update()
+    # Removed alien_lasers.update() - aliens don't shoot
     self.extra.update()
     
     self.aliens.update(self.alien_direction)
@@ -407,7 +423,7 @@ def run(self):
     self.player.draw(screen)
     self.blocks.draw(screen)
     self.aliens.draw(screen)
-    self.alien_lasers.draw(screen)
+    # Removed alien_lasers.draw() - aliens don't shoot
     self.extra.draw(screen)
     self.display_lives()
     self.display_score()
