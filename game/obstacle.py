@@ -6,11 +6,9 @@ from config import SCREEN_HEIGHT, SCREEN_WIDTH
 class Block(pygame.sprite.Sprite):
     def __init__(self,size,color,x,y):
         super().__init__()
-        self.image = pygame.Surface(size,size)
+        self.image = pygame.Surface((size, size))
         self.image.fill(color)
-        player_sprite = Player(SCREEN_WIDTH  , SCREEN_HEIGHT, 5)
-        self.player = pygame.sprite.GroupSingle(player_sprite)
-        self.rect = self.image.get_rect(top_left = (x,y))
+        self.rect = self.image.get_rect(topleft = (x,y))
 
 shape = [
   'xxxxxxx',
