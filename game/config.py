@@ -4,3 +4,21 @@
 SCREEN_WIDTH = 800
 SCREEN_HEIGHT = 600
 
+# Free currency (earned through gameplay)
+INITIAL_COINS = 0
+INITIAL_GEMS = 0
+
+# Premium currency (purchased with real money)
+INITIAL_PREMIUM_CURRENCY = 0
+
+# Currency conversion rates
+COINS_TO_GEMS_RATE = 100  # 100 coins = 1 gem
+GEMS_TO_PREMIUM_RATE = 10  # 10 gems = 1 premium currency
+
+# ============================================
+# REWARD SYSTEM
+# ============================================
+# Base rewards
+COINS_PER_ALIEN_KILL = 10
+COINS_PER_LEVEL_COMPLETE = 50
+COINS_PER_BONUS_SHIP = 100
