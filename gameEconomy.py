@@ -1,5 +1,4 @@
 import pygame
-import player
 import webbrowser
 import urllib.parse
 import uuid
@@ -23,12 +22,10 @@ def get_or_create_player_id():
             # File exists but is corrupted, create new ID
             pass
 
- # Create new player ID
+    # Create new player ID
     player_id = generate_player_id()
     save_player_id(player_id)
     return player_id
-
-save_player_id = True
 
 def save_player_id(player_id):
     with open(PLAYER_ID_FILE, 'w') as f:
@@ -54,13 +51,24 @@ def initiate_payment(package_name, amount):
 
 
 class game_economy:
-    def __init__(self):
+    def __init__(self, initial_health=100):
         self.coins = 0 
         self.score = 0 
-        self.health = player
+        self.health = initial_health
         self.potential_prizes = {
             "New Avater": False,
             "Gold Coins": False,
             "Faster_Bullet": False
-
         }
+    
+    def add_coins(self, amount):
+        """Add coins to the economy"""
+        self.coins += amount
+    
+    def add_score(self, amount):
+        """Add score to the economy"""
+        self.score += amount
+    
+    def update_health(self, health):
+        """Update health value"""
+        self.health = health

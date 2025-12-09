@@ -15,6 +15,8 @@ from alien import Alien, check_alien_edges
 import tkinter as tk
 from button import Button
 from player import Player
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from gameEconomy import game_economy
 
 
 
@@ -175,6 +177,9 @@ class Game:
         x_start = (0,0)
         y_start = (0,100)
 
+        # Economy system setup
+        self.economy = game_economy(initial_health=100)
+
         # health and score setup
         self.lives = 3
         try:
@@ -236,6 +241,9 @@ class Game:
                 if aliens_hit:
                     for alien in aliens_hit:
                         self.score += alien.value
+                        # Update economy: add score and coins (1 coin per alien value point)
+                        self.economy.add_score(alien.value)
+                        self.economy.add_coins(alien.value)
                     laser.kill()
                     if self.explosion_sound:
                         self.explosion_sound.play()
@@ -248,6 +256,9 @@ class Game:
                 if self.explosion_sound:
                     self.explosion_sound.play()
             self.lives -= 1
+            # Update economy health based on lives (each life = 33.33 health points)
+            health_percentage = (self.lives / 3.0) * 100
+            self.economy.update_health(int(health_percentage))
             if self.lives <= 0:
                 return False  # Signal game over
         
@@ -300,6 +311,11 @@ class Game:
         """Display current score"""
         score_text = self.font.render(f"Score: {self.score}", True, (255, 255, 255))
         screen.blit(score_text, (10, 10))
+    
+    def display_coins(self):
+        """Display current coins/gold"""
+        coins_text = self.font.render(f"Coins: {self.economy.coins}", True, (255, 215, 0))  # Gold color
+        screen.blit(coins_text, (10, 40))
 
     def victory_message(self):
         """Display victory message if all aliens destroyed"""
@@ -330,7 +346,11 @@ class Game:
         self.extra.draw(screen)
         self.display_lives()
         self.display_score()
+        self.display_coins()
         self.victory_message()
+        
+        # Sync economy score with game score
+        self.economy.score = self.score
         
         return True
 
