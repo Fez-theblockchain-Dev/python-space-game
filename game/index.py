@@ -251,11 +251,9 @@ class Game:
         # direct alien collision with player (aliens touching player)
         aliens_touching_player = pygame.sprite.spritecollide(self.player.sprite, self.aliens, True)
         if aliens_touching_player:
-            # Remove all aliens that touched the player
+            # if player/alien collide, take one player life for each time a collision occurs
             for alien in aliens_touching_player:
-                if self.explosion_sound:
-                    self.explosion_sound.play()
-            self.lives -= 1
+                self.lives -= 1 #decrement a life by 1 (5 lives before loosing game)
             # Update economy health based on lives (each life = 33.33 health points)
             health_percentage = (self.lives / 3.0) * 100
             self.economy.update_health(int(health_percentage))

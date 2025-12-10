@@ -51,8 +51,6 @@ class Alien(pygame.sprite.Sprite):
             return True  # Signal that edge was hit
         return False
 
-
-
     # Spawn timer variables
     SPAWN_INTERVAL = 2000  # milliseconds
     last_spawn_time = pygame.time.get_ticks()
