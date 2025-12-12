@@ -142,10 +142,13 @@ def main_menu():
             
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if PLAY_BUTTON.check_input(MENU_MOUSE_POS):
-                    # Start the game - you can import and call your game function here
+                    # Start the game
                     print("Starting game...")
-                    # from index import main
-                    # main()
+                    try:
+                        from index import main
+                        main()  # This will return when menu button is clicked
+                    except Exception as e:
+                        print(f"Error starting game: {e}")
                 
                 if THEME_BUTTON.check_input(MENU_MOUSE_POS):
                     # Cycle to next theme

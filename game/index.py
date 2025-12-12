@@ -227,6 +227,17 @@ class Game:
             self.explosion_sound.set_volume(0.3)
         except:
             self.explosion_sound = None
+        
+        # Main menu button setup
+        menu_button_font = pygame.font.Font(os.path.join(project_root, 'assets/Fonts/hyperspace/Hyperspace Bold Italic.otf'), 30)
+        self.menu_button = Button(
+            image=None,
+            pos=(SCREEN_WIDTH - 100, 30),
+            text_input="MENU",
+            font=menu_button_font,
+            base_color="#d7fcd4",
+            hovering_color="White"
+        )
 
     def collision_checks(self):
         # player lasers 
@@ -322,7 +333,7 @@ class Game:
             text_rect = victory_text.get_rect(center=(SCREEN_WIDTH//2, SCREEN_HEIGHT//2))
             screen.blit(victory_text, text_rect)
 
-    def run(self, screen):
+    def run(self, screen, mouse_pos=None, mouse_clicked=False):
         """Main game loop update method"""
         self.player.update()
         
@@ -347,6 +358,16 @@ class Game:
         self.display_coins()
         self.victory_message()
         
+        # Display and handle main menu button
+        if mouse_pos:
+            self.menu_button.change_color(mouse_pos)
+        self.menu_button.update(screen)
+        
+        # Check if menu button was clicked
+        if mouse_clicked and mouse_pos:
+            if self.menu_button.check_input(mouse_pos):
+                return "menu"  # Signal to return to main menu
+        
         # Sync economy score with game score
         self.economy.score = self.score
         
@@ -369,6 +390,9 @@ def main():
 
     # Game loop
     while running:
+        mouse_pos = pygame.mouse.get_pos()
+        mouse_clicked = False
+        
         # Handle events
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -376,13 +400,20 @@ def main():
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
                     running = False
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                mouse_clicked = True
 
         # Draw background
         screen.blit(nebula_bg, (0, 0)) 
 
         # Run game update (handles all updates, collisions, and drawing)
-        game_continues = game.run(screen)
-        if not game_continues:
+        game_result = game.run(screen, mouse_pos, mouse_clicked)
+        
+        # Check if player wants to return to menu
+        if game_result == "menu":
+            return  # Return to main menu
+        
+        if not game_result:
             # Game over screen
             game_over_text = font.render("GAME OVER", True, (255, 0, 0))
             text_rect = game_over_text.get_rect(center=(SCREEN_WIDTH//2, SCREEN_HEIGHT//2))
@@ -395,8 +426,8 @@ def main():
         pygame.display.flip()
         clock.tick(60)
 
-    pygame.quit()
-    sys.exit()
+    # Game loop ended - return to caller (main menu or exit)
+    # Don't quit pygame here as main menu may still be running
 
 # custom exception defined
 class StrictStartError(Exception):
