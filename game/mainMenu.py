@@ -162,8 +162,14 @@ def main_menu():
                     try:
                         from index import main
                         main()  # This will return when menu button is clicked
+                        # Ensures display is still active after game returns
+                        pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+                        pygame.display.set_caption("Space Invaders - Main Menu")
                     except Exception as e:
                         print(f"Error starting game: {e}")
+                        import traceback
+                        traceback.print_exc()
+
                 
                 if THEME_BUTTON.check_input(MENU_MOUSE_POS):
                     # Cycle to next theme
