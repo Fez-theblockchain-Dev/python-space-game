@@ -98,11 +98,11 @@ def decrement_health(player, screen):
     # Decrement health by 25%
     player.health = max(0, player.health - 25)
     
-    # Health bar dimensions and position
+    # Health bar dimensions and position (centered at top)
     bar_width = 200
     bar_height = 20
-    bar_x = 10
-    bar_y = 70  # Position below the coins display
+    bar_x = (SCREEN_WIDTH - bar_width) // 2  # Center horizontally
+    bar_y = 10  # Position at top of screen
     
     # Draw health bar background (red)
     background_rect = pygame.Rect(bar_x, bar_y, bar_width, bar_height)
@@ -116,9 +116,10 @@ def decrement_health(player, screen):
     # Draw health bar border
     pygame.draw.rect(screen, (255, 255, 255), background_rect, 2)
     
-    # Display health percentage text
+    # Display health percentage text (centered above bar)
     health_text = font.render(f"Health: {player.health}%", True, (255, 255, 255))
-    screen.blit(health_text, (bar_x, bar_y - 25))
+    text_rect = health_text.get_rect(center=(SCREEN_WIDTH // 2, bar_y - 15))
+    screen.blit(health_text, text_rect)
 
 # creating levels class OOP elements for game loop functionality
 class Level (pygame.sprite.Sprite):
@@ -365,11 +366,11 @@ class Game:
 
     def display_health(self):
         """Display player health bar"""
-        # Health bar dimensions and position
+        # Health bar dimensions and position (centered at top)
         bar_width = 200
         bar_height = 20
-        bar_x = 10
-        bar_y = 70  # Position below the coins display
+        bar_x = (SCREEN_WIDTH - bar_width) // 2  # Center horizontally
+        bar_y = 10  # Position at top of screen
         
         # Draw health bar background (red)
         background_rect = pygame.Rect(bar_x, bar_y, bar_width, bar_height)
@@ -385,7 +386,8 @@ class Game:
         
         # Display health percentage text
         health_text = self.font.render(f"Health: {self.player.sprite.health}%", True, (255, 255, 255))
-        screen.blit(health_text, (bar_x, bar_y - 25))
+        text_rect = health_text.get_rect(center=(SCREEN_WIDTH // 2, bar_y - 15))
+        screen.blit(health_text, text_rect)
 
     def victory_message(self):
         """Display victory message if all aliens destroyed"""
