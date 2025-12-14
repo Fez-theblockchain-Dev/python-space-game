@@ -24,6 +24,7 @@ class Player(pygame.sprite.Sprite):
 			self.laser_sound = None
 		self.cool_down_time = 600
 		self.recharge_time = 0
+		self.health = 100  # Player health (0-100)
 
 	def get_input(self):
 		keys = pygame.key.get_pressed()

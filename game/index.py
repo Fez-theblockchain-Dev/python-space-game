@@ -85,6 +85,41 @@ hero_ship = HeroShip(SCREEN_WIDTH // 2, SCREEN_HEIGHT - 100, 100, 100, 3, 100)
 hero_group = pygame.sprite.GroupSingle()
 hero_group.add(hero_ship)
 
+# health group variables/function
+
+def decrement_health(player, screen):
+    """
+    Decrements player health by 25% and displays the health bar on screen.
+    
+    Args:
+        player: The Player sprite object
+        screen: The pygame screen surface to draw on
+    """
+    # Decrement health by 25%
+    player.health = max(0, player.health - 25)
+    
+    # Health bar dimensions and position
+    bar_width = 200
+    bar_height = 20
+    bar_x = 10
+    bar_y = 70  # Position below the coins display
+    
+    # Draw health bar background (red)
+    background_rect = pygame.Rect(bar_x, bar_y, bar_width, bar_height)
+    pygame.draw.rect(screen, (255, 0, 0), background_rect)
+    
+    # Draw health bar fill (green, proportional to health)
+    health_width = int((player.health / 100) * bar_width)
+    health_rect = pygame.Rect(bar_x, bar_y, health_width, bar_height)
+    pygame.draw.rect(screen, (0, 255, 0), health_rect)
+    
+    # Draw health bar border
+    pygame.draw.rect(screen, (255, 255, 255), background_rect, 2)
+    
+    # Display health percentage text
+    health_text = font.render(f"Health: {player.health}%", True, (255, 255, 255))
+    screen.blit(health_text, (bar_x, bar_y - 25))
+
 # creating levels class OOP elements for game loop functionality
 class Level (pygame.sprite.Sprite):
     # Class variable to track current level index across instances
@@ -265,6 +300,8 @@ class Game:
             # if player/alien collide, take one player life for each time a collision occurs
             for alien in aliens_touching_player:
                 self.lives -= 1 #decrement a life by 1 (5 lives before loosing game)
+                # Decrement health by 25% when alien touches player
+                decrement_health(self.player.sprite, screen)
             # Update economy health based on lives (each life = 33.33 health points)
             health_percentage = (self.lives / 3.0) * 100
             self.economy.update_health(int(health_percentage))
@@ -326,6 +363,30 @@ class Game:
         coins_text = self.font.render(f"Coins: {self.economy.coins}", True, (255, 215, 0))  # Gold color
         screen.blit(coins_text, (10, 40))
 
+    def display_health(self):
+        """Display player health bar"""
+        # Health bar dimensions and position
+        bar_width = 200
+        bar_height = 20
+        bar_x = 10
+        bar_y = 70  # Position below the coins display
+        
+        # Draw health bar background (red)
+        background_rect = pygame.Rect(bar_x, bar_y, bar_width, bar_height)
+        pygame.draw.rect(screen, (255, 0, 0), background_rect)
+        
+        # Draw health bar fill (green, proportional to health)
+        health_width = int((self.player.sprite.health / 100) * bar_width)
+        health_rect = pygame.Rect(bar_x, bar_y, health_width, bar_height)
+        pygame.draw.rect(screen, (0, 255, 0), health_rect)
+        
+        # Draw health bar border
+        pygame.draw.rect(screen, (255, 255, 255), background_rect, 2)
+        
+        # Display health percentage text
+        health_text = self.font.render(f"Health: {self.player.sprite.health}%", True, (255, 255, 255))
+        screen.blit(health_text, (bar_x, bar_y - 25))
+
     def victory_message(self):
         """Display victory message if all aliens destroyed"""
         if len(self.aliens) == 0:
@@ -356,6 +417,7 @@ class Game:
         self.display_lives()
         self.display_score()
         self.display_coins()
+        self.display_health()
         self.victory_message()
         
         # Display and handle main menu button
