@@ -34,9 +34,9 @@ class Player(pygame.sprite.Sprite):
 		elif keys[pygame.K_LEFT]:
 			self.rect.x -= self.speed
 		elif keys[pygame.K_UP]:
-			self.rect.y += self.speed
-		elif keys[pygame.K_DOWN]:
 			self.rect.y -= self.speed
+		elif keys[pygame.K_DOWN]:
+			self.rect.y += self.speed
 
 		# spacebar to shoot laser
 		if keys[pygame.K_SPACE]:
@@ -55,10 +55,17 @@ class Player(pygame.sprite.Sprite):
 	
 	# 'margin' constraints for setting boundaries for where the player can move to 
 	def constraint(self):
+		from config import SCREEN_HEIGHT
+		# Left/Right boundaries
 		if self.rect.left <= 0:
 			self.rect.left = 0
 		if self.rect.right >= self.max_x_constraint:
 			self.rect.right = self.max_x_constraint
+		# Top/Bottom boundaries
+		if self.rect.top <= 0:
+			self.rect.top = 0
+		if self.rect.bottom >= SCREEN_HEIGHT:
+			self.rect.bottom = SCREEN_HEIGHT
         
 	def shoot_laser(self):
 		from config import SCREEN_HEIGHT
