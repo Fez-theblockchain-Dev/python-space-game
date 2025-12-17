@@ -28,11 +28,16 @@ class Player(pygame.sprite.Sprite):
 
 	def get_input(self):
 		keys = pygame.key.get_pressed()
-		# right/left navigation thru arrow keys
+		# right/left/up/down navigation thru arrow keys
 		if keys[pygame.K_RIGHT]: 
 			self.rect.x += self.speed
 		elif keys[pygame.K_LEFT]:
 			self.rect.x -= self.speed
+		elif keys[pygame.K_UP]:
+			self.rect.y += self.speed
+		elif keys[pygame.K_DOWN]:
+			self.rect.y -= self.speed
+
 		# spacebar to shoot laser
 		if keys[pygame.K_SPACE]:
 			if self.ready:
