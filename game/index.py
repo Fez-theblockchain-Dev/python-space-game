@@ -275,6 +275,59 @@ class Game:
             hovering_color="White"
         )
 
+        # Background theme setup
+        self.current_theme = "PURPLE_NEBULA"  # Default theme
+        self.backgrounds = {}
+        self._load_backgrounds()
+
+    def _load_backgrounds(self):
+        """Load all available background themes"""
+        # Flat black background
+        black_bg = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
+        black_bg.fill(BLACK)
+        self.backgrounds["BLACK"] = black_bg
+        
+        # Purple nebula background
+        nebula_image = pygame.image.load(os.path.join(project_root, 'assets/512x512_purple_nebula_1.png')).convert()
+        nebula_bg = pygame.transform.scale(nebula_image, (SCREEN_WIDTH, SCREEN_HEIGHT))
+        self.backgrounds["PURPLE_NEBULA"] = nebula_bg
+        
+        # Main menu background (purple gradient)
+        menu_bg_path = os.path.join(project_root, 'assets/main_menu_background.png')
+        if os.path.exists(menu_bg_path):
+            try:
+                menu_bg_img = pygame.image.load(menu_bg_path).convert()
+                menu_bg = pygame.transform.scale(menu_bg_img, (SCREEN_WIDTH, SCREEN_HEIGHT))
+                self.backgrounds["MENU_GRADIENT"] = menu_bg
+            except pygame.error:
+                print(f"Warning: Could not load {menu_bg_path}")
+                # Fallback to black if menu background can't be loaded
+                self.backgrounds["MENU_GRADIENT"] = black_bg
+        else:
+            # Fallback to black if file doesn't exist
+            self.backgrounds["MENU_GRADIENT"] = black_bg
+
+    def set_background_theme(self, theme_name):
+        """Set the background theme for gameplay"""
+        if theme_name in self.backgrounds:
+            self.current_theme = theme_name
+            return True
+        return False
+
+    def get_current_background(self):
+        """Get the current background surface"""
+        return self.backgrounds.get(self.current_theme, self.backgrounds["BLACK"])
+
+    def cycle_background_theme(self):
+        """Cycle to the next available background theme"""
+        themes = list(self.backgrounds.keys())
+        if themes:
+            current_index = themes.index(self.current_theme) if self.current_theme in themes else 0
+            next_index = (current_index + 1) % len(themes)
+            self.current_theme = themes[next_index]
+            return self.current_theme
+        return None
+
     def collision_checks(self):
         # player lasers 
         if self.player.sprite.lasers:
@@ -467,8 +520,8 @@ def main():
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 mouse_clicked = True
 
-        # Draw background
-        screen.blit(nebula_bg, (0, 0)) 
+        # Draw background using current theme
+        screen.blit(game.get_current_background(), (0, 0)) 
 
         # Run game update (handles all updates, collisions, and drawing)
         game_result = game.run(screen, mouse_pos, mouse_clicked)
