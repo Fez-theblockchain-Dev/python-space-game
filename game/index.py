@@ -17,11 +17,7 @@ from button import Button
 from player import Player
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from gameEconomy import game_economy
-
-
-
-
-
+from pydantic import BaseModel
 
 
 # Initialize pygame
@@ -125,7 +121,17 @@ def decrement_health(player, screen):
 class Level (pygame.sprite.Sprite):
     # Class variable to track current level index across instances
     current_level_index = 0
-    level_array = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+    
+    # Level dictionary with progressive difficulty
+    # Each level has: rows (alien rows), cols (alien columns), speed (alien movement speed)
+    level_dict = {
+        0: {"rows": 3, "cols": 8, "speed": 1},   # Level 0: Easy - 3 rows, 8 cols, speed 1
+        1: {"rows": 4, "cols": 8, "speed": 2},   # Level 1: Medium - 4 rows, 8 cols, speed 2
+        2: {"rows": 4, "cols": 9, "speed": 2},   # Level 2: Medium-Hard - 4 rows, 9 cols, speed 2
+        3: {"rows": 5, "cols": 9, "speed": 3},   # Level 3: Hard - 5 rows, 9 cols, speed 3
+        4: {"rows": 5, "cols": 10, "speed": 3},  # Level 4: Very Hard - 5 rows, 10 cols, speed 3
+        5: {"rows": 6, "cols": 10, "speed": 4}   # Level 5: Extreme - 6 rows, 10 cols, speed 4
+    }
     
     def __init__(self, level_number = None):
         super().__init__()
@@ -160,9 +166,35 @@ class Level (pygame.sprite.Sprite):
     @staticmethod
     def increment_level():
         """Move to next level if available"""
-        if Level.current_level_index < len(Level.level_array) - 1:
+        max_level = max(Level.level_dict.keys())
+        if Level.current_level_index < max_level:
             Level.current_level_index += 1
         return Level.current_level_index
+    
+    @staticmethod
+    def get_level_config(level_index=None):
+        """Get configuration for a specific level or current level"""
+        if level_index is None:
+            level_index = Level.current_level_index
+        return Level.level_dict.get(level_index, Level.level_dict[0])  # Default to level 0 if invalid
+    
+    @staticmethod
+    def get_alien_rows(level_index=None):
+        """Get number of alien rows for a level"""
+        config = Level.get_level_config(level_index)
+        return config["rows"]
+    
+    @staticmethod
+    def get_alien_cols(level_index=None):
+        """Get number of alien columns for a level"""
+        config = Level.get_level_config(level_index)
+        return config["cols"]
+    
+    @staticmethod
+    def get_alien_speed(level_index=None):
+        """Get alien movement speed for a level"""
+        config = Level.get_level_config(level_index)
+        return config["speed"]
             
 
     #function for screen messages
@@ -241,6 +273,10 @@ class Game:
         self.alien_lasers = pygame.sprite.Group()
         # self.alien_setup(rows = 6, cols = 8)
         self.alien_direction = 1
+        
+        # Level completion tracking
+        self.level_just_completed = False
+        self.level_complete_counter = 0
 
         # Extra setup
         self.extra = pygame.sprite.GroupSingle()
@@ -377,12 +413,21 @@ class Game:
         for offset_x in offset:
             self.create_obstacle(x_start, y_start, offset_x)
 
-    def alien_setup(self, rows, cols, x_distance=60, y_distance=48, x_offset=70, y_offset=100):
+    def alien_setup(self, rows=None, cols=None, speed=None, x_distance=60, y_distance=48, x_offset=70, y_offset=100):
+        """Setup aliens for current level. If rows/cols/speed not provided, uses current level config."""
+        # Get level-based configuration if not provided
+        if rows is None:
+            rows = Level.get_alien_rows()
+        if cols is None:
+            cols = Level.get_alien_cols()
+        if speed is None:
+            speed = Level.get_alien_speed()
+        
         for row_index in range(rows):
             for col_index in range(cols):
                 x = col_index * x_distance + x_offset
                 y = row_index * y_distance + y_offset
-                alien_sprite = Alien(1, 2, x, y)
+                alien_sprite = Alien(1, speed, x, y)
                 self.aliens.add(alien_sprite)
 
     def alien_position_checker(self):
@@ -416,6 +461,11 @@ class Game:
         """Display current coins/gold"""
         coins_text = self.font.render(f"Coins: {self.economy.coins}", True, (255, 215, 0))  # Gold color
         screen.blit(coins_text, (10, 40))
+    
+    def display_level(self):
+        """Display current level"""
+        level_text = self.font.render(f"Level: {Level.current_level_index + 1}", True, (255, 255, 255))
+        screen.blit(level_text, (10, 70))
 
     def display_health(self):
         """Display player health bar"""
@@ -443,11 +493,40 @@ class Game:
         screen.blit(health_text, text_rect)
 
     def victory_message(self):
-        """Display victory message if all aliens destroyed"""
-        if len(self.aliens) == 0:
-            victory_text = self.font.render("VICTORY!", True, (255, 255, 0))
-            text_rect = victory_text.get_rect(center=(SCREEN_WIDTH//2, SCREEN_HEIGHT//2))
-            screen.blit(victory_text, text_rect)
+        """Display victory message if all aliens destroyed and advance to next level"""
+        if len(self.aliens) == 0 and not self.level_just_completed:
+            # Check if there are more levels
+            max_level = max(Level.level_dict.keys())
+            current_level = Level.current_level_index
+            
+            if current_level < max_level:
+                # Mark level as completed
+                self.level_just_completed = True
+                self.level_complete_counter = 180  # Show message for ~3 seconds at 60 FPS
+                
+                # Advance to next level
+                Level.increment_level()
+                # Setup aliens for the new level
+                self.alien_setup()  # Uses current level config automatically
+                
+        # Display level complete message if timer is active
+        if self.level_just_completed:
+            max_level = max(Level.level_dict.keys())
+            if Level.current_level_index <= max_level:
+                level_text = self.font.render(f"LEVEL {Level.current_level_index - 1} COMPLETE! LEVEL {Level.current_level_index} STARTING!", True, (255, 255, 0))
+                text_rect = level_text.get_rect(center=(SCREEN_WIDTH//2, SCREEN_HEIGHT//2 - 30))
+                screen.blit(level_text, text_rect)
+            
+            self.level_complete_counter -= 1
+            if self.level_complete_counter <= 0:
+                self.level_just_completed = False
+        elif len(self.aliens) == 0:
+            # All levels completed - final victory
+            max_level = max(Level.level_dict.keys())
+            if Level.current_level_index >= max_level:
+                victory_text = self.font.render("VICTORY! ALL LEVELS COMPLETE!", True, (255, 255, 0))
+                text_rect = victory_text.get_rect(center=(SCREEN_WIDTH//2, SCREEN_HEIGHT//2))
+                screen.blit(victory_text, text_rect)
 
     def run(self, screen, mouse_pos=None, mouse_clicked=False):
         """Main game loop update method"""
@@ -472,6 +551,7 @@ class Game:
         self.display_lives()
         self.display_score()
         self.display_coins()
+        self.display_level()
         self.display_health()
         self.victory_message()
         
@@ -499,8 +579,8 @@ def main():
     # Create game instance
     game = Game()
     
-    # Setup initial aliens
-    game.alien_setup(rows=3, cols=8)
+    # Setup initial aliens using level 0 configuration
+    game.alien_setup()  # Uses current level (0) config automatically
     
     # Setup obstacles
     game.create_multiple_obstacles(*game.obstacle_x_positions, x_start=SCREEN_WIDTH / 15, y_start=480)
