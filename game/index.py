@@ -17,7 +17,7 @@ from button import Button
 from player import Player
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from gameEconomy import game_economy
-from pydantic import BaseModel
+
 
 
 # Initialize pygame
@@ -237,13 +237,14 @@ for row in range(3):
 # Game loop setup
 
 class Game:
-    
-    def __init__(self):
+    def __init__(self, game):
+        # def run(self, screen, mouse_pos=None, mouse_clicked=False):
         # Player setup
         player_sprite = Player((SCREEN_WIDTH / 2, SCREEN_HEIGHT), SCREEN_WIDTH, 5)
         self.player = pygame.sprite.GroupSingle(player_sprite)
         x_start = (0,0)
         y_start = (0,100)
+        
 
         # Economy system setup
         self.economy = game_economy(initial_health=100)
@@ -513,7 +514,9 @@ class Game:
         if self.level_just_completed:
             max_level = max(Level.level_dict.keys())
             if Level.current_level_index <= max_level:
-                level_text = self.font.render(f"LEVEL {Level.current_level_index - 1} COMPLETE! LEVEL {Level.current_level_index} STARTING!", True, (255, 255, 0))
+                completed_level = Level.current_level_index + 1
+                starting_level = Level.current_level_index + 1
+                level_text = self.font.render(f"LEVEL {completed_level} COMPLETE! LEVEL {starting_level} STARTING!", True, (255, 255, 0))
                 text_rect = level_text.get_rect(center=(SCREEN_WIDTH//2, SCREEN_HEIGHT//2 - 30))
                 screen.blit(level_text, text_rect)
             
@@ -571,19 +574,18 @@ class Game:
         return True
 
 
-def main():
+      
     print("game is starting...")
     clock = pygame.time.Clock()
     running = True
     
-    # Create game instance
-    game = Game()
+
     
     # Setup initial aliens using level 0 configuration
-    game.alien_setup()  # Uses current level (0) config automatically
+    alien_setup = game.alien_setup()  
     
     # Setup obstacles
-    game.create_multiple_obstacles(*game.obstacle_x_positions, x_start=SCREEN_WIDTH / 15, y_start=480)
+    game.create_multiple_obstacles(game.obstacle_x_positions, x_start=SCREEN_WIDTH / 15, y_start=480)  # pyright: ignore[reportUndefinedVariable]
 
     # Game loop
     while running:
@@ -607,8 +609,9 @@ def main():
         game_result = game.run(screen, mouse_pos, mouse_clicked)
         
         # Check if player wants to return to menu
-        if game_result == "menu":
-            return  # Return to main menu
+        def menu_redirect(self, screen):
+            if game_result == "Lose":
+                return main_menu() 
         
         if not game_result:
             # Game over screen
