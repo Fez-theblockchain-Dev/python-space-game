@@ -384,6 +384,26 @@ class Game:
                     laser.kill()
                     if self.explosion_sound:
                         self.explosion_sound.play()
+
+        
+<<<<<<< Current (Your changes)
+=======
+class PlayerWallet:
+    """A wallet class for managing player currency with unique serial numbers."""
+    _serial_counter = 0  # Class variable to track unique serial numbers
+    
+    def __init__(self, screen):
+        self.screen = screen
+        PlayerWallet._serial_counter += 1
+        self.serial_number = PlayerWallet._serial_counter
+        self.balance = 0
+        self.coins = 0
+    
+    def get_serial_number(self):
+        """Returns the unique serial number for this wallet."""
+        return self.serial_number
+>>>>>>> Incoming (Background Agent changes)
+
         
         # direct alien collision with player (aliens touching player)
         aliens_touching_player = pygame.sprite.spritecollide(self.player.sprite, self.aliens, True)
