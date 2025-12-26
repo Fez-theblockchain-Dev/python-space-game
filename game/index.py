@@ -5,6 +5,7 @@ import sys
 import time
 import os
 import random
+import json
 from pygame.locals import * #For useful variables
 from typing import Any
 from config import SCREEN_WIDTH, SCREEN_HEIGHT
@@ -17,6 +18,24 @@ from button import Button
 from player import Player
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from gameEconomy import game_economy
+
+DEBUG_LOG_PATH = "/Users/ramez/Desktop/ramezdev/python-space-game/.cursor/debug.log"
+DEBUG_SESSION_ID = "debug-session"
+
+#region agent log
+def _agent_log(payload):
+    """Write NDJSON debug log entry; keep failures silent for gameplay."""
+    try:
+        os.makedirs(os.path.dirname(DEBUG_LOG_PATH), exist_ok=True)
+        base = {
+            "sessionId": DEBUG_SESSION_ID,
+            "timestamp": int(time.time() * 1000),
+        }
+        with open(DEBUG_LOG_PATH, "a", encoding="utf-8") as log_file:
+            log_file.write(json.dumps({**base, **payload}) + "\n")
+    except Exception:
+        pass
+#endregion
 
 
 
@@ -69,20 +88,19 @@ class HeroShip(pygame.sprite.Sprite):
 
 
 class PlayerWallet:
-    """A wallet class for managing player currency with unique serial numbers."""
-    _serial_counter = 0  # Class variable to track unique serial numbers
-    
+    """Wallet for managing player currency with unique serial numbers."""
+    _serial_counter = 0
+
     def __init__(self, screen):
         self.screen = screen
         PlayerWallet._serial_counter += 1
         self.serial_number = PlayerWallet._serial_counter
         self.balance = 0
         self.coins = 0
-    
-    def get_serial_number(self):
-        """Returns the unique serial number for this wallet."""
-        return self.serial_number
 
+    def get_serial_number(self):
+        """Return the unique serial number for this wallet."""
+        return self.serial_number
 
 # creating new group for all space ships (hero & enemies)
 spaceship = SpaceShip(100, SCREEN_HEIGHT - 100, 100)
@@ -382,6 +400,20 @@ class Game:
         return None
 
     def collision_checks(self):
+        #region agent log
+        _agent_log({
+            "runId": "pre-fix",
+            "hypothesisId": "A",
+            "location": "game/index.py:collision_checks:entry",
+            "message": "collision_checks_entry",
+            "data": {
+                "lives": self.lives,
+                "aliens": len(self.aliens),
+                "player_health": getattr(self.player.sprite, "health", None),
+            },
+        })
+        #endregion
+
         # player lasers 
         if self.player.sprite.lasers:
             for laser in self.player.sprite.lasers:
@@ -401,38 +433,54 @@ class Game:
                     if self.explosion_sound:
                         self.explosion_sound.play()
 
-        
-class PlayerWallet:
-    """A wallet class for managing player currency with unique serial numbers."""
-    _serial_counter = 0  # Class variable to track unique serial numbers
-     
-    def __init__(self, screen):
-        self.screen = screen
-        PlayerWallet._serial_counter += 1
-        self.serial_number = PlayerWallet._serial_counter
-        self.balance = 0
-        self.coins = 0
-    
-    def get_serial_number(self):
-        """Returns the unique serial number for this wallet."""
-        return self.serial_number
+        # direct alien collision with player (aliens touching player)
+        aliens_touching_player = pygame.sprite.spritecollide(self.player.sprite, self.aliens, True)
+        if aliens_touching_player:
+            # if player/alien collide, take one player life for each time a collision occurs
+            for alien in aliens_touching_player:
+                self.lives -= 1  # decrement a life by 1 (5 lives before losing game)
+                decrement_health(self.player.sprite, screen)
 
+            # Update economy health based on lives (each life = 33.33 health points)
+            health_percentage = (self.lives / 3.0) * 100
+            self.economy.update_health(int(health_percentage))
 
-    # direct alien collision with player (aliens touching player)
-    aliens_touching_player = pygame.sprite.spritecollide(self.player.sprite, self.aliens, True)
-    if aliens_touching_player:
-        # if player/alien collide, take one player life for each time a collision occurs
-        for alien in aliens_touching_player:
-            self.lives -= 1 #decrement a life by 1 (5 lives before loosing game)
-            # Decrement health by 25% when alien touches player
-            decrement_health(self.player.sprite, screen)
-        # Update economy health based on lives (each life = 33.33 health points)
-        health_percentage = (self.lives / 3.0) * 100
-        self.economy.update_health(int(health_percentage))
-        if self.lives <= 0:
-            return False  # Signal game over
+            #region agent log
+            _agent_log({
+                "runId": "pre-fix",
+                "hypothesisId": "A",
+                "location": "game/index.py:collision_checks:alien_player_collision",
+                "message": "alien_player_collision",
+                "data": {
+                    "collisions": len(aliens_touching_player),
+                    "lives_after": self.lives,
+                    "health_percentage": health_percentage,
+                },
+            })
+            #endregion
 
-    return True  # Game continues
+            if self.lives <= 0:
+                #region agent log
+                _agent_log({
+                    "runId": "pre-fix",
+                    "hypothesisId": "A",
+                    "location": "game/index.py:collision_checks:game_over",
+                    "message": "player_out_of_lives",
+                    "data": {"lives": self.lives},
+                })
+                #endregion
+                return False  # Signal game over
+
+        #region agent log
+        _agent_log({
+            "runId": "pre-fix",
+            "hypothesisId": "A",
+            "location": "game/index.py:collision_checks:exit",
+            "message": "collision_checks_exit",
+            "data": {"lives": self.lives, "aliens": len(self.aliens)},
+        })
+        #endregion
+        return True  # Game continues
 
     def create_obstacle(self, x_start, y_start, offset_x):
         for row_index, row in enumerate(self.shape):
