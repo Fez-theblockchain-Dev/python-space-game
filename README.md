@@ -121,16 +121,3 @@ Looking for opportunities to contribute to larger Python projects or join a deve
 📝 License
 
 This project is licensed under the MIT License
-.
-
-✅ Next Steps
-
-Before finalizing the README:
-
-Would you like to include screenshots or a GIF of gameplay?
-
-Do you want to add your name or GitHub profile?
-
-Should I help you generate a requirements.txt file?
-
-Let me know if you'd like this exported to a .md file or pushed to a GitHub repo structure. 
