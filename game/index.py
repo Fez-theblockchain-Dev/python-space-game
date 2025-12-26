@@ -89,18 +89,31 @@ class HeroShip(pygame.sprite.Sprite):
 
 class PlayerWallet:
     """Wallet for managing player currency with unique serial numbers."""
-    _serial_counter = 0
+    _used_ids: set[str] = set()
 
-    def __init__(self, screen):
+    def __init__(self, screen, db_api_url: str | None = None):
         self.screen = screen
-        PlayerWallet._serial_counter += 1
-        self.serial_number = PlayerWallet._serial_counter
+        self.db_api = db_api_url or os.getenv(
+            "DRIZZLE_POSTGRES_API", "https://api.drizzle.team/postgres"
+        )
         self.balance = 0
         self.coins = 0
+        self.id = self._generate_serial_id()
 
-    def get_serial_number(self):
-        """Return the unique serial number for this wallet."""
-        return self.serial_number
+    @classmethod
+    def _generate_serial_id(cls) -> str:
+        """Generate a unique 3-digit serial ID."""
+        for _ in range(1000):
+            candidate = random.randint(0, 999)
+            serial = f"{candidate:03d}"
+            if serial not in cls._used_ids:
+                cls._used_ids.add(serial)
+                return serial
+        raise RuntimeError("Unable to generate unique PlayerWallet ID")
+
+    def get_serial_number(self) -> str:
+        """Return the unique 3-digit serial number for this wallet."""
+        return self.id
 
 # creating new group for all space ships (hero & enemies)
 spaceship = SpaceShip(100, SCREEN_HEIGHT - 100, 100)
