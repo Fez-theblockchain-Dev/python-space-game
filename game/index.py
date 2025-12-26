@@ -68,6 +68,22 @@ class HeroShip(pygame.sprite.Sprite):
         screen.blit(self.image, self.rect)
 
 
+class PlayerWallet:
+    """A wallet class for managing player currency with unique serial numbers."""
+    _serial_counter = 0  # Class variable to track unique serial numbers
+    
+    def __init__(self, screen):
+        self.screen = screen
+        PlayerWallet._serial_counter += 1
+        self.serial_number = PlayerWallet._serial_counter
+        self.balance = 0
+        self.coins = 0
+    
+    def get_serial_number(self):
+        """Returns the unique serial number for this wallet."""
+        return self.serial_number
+
+
 # creating new group for all space ships (hero & enemies)
 spaceship = SpaceShip(100, SCREEN_HEIGHT - 100, 100)
 spaceship_group = pygame.sprite.GroupSingle()
@@ -386,12 +402,10 @@ class Game:
                         self.explosion_sound.play()
 
         
-<<<<<<< Current (Your changes)
-=======
 class PlayerWallet:
     """A wallet class for managing player currency with unique serial numbers."""
     _serial_counter = 0  # Class variable to track unique serial numbers
-    
+     
     def __init__(self, screen):
         self.screen = screen
         PlayerWallet._serial_counter += 1
@@ -402,24 +416,23 @@ class PlayerWallet:
     def get_serial_number(self):
         """Returns the unique serial number for this wallet."""
         return self.serial_number
->>>>>>> Incoming (Background Agent changes)
 
-        
-        # direct alien collision with player (aliens touching player)
-        aliens_touching_player = pygame.sprite.spritecollide(self.player.sprite, self.aliens, True)
-        if aliens_touching_player:
-            # if player/alien collide, take one player life for each time a collision occurs
-            for alien in aliens_touching_player:
-                self.lives -= 1 #decrement a life by 1 (5 lives before loosing game)
-                # Decrement health by 25% when alien touches player
-                decrement_health(self.player.sprite, screen)
-            # Update economy health based on lives (each life = 33.33 health points)
-            health_percentage = (self.lives / 3.0) * 100
-            self.economy.update_health(int(health_percentage))
-            if self.lives <= 0:
-                return False  # Signal game over
-        
-        return True  # Game continues
+
+    # direct alien collision with player (aliens touching player)
+    aliens_touching_player = pygame.sprite.spritecollide(self.player.sprite, self.aliens, True)
+    if aliens_touching_player:
+        # if player/alien collide, take one player life for each time a collision occurs
+        for alien in aliens_touching_player:
+            self.lives -= 1 #decrement a life by 1 (5 lives before loosing game)
+            # Decrement health by 25% when alien touches player
+            decrement_health(self.player.sprite, screen)
+        # Update economy health based on lives (each life = 33.33 health points)
+        health_percentage = (self.lives / 3.0) * 100
+        self.economy.update_health(int(health_percentage))
+        if self.lives <= 0:
+            return False  # Signal game over
+
+    return True  # Game continues
 
     def create_obstacle(self, x_start, y_start, offset_x):
         for row_index, row in enumerate(self.shape):
