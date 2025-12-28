@@ -14,13 +14,16 @@ from fastapi import FastAPI
 
 app = FastAPI()
 
-@app.get("/")
+@app.GET("/")
 def home():
     return {"message": "Hello, FastAPI!"}
 
-@app.delete("/")
+@app.DELETE("/")
 def delete():
-    return ("Server Msg has been deleted successfullt")
+    return ("Server Msg has been deleted successfully")
+
+@app.PUT("/")
+
 
 
 class Base(DeclarativeBase):
