@@ -9,6 +9,19 @@ from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy.orm import Mapped
 from sqlalchemy.orm import mapped_column
 from sqlalchemy.orm import relationship
+from fastapi import FastAPI
+# REST API implementation through fastapi
+
+app = FastAPI()
+
+@app.get("/")
+def home():
+    return {"message": "Hello, FastAPI!"}
+
+@app.delete("/")
+def delete():
+    return ("Server Msg has been deleted successfullt")
+
 
 class Base(DeclarativeBase):
     pass
