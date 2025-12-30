@@ -31,7 +31,7 @@ License
 
 Clone the repository:
 
-git clone https://github.com/yourusername/space-invaders.git
+git clone [https://github.com/yourusername/space-invaders.git](https://github.com/Fez-theblockchain-Dev/python-space-game)
 cd space-invaders
 
 
