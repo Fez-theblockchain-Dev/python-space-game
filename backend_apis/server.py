@@ -1,6 +1,3 @@
-from sqlalchemy import create_engine
-engine = create_engine("sqlite://", echo=True)
-
 from typing import List
 from typing import Optional
 from sqlalchemy import ForeignKey
@@ -10,11 +7,15 @@ from sqlalchemy.orm import Mapped
 from sqlalchemy.orm import mapped_column
 from sqlalchemy.orm import relationship
 from fastapi import FastAPI
+from sqlalchemy import create_engine
 
 # Use a file-backed SQLite DB so data persists across runs.
 engine = create_engine("sqlite:///data.db", echo=True)
 
 app = FastAPI()
+
+
+
 
 @app.get("/")
 def home():

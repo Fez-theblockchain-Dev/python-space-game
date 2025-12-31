@@ -91,15 +91,6 @@ class PlayerWallet:
     """Wallet for managing player currency with unique serial numbers."""
     _used_ids: set[str] = set()
 
-    def __init__(self, screen, db_api_url: str | None = None):
-        self.screen = screen
-        self.db_api = db_api_url or os.getenv(
-            "DRIZZLE_POSTGRES_API", "https://api.drizzle.team/postgres"
-        )
-        self.balance = 0
-        self.coins = 0
-        self.id = self._generate_serial_id()
-
     @classmethod
     def _generate_serial_id(cls) -> str:
         """Generate a unique 3-digit serial ID."""
@@ -319,7 +310,7 @@ class Game:
         # Alien setup
         self.aliens = pygame.sprite.Group()
         self.alien_lasers = pygame.sprite.Group()
-        # self.alien_setup(rows = 6, cols = 8)
+        self.alien_setup(rows = 6, cols = 8)
         self.alien_direction = 1
         
         # Level completion tracking
