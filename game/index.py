@@ -269,7 +269,7 @@ class Game:
         
 
         # Economy system setup
-        self.economy = game_economy(initial_health=100)
+        self.economy = GameEconomy(initial_health=100)
 
         # health and score setup
         self.lives = 3
