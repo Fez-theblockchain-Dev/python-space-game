@@ -16,6 +16,7 @@ from alien import Alien, check_alien_edges
 import tkinter as tk
 from button import Button
 from player import Player
+from mainMenu import main_menu, ThemeManager, play
 
 # Add parent directory to path so we can import from backend_apis
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
