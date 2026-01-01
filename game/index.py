@@ -17,7 +17,7 @@ import tkinter as tk
 from button import Button
 from player import Player
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from gameEconomy import game_economy
+from gameEconomy import game_economy, PlayerWallet
 
 DEBUG_LOG_PATH = "/Users/ramez/Desktop/ramezdev/python-space-game/.cursor/debug.log"
 DEBUG_SESSION_ID = "debug-session"
@@ -86,25 +86,6 @@ class HeroShip(pygame.sprite.Sprite):
     def draw(self, screen):
         screen.blit(self.image, self.rect)
 
-
-class PlayerWallet:
-    """Wallet for managing player currency with unique serial numbers."""
-    _used_ids: set[str] = set()
-
-    @classmethod
-    def _generate_serial_id(cls) -> str:
-        """Generate a unique 3-digit serial ID."""
-        for _ in range(1000):
-            candidate = random.randint(0, 999)
-            serial = f"{candidate:03d}"
-            if serial not in cls._used_ids:
-                cls._used_ids.add(serial)
-                return serial
-        raise RuntimeError("Unable to generate unique PlayerWallet ID")
-
-    def get_serial_number(self) -> str:
-        """Return the unique 3-digit serial number for this wallet."""
-        return self.id
 
 # creating new group for all space ships (hero & enemies)
 spaceship = SpaceShip(100, SCREEN_HEIGHT - 100, 100)
