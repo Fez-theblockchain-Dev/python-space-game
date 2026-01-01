@@ -153,10 +153,10 @@ class PlayerWallet:
 
 class game_economy:
     def __init__(self, initial_health=100):
-        self.coins = 0 
+        self.wallet = PlayerWallet()
+        self.coins = self.wallet.gold_coins  # Load saved coins from wallet
         self.score = 0 
         self.health = initial_health
-        self.wallet = PlayerWallet()
         self.potential_prizes = {
             "New Avater": False,
             "Gold Coins": False,

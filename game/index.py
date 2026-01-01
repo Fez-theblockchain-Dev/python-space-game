@@ -526,7 +526,7 @@ class Game:
     
     def display_coins(self):
         """Display current coins/gold"""
-        coins_text = self.font.render(f"Coins: {self.economy.coins}", True, (255, 215, 0))  # Gold color
+        coins_text = self.font.render(f"Coins: {self.economy.get_total_coins()}", True, (255, 215, 0))  # Gold color
         screen.blit(coins_text, (10, 40))
     
     def display_level(self):
