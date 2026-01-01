@@ -16,7 +16,7 @@ from alien import Alien, check_alien_edges
 import tkinter as tk
 from button import Button
 from player import Player
-from mainMenu import main_menu, ThemeManager, play
+# Note: main_menu imported lazily inside main() to avoid circular import
 
 # Add parent directory to path so we can import from backend_apis
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -644,17 +644,20 @@ class Game:
 
 
       
+
+
+def main():
+    """Main game entry point - creates game instance and runs game loop"""
     print("game is starting...")
+    
+    # Create game instance
+    game = Game(None)
+    
     clock = pygame.time.Clock()
     running = True
     
-
-    
-    # Setup initial aliens using level 0 configuration
-    alien_setup = game.alien_setup()  
-    
     # Setup obstacles
-    game.create_multiple_obstacles(game.obstacle_x_positions, x_start=SCREEN_WIDTH / 15, y_start=480)  # pyright: ignore[reportUndefinedVariable]
+    game.create_multiple_obstacles(*game.obstacle_x_positions, x_start=SCREEN_WIDTH / 15, y_start=480)
 
     # Game loop
     while running:
@@ -678,9 +681,9 @@ class Game:
         game_result = game.run(screen, mouse_pos, mouse_clicked)
         
         # Check if player wants to return to menu
-        def menu_redirect(self, screen):
-            if game_result == "Lose":
-                return main_menu() 
+        if game_result == "menu":
+            from mainMenu import main_menu
+            return main_menu()
         
         if not game_result:
             # Game over screen
@@ -706,16 +709,19 @@ if __name__ == "__main__":
 
 # new 'Key' class that will hold the object that appears on the players screen when the mystery_ship is destroyed
 class Key:
-    def mystery_ship_destroyed(self, x, y,):
+    def __init__(self):
+        self.mystery_ship_alive = True
+    
+    def mystery_ship_destroyed(self, x, y):
         if self.mystery_ship_alive is False:
             return 'mystery ship has been destroyed'
         else:
             return None
     
-    
-    # Key functionality can be added later
-    hero_ship.has_key = True  # flag for later access
-    print("Hero gained a Key!🔑")
+    def grant_key_to_hero(self, hero_ship):
+        """Grant key to hero when mystery ship is destroyed"""
+        hero_ship.has_key = True
+        print("Hero gained a Key!🔑")
                     
             
 try:
