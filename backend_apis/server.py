@@ -1,147 +1,359 @@
-from sys import path
-import json
-import time
-from typing import List
+"""
+Game Backend API Server
+
+Handles:
+- Player wallet management
+- Adyen payment integration (checkout sessions, webhooks)
+- Transaction history
+"""
+import os
 from typing import Optional
-from sqlalchemy import String
-from sqlalchemy.orm import DeclarativeBase
-from sqlalchemy.orm import Mapped
-from sqlalchemy.orm import mapped_column
-from sqlalchemy.orm import relationship
+from contextlib import asynccontextmanager
+
+from fastapi import FastAPI, Depends, HTTPException, Request, Response
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker, Session
+
+from .models import Base, PackageType, PACKAGES
+from .adyen_service import AdyenPaymentService
+from .payment_handler import PaymentHandler
 
 
-# database connection
-from fastapi import Depends, FastAPI
-from sqlalchemy import create_engine, String, ForeignKey
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship, sessionmaker, Session
+# ============================================================================
+# Configuration
+# ============================================================================
 
-DATABASE_URL = "sqlite:///./data.db"
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./game_economy.db")
 
-engine = create_engine(DATABASE_URL, echo=True, connect_args={"check_same_thread": False})
+# Adyen configuration - set these in environment variables for production
+ADYEN_CONFIG = {
+    "api_key": os.getenv("ADYEN_API_KEY"),
+    "merchant_account": os.getenv("ADYEN_MERCHANT_ACCOUNT"),
+    "environment": os.getenv("ADYEN_ENVIRONMENT", "test"),
+    "hmac_key": os.getenv("ADYEN_HMAC_KEY"),
+    "return_url": os.getenv("ADYEN_RETURN_URL", "http://localhost:8000/api/payment/result"),
+}
+
+
+# ============================================================================
+# Database Setup
+# ============================================================================
+
+engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-class Base(DeclarativeBase):
-    pass
 
-class User(Base):
-    __tablename__ = "user_account"
-    id: Mapped[int] = mapped_column(primary_key=True)
-    name: Mapped[str] = mapped_column(String(30))
-    fullname: Mapped[str] = mapped_column(String(50), nullable=True)
-    addresses: Mapped[list["Address"]] = relationship(back_populates="user", cascade="all, delete-orphan")
-
-class Address(Base):
-    __tablename__ = "address"
-    id: Mapped[int] = mapped_column(primary_key=True)
-    email_address: Mapped[str] = mapped_column(String(100))
-    user_id: Mapped[int] = mapped_column(ForeignKey("user_account.id"))
-    user: Mapped["User"] = relationship(back_populates="addresses")
-
-app = FastAPI()
-
-def get_db() -> Session:
+def get_db():
+    """Dependency to get database session."""
     db = SessionLocal()
     try:
         yield db
     finally:
         db.close()
 
-@app.on_event("startup")
-def on_startup():
+
+# ============================================================================
+# Service Setup
+# ============================================================================
+
+adyen_service = AdyenPaymentService(**ADYEN_CONFIG)
+payment_handler = PaymentHandler(adyen_service)
+
+
+# ============================================================================
+# FastAPI App
+# ============================================================================
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup: create database tables
     Base.metadata.create_all(bind=engine)
+    yield
+    # Shutdown: cleanup if needed
+
+app = FastAPI(
+    title="Space Game Economy API",
+    description="Backend API for in-game purchases and wallet management",
+    version="1.0.0",
+    lifespan=lifespan,
+)
+
+# CORS middleware for game client
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Configure appropriately for production
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
+# ============================================================================
+# Pydantic Models (Request/Response)
+# ============================================================================
+
+class CreateSessionRequest(BaseModel):
+    player_uuid: str
+    package_id: str  # e.g., "gold_100", "health_pack_5"
+    use_payment_link: bool = False
+    email: Optional[str] = None
+
+
+class CreateSessionResponse(BaseModel):
+    success: bool
+    session_id: Optional[str] = None
+    session_data: Optional[str] = None
+    checkout_url: Optional[str] = None
+    merchant_reference: Optional[str] = None
+    error: Optional[str] = None
+
+
+class WalletResponse(BaseModel):
+    gold_coins: int
+    health_packs: int
+    total_earned_coins: int
+    total_earned_health_packs: int
+    total_spent_usd: float
+
+
+class PackageResponse(BaseModel):
+    id: str
+    name: str
+    price_usd: float
+    gold_coins: int
+    health_packs: int
+
+
+class TransactionResponse(BaseModel):
+    reference: str
+    package: str
+    amount_usd: float
+    status: str
+    gold_coins: int
+    health_packs: int
+    created_at: str
+    completed_at: Optional[str] = None
+
+
+class SpendCoinsRequest(BaseModel):
+    player_uuid: str
+    amount: int
+
+
+class UseHealthPackRequest(BaseModel):
+    player_uuid: str
+
+
+# ============================================================================
+# API Routes - Health Check
+# ============================================================================
 
 @app.get("/")
-def home(db: Session = Depends(get_db)):
-    return {"users": db.query(User).all()}
+def root():
+    return {"status": "ok", "service": "Space Game Economy API"}
 
 
-#region agent log
-with open("/Users/ramez/Desktop/ramezdev/python-space-game/.cursor/debug.log", "a", encoding="utf-8") as _f:
-    _f.write(json.dumps({
-        "sessionId": "debug-session",
-        "runId": "initial",
-        "hypothesisId": "A",
-        "location": "backend_apis/server.py:module",
-        "message": "module import start",
-        "data": {"__name__": __name__},
-        "timestamp": int(time.time() * 1000)
-    }) + "\n")
-#endregion
-
-#region agent log
-with open("/Users/ramez/Desktop/ramezdev/python-space-game/.cursor/debug.log", "a", encoding="utf-8") as _f:
-    _f.write(json.dumps({
-        "sessionId": "debug-session",
-        "runId": "initial",
-        "hypothesisId": "B",
-        "location": "backend_apis/server.py:engine",
-        "message": "engine created",
-        "data": {"echo": True},
-        "timestamp": int(time.time() * 1000)
-    }) + "\n")
-#endregion
-
-app = FastAPI()
-
-#region agent log
-with open("/Users/ramez/Desktop/ramezdev/python-space-game/.cursor/debug.log", "a", encoding="utf-8") as _f:
-    _f.write(json.dumps({
-        "sessionId": "debug-session",
-        "runId": "initial",
-        "hypothesisId": "C",
-        "location": "backend_apis/server.py:app",
-        "message": "fastapi app created",
-        "data": {"path_shadow": True},
-        "timestamp": int(time.time() * 1000)
-    }) + "\n")
-#endregion
-
-path = "(/Users/ramez/Desktop/ramezdev/python-space-game)"
+@app.get("/health")
+def health_check():
+    return {"status": "healthy"}
 
 
+# ============================================================================
+# API Routes - Packages
+# ============================================================================
+
+@app.get("/api/packages", response_model=list[PackageResponse])
+def get_packages():
+    """Get all available purchase packages."""
+    return payment_handler.get_available_packages()
 
 
-@app.get("/")
-def home():
-    return {"message": "Hello, FastAPI!"}
+# ============================================================================
+# API Routes - Wallet
+# ============================================================================
 
-@app.delete("/")
-def delete():
-    return {"message": "Server Msg has been deleted successfully"}
+@app.get("/api/wallet/{player_uuid}", response_model=WalletResponse)
+def get_wallet(player_uuid: str, db: Session = Depends(get_db)):
+    """Get player's wallet balance."""
+    # Ensure player exists
+    payment_handler.get_or_create_player(db, player_uuid)
+    
+    wallet = payment_handler.get_player_wallet(db, player_uuid)
+    
+    if not wallet:
+        raise HTTPException(status_code=404, detail="Wallet not found")
+    
+    return WalletResponse(**wallet)
 
-@app.put("/")
-def put_placeholder():
-    return {"message": "PUT endpoint not implemented yet"}
+
+@app.post("/api/wallet/spend")
+def spend_coins(request: SpendCoinsRequest, db: Session = Depends(get_db)):
+    """Spend gold coins from wallet."""
+    from .models import Player
+    
+    player = db.query(Player).filter(Player.player_uuid == request.player_uuid).first()
+    
+    if not player or not player.wallet:
+        raise HTTPException(status_code=404, detail="Player or wallet not found")
+    
+    if not player.wallet.spend_gold_coins(request.amount):
+        raise HTTPException(status_code=400, detail="Insufficient gold coins")
+    
+    db.commit()
+    
+    return {
+        "success": True,
+        "new_balance": player.wallet.gold_coins,
+    }
 
 
-class Sqlalchemy:
-    def connectDB(DB,self):
-        return {"DB": [str] }
+@app.post("/api/wallet/use-health-pack")
+def use_health_pack(request: UseHealthPackRequest, db: Session = Depends(get_db)):
+    """Use a health pack from wallet."""
+    from .models import Player
+    
+    player = db.query(Player).filter(Player.player_uuid == request.player_uuid).first()
+    
+    if not player or not player.wallet:
+        raise HTTPException(status_code=404, detail="Player or wallet not found")
+    
+    if not player.wallet.use_health_pack():
+        raise HTTPException(status_code=400, detail="No health packs available")
+    
+    db.commit()
+    
+    return {
+        "success": True,
+        "health_packs_remaining": player.wallet.health_packs,
+    }
 
 
-class Base(DeclarativeBase):
-    pass
+# ============================================================================
+# API Routes - Payments
+# ============================================================================
 
-class User(Base):
-    __tablename__ = "user_account"
-    id: Mapped[int] = mapped_column(primary_key=True)
-    name: Mapped[str] = mapped_column(String(30))
-    fullname: mapped_column[Optional[str]]
-    addresses: Mapped[List["Address"]] = relationship(
-        back_populates="user", cascade="all, delete-orphan"
+@app.post("/api/payment/create-session", response_model=CreateSessionResponse)
+def create_payment_session(request: CreateSessionRequest, db: Session = Depends(get_db)):
+    """
+    Create an Adyen checkout session for a package purchase.
+    
+    Returns session data for Drop-in/Components, or a checkout URL for redirect.
+    """
+    # Validate package
+    try:
+        package_type = PackageType(request.package_id)
+    except ValueError:
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Invalid package_id. Available: {[p.value for p in PackageType]}"
+        )
+    
+    result = payment_handler.initiate_purchase(
+        db=db,
+        player_uuid=request.player_uuid,
+        package_type=package_type,
+        use_payment_link=request.use_payment_link,
+        shopper_email=request.email,
     )
-    def __repr__(self) -> str:
-        return f"User(id={self.id!r}, name={self.name!r}, fullname={self.fullname!r})"
+    
+    return CreateSessionResponse(
+        success=result.success,
+        session_id=result.session_id,
+        session_data=result.session_data,
+        checkout_url=result.checkout_url,
+        merchant_reference=result.merchant_reference,
+        error=result.error,
+    )
 
-class Address(Base):
-    __tablename__ = "address"
-    id: Mapped[int] = mapped_column(primary_key=True)
-    email_address: Mapped[str] = mapped_column(String(100))
-    user_id: Mapped[int] = mapped_column(ForeignKey("user_account.id"))
-    user: Mapped["User"] = relationship(back_populates="addresses")
-    def __repr__(self) -> str:
-        return f"Address(id={self.id!r}, email_address={self.email_address!r})"
 
-# Create the tables once the models are defined.
-Base.metadata.create_all(engine)
+@app.get("/api/payment/result")
+def payment_result(ref: str, redirectResult: Optional[str] = None, db: Session = Depends(get_db)):
+    """
+    Handle redirect after payment completion.
+    
+    This endpoint is called when the user returns from the Adyen hosted payment page.
+    The actual crediting happens via webhooks, but this confirms the transaction status.
+    """
+    result = payment_handler.verify_and_credit_redirect(
+        db=db,
+        merchant_reference=ref,
+        redirect_result=redirectResult,
+    )
+    
+    if result.success and result.new_balance:
+        return {
+            "status": "success",
+            "message": "Payment completed!",
+            "gold_coins_added": result.gold_coins_added,
+            "health_packs_added": result.health_packs_added,
+            "new_balance": result.new_balance,
+        }
+    elif result.success:
+        return {
+            "status": "pending",
+            "message": result.error or "Payment is being processed",
+        }
+    else:
+        return {
+            "status": "failed",
+            "message": result.error or "Payment could not be verified",
+        }
 
+
+@app.post("/api/payment/webhook")
+async def adyen_webhook(request: Request, db: Session = Depends(get_db)):
+    """
+    Handle Adyen webhook notifications.
+    
+    This is called by Adyen when payment events occur (authorization, capture, etc.).
+    Must respond with [accepted] to acknowledge receipt.
+    """
+    try:
+        payload = await request.json()
+    except Exception:
+        return Response(content="[accepted]", media_type="text/plain")
+    
+    success, message = payment_handler.process_webhook_notification(db, payload)
+    
+    # Always respond with [accepted] to prevent Adyen from retrying
+    # Log failures for debugging but don't reject the webhook
+    if not success:
+        print(f"Webhook processing warning: {message}")
+    
+    return Response(content="[accepted]", media_type="text/plain")
+
+
+@app.get("/api/payment/transactions/{player_uuid}", response_model=list[TransactionResponse])
+def get_transactions(player_uuid: str, limit: int = 20, db: Session = Depends(get_db)):
+    """Get transaction history for a player."""
+    transactions = payment_handler.get_transaction_history(db, player_uuid, limit)
+    return [TransactionResponse(**t) for t in transactions]
+
+
+# ============================================================================
+# API Routes - Admin/Debug (remove or protect in production)
+# ============================================================================
+
+@app.post("/api/admin/credit-test")
+def admin_credit_test(player_uuid: str, gold_coins: int = 0, health_packs: int = 0, db: Session = Depends(get_db)):
+    """
+    Admin endpoint to manually credit a player (for testing).
+    REMOVE OR PROTECT THIS IN PRODUCTION!
+    """
+    from .models import Player
+    
+    player = payment_handler.get_or_create_player(db, player_uuid)
+    
+    if gold_coins > 0:
+        player.wallet.add_gold_coins(gold_coins)
+    if health_packs > 0:
+        player.wallet.add_health_packs(health_packs)
+    
+    db.commit()
+    
+    return {
+        "success": True,
+        "wallet": player.wallet.to_dict(),
+    }
