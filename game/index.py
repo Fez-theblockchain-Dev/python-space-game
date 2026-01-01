@@ -16,8 +16,10 @@ from alien import Alien, check_alien_edges
 import tkinter as tk
 from button import Button
 from player import Player
+
+# Add parent directory to path so we can import from backend_apis
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from gameEconomy import game_economy, PlayerWallet
+from backend_apis.gameEconomy import GameEconomy
 
 DEBUG_LOG_PATH = "/Users/ramez/Desktop/ramezdev/python-space-game/.cursor/debug.log"
 DEBUG_SESSION_ID = "debug-session"
