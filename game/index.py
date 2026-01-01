@@ -645,7 +645,7 @@ class Game:
 
       
 
-
+# main game loop init function
 def main():
     """Main game entry point - creates game instance and runs game loop"""
     print("game is starting...")
