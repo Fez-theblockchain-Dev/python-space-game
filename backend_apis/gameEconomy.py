@@ -302,13 +302,17 @@ class GameEconomy:
     - Backend synchronization via BackendClient
     """
     
-    def __init__(self, initial_health: int = 100, backend_url: str = None):
+    def __init__(self, initial_health: int = 100, backend_url: str = None, ):
         self.backend = BackendClient(base_url=backend_url)
         self.score = 0
         self.health = initial_health
         self.max_health = initial_health
         self.session_coins_earned = 0  # Coins earned this session
+        self.save_session_earnings = True
+
         
+        
+
         # Prizes/achievements for this session
         self.potential_prizes = {
             "New Avatar": False,
@@ -331,6 +335,14 @@ class GameEconomy:
         if self._synced_wallet:
             return self._synced_wallet.gold_coins
         return 0
+
+# This method leverages the existing coins 
+# property which already fetches the gold_coins 
+# from the backend wallet. 
+
+    def get_total_coins(self) -> int:
+        """Get total coins from the player's wallet."""
+        return self.coins
     
     @property
     def health_packs(self) -> int:
