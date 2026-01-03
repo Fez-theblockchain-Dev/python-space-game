@@ -273,6 +273,38 @@ class BackendClient:
         
         return False
     
+    def add_earned_coins(self, amount: int) -> dict:
+        """
+        Add earned coins from gameplay to the backend wallet.
+        
+        Args:
+            amount: Number of coins earned during gameplay
+            
+        Returns:
+            Dict with success status, coins_added, and new_balance
+        """
+        if amount <= 0:
+            return {"success": False, "error": "Amount must be positive"}
+        
+        data = self._request(
+            "POST",
+            "/api/wallet/add-earned-coins",
+            json={
+                "player_uuid": self.player_uuid,
+                "amount": amount,
+            }
+        )
+        
+        if data and data.get("success"):
+            self._cached_wallet = None  # Invalidate cache
+            return {
+                "success": True,
+                "coins_added": data.get("coins_added", amount),
+                "new_balance": data.get("new_balance", 0),
+            }
+        
+        return {"success": False, "error": "Failed to add coins to wallet"}
+    
     def get_transaction_history(self, limit: int = 20) -> list[dict]:
         """Get recent transaction history."""
         data = self._request(
@@ -343,6 +375,13 @@ class GameEconomy:
     def get_total_coins(self) -> int:
         """Get total coins from the player's wallet."""
         return self.coins
+    
+    def add_coins (self, screen) -> int:
+        @dataclass
+        class SessionSaveResult:
+            success: bool
+            coins_added: int = 0
+
     
     @property
     def health_packs(self) -> int:

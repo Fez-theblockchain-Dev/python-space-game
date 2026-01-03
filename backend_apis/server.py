@@ -146,6 +146,11 @@ class UseHealthPackRequest(BaseModel):
     player_uuid: str
 
 
+class AddEarnedCoinsRequest(BaseModel):
+    player_uuid: str
+    amount: int
+
+
 # ============================================================================
 # API Routes - Health Check
 # ============================================================================
@@ -227,6 +232,33 @@ def use_health_pack(request: UseHealthPackRequest, db: Session = Depends(get_db)
     return {
         "success": True,
         "health_packs_remaining": player.wallet.health_packs,
+    }
+
+
+@app.post("/api/wallet/add-earned-coins")
+def add_earned_coins(request: AddEarnedCoinsRequest, db: Session = Depends(get_db)):
+    """
+    Add coins earned from gameplay to player's wallet.
+    
+    Called at the end of a level/session to save earned coins.
+    """
+    from .models import Player
+    
+    if request.amount <= 0:
+        raise HTTPException(status_code=400, detail="Amount must be positive")
+    
+    player = payment_handler.get_or_create_player(db, request.player_uuid)
+    
+    if not player.wallet:
+        raise HTTPException(status_code=404, detail="Wallet not found")
+    
+    player.wallet.add_gold_coins(request.amount)
+    db.commit()
+    
+    return {
+        "success": True,
+        "coins_added": request.amount,
+        "new_balance": player.wallet.gold_coins,
     }
 
 
