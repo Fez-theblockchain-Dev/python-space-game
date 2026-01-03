@@ -342,8 +342,9 @@ class GameEconomy:
         self.session_coins_earned = 0  # Coins earned this session
         self.save_session_earnings = True
 
-        
-        
+        # Pause/resume state
+        self.is_paused = False
+        self.paused_state = None  # Stores game state when paused
 
         # Prizes/achievements for this session
         self.potential_prizes = {
@@ -376,11 +377,126 @@ class GameEconomy:
         """Get total coins from the player's wallet."""
         return self.coins
     
-    def add_coins (self, screen) -> int:
-        @dataclass
-        class SessionSaveResult:
-            success: bool
-            coins_added: int = 0
+    def add_coins(self, amount: int):
+        """
+        Add coins to the current session's earned coins.
+        
+        Called during gameplay when player earns coins (e.g., destroying aliens).
+        These coins are tracked locally and saved to the wallet via save_session_coins().
+        
+        Args:
+            amount: Number of coins to add to session earnings
+        """
+        if amount > 0:
+            self.session_coins_earned += amount
+
+# save session analytics function for gold coins 
+    
+    def save_session_coins(self) -> dict:
+        """
+        Save coins earned during the current session to the player's wallet.
+        
+        Call this at the end of a level or when the player completes a session
+        to persist their earned coins to the backend wallet.
+        
+        Returns:
+            Dict with:
+                - success: bool indicating if save was successful
+                - coins_added: number of coins added to wallet
+                - new_balance: updated wallet balance
+                - error: error message if failed
+        """
+        if self.session_coins_earned <= 0:
+            return {
+                "success": False,
+                "coins_added": 0,
+                "error": "No coins to save"
+            }
+        
+        result = self.backend.add_earned_coins(self.session_coins_earned)
+        
+        if result.get("success"):
+            saved_amount = self.session_coins_earned
+            self.session_coins_earned = 0  # Reset session earnings
+            self.sync_wallet()  # Refresh wallet balance
+            return {
+                "success": True,
+                "coins_added": saved_amount,
+                "new_balance": result.get("new_balance", self.coins),
+            }
+        
+        return {
+            "success": False,
+            "coins_added": 0,
+            "error": result.get("error", "Failed to save coins")
+        }
+    
+# pause feature 
+    def pause_game(self, game_state: dict) -> dict:
+        """
+        Pause the game and save the current game state.
+        
+        Args:
+            game_state: Dict containing current game state (score, health, enemies, etc.)
+                       This should be a snapshot of the game at pause time.
+        
+        Returns:
+            Dict with success status and pause timestamp
+        """
+        self.is_paused = True
+        self.paused_state = {
+            "timestamp": __import__('time').time(),
+            "score": self.score,
+            "health": self.health,
+            "session_coins_earned": self.session_coins_earned,
+            "game_state": game_state,  # Game-specific state (enemies, bullets, player pos, etc.)
+        }
+        return {
+            "success": True,
+            "message": "Game paused",
+            "paused_at": self.paused_state["timestamp"],
+        }
+    
+    def resume_game(self) -> dict:
+        """
+        Resume the game from a paused state.
+        
+        Returns:
+            Dict with:
+                - success: bool indicating if resume was successful
+                - paused_state: the saved game state to restore
+                - error: error message if failed
+        """
+        if not self.is_paused:
+            return {
+                "success": False,
+                "error": "Game is not paused"
+            }
+        
+        if not self.paused_state:
+            return {
+                "success": False,
+                "error": "No paused state found"
+            }
+        
+        saved_state = self.paused_state
+        self.is_paused = False
+        self.paused_state = None
+        
+        return {
+            "success": True,
+            "paused_state": saved_state,
+            "message": "Game resumed"
+        }
+    
+    def is_game_paused(self) -> bool:
+        """Check if the game is currently paused."""
+        return self.is_paused
+# function to track state of the the game when paused
+    def get_paused_state(self) -> Optional[dict]:
+        """Get the saved pause state without resuming."""
+        return self.paused_state if self.is_paused else None
+    
 
     
     @property

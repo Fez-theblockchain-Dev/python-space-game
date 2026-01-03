@@ -333,6 +333,19 @@ class Game:
             base_color="#d7fcd4",
             hovering_color="White"
         )
+        
+        # Pause button setup
+        self.pause_button = Button(
+            image=None,
+            pos=(SCREEN_WIDTH - 200, 30),
+            text_input="PAUSE",
+            font=menu_button_font,
+            base_color="#d7fcd4",
+            hovering_color="White"
+        )
+        
+        # Pause state
+        self.is_paused = False
 
         # Background theme setup
         self.current_theme = "PURPLE_NEBULA"  # Default theme
@@ -562,6 +575,57 @@ class Game:
         text_rect = health_text.get_rect(center=(SCREEN_WIDTH // 2, bar_y - 15))
         screen.blit(health_text, text_rect)
 
+    def toggle_pause(self):
+        """Toggle game pause state and sync with economy"""
+        self.is_paused = not self.is_paused
+        
+        if self.is_paused:
+            # Save game state to economy
+            game_state = {
+                "aliens_count": len(self.aliens),
+                "player_pos": self.player.sprite.rect.center,
+                "level": Level.current_level_index,
+            }
+            self.economy.pause_game(game_state)
+        else:
+            # Resume game
+            self.economy.resume_game()
+    
+    def display_pause_screen(self, screen, mouse_pos=None):
+        """Display pause overlay and menu"""
+        # Semi-transparent overlay
+        overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
+        overlay.set_alpha(180)
+        overlay.fill((0, 0, 0))
+        screen.blit(overlay, (0, 0))
+        
+        # Pause title
+        pause_font = pygame.font.Font(os.path.join(project_root, 'assets/Fonts/hyperspace/Hyperspace Bold Italic.otf'), 60)
+        pause_text = pause_font.render("PAUSED", True, (255, 255, 0))
+        text_rect = pause_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 3))
+        screen.blit(pause_text, text_rect)
+        
+        # Instructions
+        instruction_font = pygame.font.Font(os.path.join(project_root, 'assets/Fonts/hyperspace/Hyperspace Bold Italic.otf'), 24)
+        
+        resume_text = instruction_font.render("Press P or ESC to Resume", True, (255, 255, 255))
+        resume_rect = resume_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2))
+        screen.blit(resume_text, resume_rect)
+        
+        quit_text = instruction_font.render("Press Q to Quit to Menu", True, (200, 200, 200))
+        quit_rect = quit_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 40))
+        screen.blit(quit_text, quit_rect)
+        
+        # Display session stats
+        stats_y = SCREEN_HEIGHT // 2 + 100
+        score_text = instruction_font.render(f"Score: {self.score}", True, (255, 255, 255))
+        score_rect = score_text.get_rect(center=(SCREEN_WIDTH // 2, stats_y))
+        screen.blit(score_text, score_rect)
+        
+        coins_text = instruction_font.render(f"Session Coins: {self.economy.session_coins_earned}", True, (255, 215, 0))
+        coins_rect = coins_text.get_rect(center=(SCREEN_WIDTH // 2, stats_y + 30))
+        screen.blit(coins_text, coins_rect)
+
     def victory_message(self):
         """Display victory message if all aliens destroyed and advance to next level"""
         if len(self.aliens) == 0 and not self.level_just_completed:
@@ -630,12 +694,17 @@ class Game:
         # Display and handle main menu button
         if mouse_pos:
             self.menu_button.change_color(mouse_pos)
+            self.pause_button.change_color(mouse_pos)
         self.menu_button.update(screen)
+        self.pause_button.update(screen)
         
         # Check if menu button was clicked
         if mouse_clicked and mouse_pos:
             if self.menu_button.check_input(mouse_pos):
                 return "menu"  # Signal to return to main menu
+            if self.pause_button.check_input(mouse_pos):
+                self.toggle_pause()
+                return "paused"  # Signal game is paused
         
         # Sync economy score with game score
         self.economy.score = self.score
@@ -669,30 +738,57 @@ def main():
             if event.type == pygame.QUIT:
                 running = False
             elif event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_ESCAPE:
-                    running = False
+                if event.key == pygame.K_p or (event.key == pygame.K_ESCAPE and not game.is_paused):
+                    # Toggle pause with P key, or ESC to pause (not unpause)
+                    game.toggle_pause()
+                elif event.key == pygame.K_ESCAPE and game.is_paused:
+                    # ESC while paused = resume
+                    game.toggle_pause()
+                elif event.key == pygame.K_q and game.is_paused:
+                    # Q while paused = quit to menu
+                    # Save session coins before quitting
+                    game.economy.save_session_coins()
+                    from mainMenu import main_menu
+                    return main_menu()
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 mouse_clicked = True
 
         # Draw background using current theme
         screen.blit(game.get_current_background(), (0, 0)) 
 
-        # Run game update (handles all updates, collisions, and drawing)
-        game_result = game.run(screen, mouse_pos, mouse_clicked)
-        
-        # Check if player wants to return to menu
-        if game_result == "menu":
-            from mainMenu import main_menu
-            return main_menu()
-        
-        if not game_result:
-            # Game over screen
-            game_over_text = font.render("GAME OVER", True, (255, 0, 0))
-            text_rect = game_over_text.get_rect(center=(SCREEN_WIDTH//2, SCREEN_HEIGHT//2))
-            screen.blit(game_over_text, text_rect)
-            pygame.display.flip()
-            pygame.time.wait(3000)
-            running = False
+        # Handle pause state
+        if game.is_paused:
+            # Still draw game state in background, then overlay pause screen
+            game.player.draw(screen)
+            game.blocks.draw(screen)
+            game.aliens.draw(screen)
+            game.display_score()
+            game.display_coins()
+            game.display_level()
+            game.display_health()
+            game.display_pause_screen(screen, mouse_pos)
+        else:
+            # Run game update (handles all updates, collisions, and drawing)
+            game_result = game.run(screen, mouse_pos, mouse_clicked)
+            
+            # Check if player wants to return to menu
+            if game_result == "menu":
+                from mainMenu import main_menu
+                return main_menu()
+            
+            # Check if pause button was clicked
+            if game_result == "paused":
+                pass  # Will be handled next frame when is_paused is True
+            
+            elif not game_result:
+                # Game over screen - save coins before ending
+                game.economy.save_session_coins()
+                game_over_text = font.render("GAME OVER", True, (255, 0, 0))
+                text_rect = game_over_text.get_rect(center=(SCREEN_WIDTH//2, SCREEN_HEIGHT//2))
+                screen.blit(game_over_text, text_rect)
+                pygame.display.flip()
+                pygame.time.wait(3000)
+                running = False
         
         # Update display
         pygame.display.flip()
