@@ -85,26 +85,12 @@ def main_menu():
     """Main menu screen"""
     clock = pygame.time.Clock()
     
-    # Load main menu background image
-    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    menu_bg_path = os.path.join(base_dir, 'assets', 'main_menu_background.png')
-    menu_background = None
-    if os.path.exists(menu_bg_path):
-        try:
-            menu_bg_img = pygame.image.load(menu_bg_path).convert()
-            menu_background = pygame.transform.scale(menu_bg_img, (SCREEN_WIDTH, SCREEN_HEIGHT))
-        except pygame.error:
-            print(f"Warning: Could not load {menu_bg_path}")
-    
     while True:
         MENU_MOUSE_POS = pygame.mouse.get_pos()
         
-        # Draw main menu background
-        if menu_background:
-            SCREEN.blit(menu_background, (0, 0))
-        else:
-            # Fallback to black if image couldn't be loaded
-            SCREEN.fill((0, 0, 0))
+        # Draw background using theme manager
+        current_bg = theme_manager.get_current_background()
+        SCREEN.blit(current_bg, (0, 0))
         
         # Title
         MENU_TEXT = get_font(100).render("SPACE INVADERS", True, "#b68f40")

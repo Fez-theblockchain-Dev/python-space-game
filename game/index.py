@@ -16,6 +16,7 @@ from alien import Alien, check_alien_edges
 import tkinter as tk
 from button import Button
 from player import Player
+from mainMenu import theme_manager
 # Note: main_menu imported lazily inside main() to avoid circular import
 
 # Add parent directory to path so we can import from backend_apis
@@ -749,6 +750,17 @@ def main():
     
     # Create game instance
     game = Game(None)
+    
+    # Apply the theme selected in main menu to the game
+    menu_theme_name = theme_manager.get_current_theme_name()
+    theme_mapping = {
+        "Black": "BLACK",
+        "Menu Background": "MENU_GRADIENT",
+        "Purple Nebula": "PURPLE_NEBULA"
+    }
+    game_theme = theme_mapping.get(menu_theme_name, "PURPLE_NEBULA")
+    game.set_background_theme(game_theme)
+    print(f"Game using theme: {game_theme}")
     
     clock = pygame.time.Clock()
     running = True
