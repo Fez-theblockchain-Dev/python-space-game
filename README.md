@@ -23,9 +23,9 @@ Examples
 
 Troubleshooting
 
-Contributors
+Contributors: Ramez Festek
 
-License
+License: MIT
 
 💾 Installation
 
@@ -42,7 +42,7 @@ pip install -r requirements.txt
 
 Run the game:
 
-python index.py
+python game/index.py
 
 🚀 Usage
 
@@ -99,10 +99,10 @@ Settings such as screen dimensions, player attributes, and colors are defined in
 
 🧪 Examples
 # Run the main game
-python index.py
+python gmae/index.py
 
 
-As the game starts, aliens will descend and shoot lasers. Eliminate them to collect gold. The game will continue until the player loses all lives.
+As the game starts, aliens will descend and shoot lasers. Eliminate them to collect gold coins. The game will continue until the player loses all lives.
 
 🛠️ Troubleshooting
 
