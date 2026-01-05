@@ -300,6 +300,7 @@ class Game:
         # Level completion tracking
         self.level_just_completed = False
         self.level_complete_counter = 0
+        self.level_bonus_earned = 0  # Track bonus coins earned for display
 
         # Extra setup
         self.extra = pygame.sprite.GroupSingle()
@@ -541,8 +542,9 @@ class Game:
         screen.blit(score_text, (10, 10))
     
     def display_coins(self):
-        """Display current coins/gold"""
-        coins_text = self.font.render(f"Coins: {self.economy.get_total_coins()}", True, (255, 215, 0))  # Gold color
+        """Display total gold coins (wallet balance + current session earnings)"""
+        total_coins = self.economy.get_total_coins() + self.economy.session_coins_earned
+        coins_text = self.font.render(f"Gold: {total_coins}", True, (255, 215, 0))  # Gold color
         screen.blit(coins_text, (10, 40))
     
     def display_level(self):
@@ -638,6 +640,14 @@ class Game:
                 self.level_just_completed = True
                 self.level_complete_counter = 180  # Show message for ~3 seconds at 60 FPS
                 
+                # Award level completion bonus: 50 coins doubled each level
+                # Level 0 = 50, Level 1 = 100, Level 2 = 200, etc.
+                self.level_bonus_earned = 50 * (2 ** current_level)
+                self.economy.add_coins(self.level_bonus_earned)
+                
+                # Save earned coins to wallet immediately so they persist
+                self.economy.save_session_coins()
+                
                 # Advance to next level
                 Level.increment_level()
                 # Setup aliens for the new level
@@ -647,22 +657,40 @@ class Game:
         if self.level_just_completed:
             max_level = max(Level.level_dict.keys())
             if Level.current_level_index <= max_level:
-                completed_level = Level.current_level_index + 1
+                completed_level = Level.current_level_index
                 starting_level = Level.current_level_index + 1
                 level_text = self.font.render(f"LEVEL {completed_level} COMPLETE! LEVEL {starting_level} STARTING!", True, (255, 255, 0))
                 text_rect = level_text.get_rect(center=(SCREEN_WIDTH//2, SCREEN_HEIGHT//2 - 30))
                 screen.blit(level_text, text_rect)
+                
+                # Display bonus coins earned
+                bonus_text = self.font.render(f"+{self.level_bonus_earned} GOLD COIN BONUS!", True, (255, 215, 0))
+                bonus_rect = bonus_text.get_rect(center=(SCREEN_WIDTH//2, SCREEN_HEIGHT//2 + 10))
+                screen.blit(bonus_text, bonus_rect)
             
             self.level_complete_counter -= 1
             if self.level_complete_counter <= 0:
                 self.level_just_completed = False
+                self.level_bonus_earned = 0  # Reset bonus after display
         elif len(self.aliens) == 0:
             # All levels completed - final victory
             max_level = max(Level.level_dict.keys())
             if Level.current_level_index >= max_level:
+                # Award final level bonus if not already awarded
+                if self.level_bonus_earned == 0:
+                    self.level_bonus_earned = 50 * (2 ** Level.current_level_index)
+                    self.economy.add_coins(self.level_bonus_earned)
+                    # Save earned coins to wallet immediately
+                    self.economy.save_session_coins()
+                
                 victory_text = self.font.render("VICTORY! ALL LEVELS COMPLETE!", True, (255, 255, 0))
                 text_rect = victory_text.get_rect(center=(SCREEN_WIDTH//2, SCREEN_HEIGHT//2))
                 screen.blit(victory_text, text_rect)
+                
+                # Display final bonus
+                bonus_text = self.font.render(f"+{self.level_bonus_earned} BONUS COINS!", True, (255, 215, 0))
+                bonus_rect = bonus_text.get_rect(center=(SCREEN_WIDTH//2, SCREEN_HEIGHT//2 + 40))
+                screen.blit(bonus_text, bonus_rect)
 
     def run(self, screen, mouse_pos=None, mouse_clicked=False):
         """Main game loop update method"""
