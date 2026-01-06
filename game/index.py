@@ -591,6 +591,23 @@ class Game:
                     a.rect.y += 20  # Move down
                 break
 
+    def remove_offscreen_aliens(self):
+        """Remove aliens that have moved below the screen (player survived by avoiding them)"""
+        # Check Type 1 aliens (formation)
+        for alien in list(self.aliens):
+            if alien.rect.top > SCREEN_HEIGHT:
+                alien.kill()
+        
+        # Check Type 2 aliens (diagonal)
+        for alien in list(self.diagonal_aliens):
+            if alien.rect.top > SCREEN_HEIGHT:
+                alien.kill()
+        
+        # Check Type 3 aliens (diver)
+        for alien in list(self.diver_aliens):
+            if alien.rect.top > SCREEN_HEIGHT:
+                alien.kill()
+
     def extra_alien_timer(self):
         """Handle extra alien spawning"""
         self.extra_spawn_time -= 1
@@ -778,6 +795,7 @@ class Game:
         
         self.alien_position_checker()
         self.extra_alien_timer()
+        self.remove_offscreen_aliens()  # Remove aliens that passed below the screen
         
         game_continues = self.collision_checks()
         if not game_continues:
