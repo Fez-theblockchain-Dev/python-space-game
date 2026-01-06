@@ -12,7 +12,7 @@ from config import SCREEN_WIDTH, SCREEN_HEIGHT
 from obstacle import Block, shape
 from spaceship import SpaceShip
 from laser import Laser
-from alien import Alien, check_alien_edges
+from alien import Alien, AlienDiagonal, AlienDiver, check_alien_edges
 import tkinter as tk
 from button import Button
 from player import Player
@@ -146,14 +146,18 @@ class Level (pygame.sprite.Sprite):
     current_level_index = 0
     
     # Level dictionary with progressive difficulty
-    # Each level has: rows (alien rows), cols (alien columns), speed (alien movement speed)
+    # Each level has: 
+    #   - rows/cols: alien_1 formation size
+    #   - speed: base alien movement speed
+    #   - diagonal_count: number of alien_2 (diagonal) aliens
+    #   - diver_count: number of alien_3 (diver) aliens
     level_dict = {
-        0: {"rows": 3, "cols": 8, "speed": 1},   # Level 0: Easy - 3 rows, 8 cols, speed 1
-        1: {"rows": 4, "cols": 8, "speed": 2},   # Level 1: Medium - 4 rows, 8 cols, speed 2
-        2: {"rows": 4, "cols": 9, "speed": 2},   # Level 2: Medium-Hard - 4 rows, 9 cols, speed 2
-        3: {"rows": 5, "cols": 9, "speed": 3},   # Level 3: Hard - 5 rows, 9 cols, speed 3
-        4: {"rows": 5, "cols": 10, "speed": 3},  # Level 4: Very Hard - 5 rows, 10 cols, speed 3
-        5: {"rows": 6, "cols": 10, "speed": 4}   # Level 5: Extreme - 6 rows, 10 cols, speed 4
+        0: {"rows": 3, "cols": 8, "speed": 1, "diagonal_count": 0, "diver_count": 0},    # Level 0: Easy - only type 1
+        1: {"rows": 4, "cols": 8, "speed": 2, "diagonal_count": 4, "diver_count": 0},    # Level 1: +4 diagonal aliens
+        2: {"rows": 4, "cols": 9, "speed": 2, "diagonal_count": 6, "diver_count": 3},    # Level 2: +6 diagonal, +3 divers
+        3: {"rows": 5, "cols": 9, "speed": 3, "diagonal_count": 8, "diver_count": 5},    # Level 3: +8 diagonal, +5 divers
+        4: {"rows": 5, "cols": 10, "speed": 3, "diagonal_count": 10, "diver_count": 7},  # Level 4: +10 diagonal, +7 divers
+        5: {"rows": 6, "cols": 10, "speed": 4, "diagonal_count": 12, "diver_count": 10}  # Level 5: +12 diagonal, +10 divers
     }
     
     def __init__(self, level_number = None):
@@ -218,6 +222,18 @@ class Level (pygame.sprite.Sprite):
         """Get alien movement speed for a level"""
         config = Level.get_level_config(level_index)
         return config["speed"]
+    
+    @staticmethod
+    def get_diagonal_count(level_index=None):
+        """Get number of diagonal (type 2) aliens for a level"""
+        config = Level.get_level_config(level_index)
+        return config.get("diagonal_count", 0)
+    
+    @staticmethod
+    def get_diver_count(level_index=None):
+        """Get number of diver (type 3) aliens for a level"""
+        config = Level.get_level_config(level_index)
+        return config.get("diver_count", 0)
             
 
     #function for screen messages
@@ -293,9 +309,11 @@ class Game:
         # self.create_multiple_obstacles(*self.obstacle_x_positions, x_start=SCREEN_WIDTH / 15, y_start=480)
 
         # Alien setup
-        self.aliens = pygame.sprite.Group()
+        self.aliens = pygame.sprite.Group()  # Type 1: horizontal formation
+        self.diagonal_aliens = pygame.sprite.Group()  # Type 2: diagonal movement
+        self.diver_aliens = pygame.sprite.Group()  # Type 3: straight down dive
         self.alien_lasers = pygame.sprite.Group()
-        self.alien_setup(rows = 6, cols = 8)
+        self.alien_setup()  # Uses level config for predetermined alien counts
         self.alien_direction = 1
         
         # Level completion tracking
@@ -412,6 +430,8 @@ class Game:
             "data": {
                 "lives": self.lives,
                 "aliens": len(self.aliens),
+                "diagonal_aliens": len(self.diagonal_aliens),
+                "diver_aliens": len(self.diver_aliens),
                 "player_health": getattr(self.player.sprite, "health", None),
             },
         })
@@ -424,10 +444,17 @@ class Game:
                 if pygame.sprite.spritecollide(laser, self.blocks, True):
                     laser.kill()
                 
-                # alien collisions
+                # alien collisions - check all alien groups
+                # Type 1: Standard formation aliens
                 aliens_hit = pygame.sprite.spritecollide(laser, self.aliens, True)
-                if aliens_hit:
-                    for alien in aliens_hit:
+                # Type 2: Diagonal aliens
+                diagonal_hit = pygame.sprite.spritecollide(laser, self.diagonal_aliens, True)
+                # Type 3: Diver aliens
+                diver_hit = pygame.sprite.spritecollide(laser, self.diver_aliens, True)
+                
+                all_hits = aliens_hit + diagonal_hit + diver_hit
+                if all_hits:
+                    for alien in all_hits:
                         self.score += alien.value
                         # Update economy: add score and coins (1 coin per alien value point)
                         self.economy.add_score(alien.value)
@@ -436,8 +463,11 @@ class Game:
                     if self.explosion_sound:
                         self.explosion_sound.play()
 
-        # direct alien collision with player (aliens touching player)
+        # direct alien collision with player (aliens touching player) - check all groups
         aliens_touching_player = pygame.sprite.spritecollide(self.player.sprite, self.aliens, True)
+        diagonal_touching_player = pygame.sprite.spritecollide(self.player.sprite, self.diagonal_aliens, True)
+        diver_touching_player = pygame.sprite.spritecollide(self.player.sprite, self.diver_aliens, True)
+        aliens_touching_player = aliens_touching_player + diagonal_touching_player + diver_touching_player
         if aliens_touching_player:
             # if player/alien collide, take one player life for each time a collision occurs
             for alien in aliens_touching_player:
@@ -480,7 +510,12 @@ class Game:
             "hypothesisId": "A",
             "location": "game/index.py:collision_checks:exit",
             "message": "collision_checks_exit",
-            "data": {"lives": self.lives, "aliens": len(self.aliens)},
+            "data": {
+                "lives": self.lives,
+                "aliens": len(self.aliens),
+                "diagonal_aliens": len(self.diagonal_aliens),
+                "diver_aliens": len(self.diver_aliens),
+            },
         })
         #endregion
         return True  # Game continues
@@ -499,7 +534,7 @@ class Game:
             self.create_obstacle(x_start, y_start, offset_x)
 
     def alien_setup(self, rows=None, cols=None, speed=None, x_distance=60, y_distance=48, x_offset=70, y_offset=100):
-        """Setup aliens for current level. If rows/cols/speed not provided, uses current level config."""
+        """Setup aliens for current level with predetermined counts for each type."""
         # Get level-based configuration if not provided
         if rows is None:
             rows = Level.get_alien_rows()
@@ -508,12 +543,44 @@ class Game:
         if speed is None:
             speed = Level.get_alien_speed()
         
+        # Clear existing aliens from all groups
+        self.aliens.empty()
+        self.diagonal_aliens.empty()
+        self.diver_aliens.empty()
+        
+        current_level = Level.current_level_index
+        
+        # Get predetermined counts for special aliens
+        diagonal_count = Level.get_diagonal_count()
+        diver_count = Level.get_diver_count()
+        
+        # Create Type 1 aliens in formation (rows x cols)
         for row_index in range(rows):
             for col_index in range(cols):
                 x = col_index * x_distance + x_offset
                 y = row_index * y_distance + y_offset
                 alien_sprite = Alien(1, speed, x, y)
                 self.aliens.add(alien_sprite)
+        
+        # Spawn predetermined number of Type 2 diagonal aliens
+        # Position them spread across the top area, alternating left/right start
+        for i in range(diagonal_count):
+            # Spread diagonals evenly across screen width
+            x = 50 + (i * (SCREEN_WIDTH - 100) // max(1, diagonal_count - 1)) if diagonal_count > 1 else SCREEN_WIDTH // 2
+            y = -30 - (i * 40)  # Stagger entry from above screen
+            direction = 1 if i % 2 == 0 else -1  # Alternate directions
+            diagonal = AlienDiagonal(speed, x, y, direction=direction)
+            self.diagonal_aliens.add(diagonal)
+        
+        # Spawn predetermined number of Type 3 diver aliens
+        # Position them spread across top, staggered entry
+        for i in range(diver_count):
+            # Spread divers randomly but evenly across screen width
+            section_width = (SCREEN_WIDTH - 100) // max(1, diver_count)
+            x = 50 + (i * section_width) + random.randint(0, section_width // 2)
+            y = -60 - (i * 50)  # Stagger entry more than diagonals
+            diver = AlienDiver(speed, x, y, level_multiplier=current_level)
+            self.diver_aliens.add(diver)
 
     def alien_position_checker(self):
         """Check if aliens hit edges and reverse direction"""
@@ -629,9 +696,13 @@ class Game:
         coins_rect = coins_text.get_rect(center=(SCREEN_WIDTH // 2, stats_y + 30))
         screen.blit(coins_text, coins_rect)
 
+    def all_aliens_destroyed(self):
+        """Check if all alien types have been destroyed"""
+        return len(self.aliens) == 0 and len(self.diagonal_aliens) == 0 and len(self.diver_aliens) == 0
+    
     def victory_message(self):
         """Display victory message if all aliens destroyed and advance to next level"""
-        if len(self.aliens) == 0 and not self.level_just_completed:
+        if self.all_aliens_destroyed() and not self.level_just_completed:
             # Check if there are more levels
             max_level = max(Level.level_dict.keys())
             current_level = Level.current_level_index
@@ -673,7 +744,7 @@ class Game:
             if self.level_complete_counter <= 0:
                 self.level_just_completed = False
                 self.level_bonus_earned = 0  # Reset bonus after display
-        elif len(self.aliens) == 0:
+        elif self.all_aliens_destroyed():
             # All levels completed - final victory
             max_level = max(Level.level_dict.keys())
             if Level.current_level_index >= max_level:
@@ -700,9 +771,14 @@ class Game:
         # Removed alien_lasers.update() - aliens don't shoot
         self.extra.update()
         
-        self.aliens.update(self.alien_direction)
+        # Update all alien types
+        self.aliens.update(self.alien_direction)  # Type 1: horizontal formation
+        self.diagonal_aliens.update()  # Type 2: diagonal movement
+        self.diver_aliens.update()  # Type 3: straight down dive
+        
         self.alien_position_checker()
         self.extra_alien_timer()
+        
         game_continues = self.collision_checks()
         if not game_continues:
             return False
@@ -710,7 +786,12 @@ class Game:
         self.player.sprite.lasers.draw(screen)
         self.player.draw(screen)
         self.blocks.draw(screen)
-        self.aliens.draw(screen)
+        
+        # Draw all alien types
+        self.aliens.draw(screen)  # Type 1
+        self.diagonal_aliens.draw(screen)  # Type 2
+        self.diver_aliens.draw(screen)  # Type 3
+        
         # Removed alien_lasers.draw() - aliens don't shoot
         self.extra.draw(screen)
         self.display_lives()
@@ -802,6 +883,8 @@ def main():
             game.player.draw(screen)
             game.blocks.draw(screen)
             game.aliens.draw(screen)
+            game.diagonal_aliens.draw(screen)
+            game.diver_aliens.draw(screen)
             game.display_score()
             game.display_coins()
             game.display_level()
