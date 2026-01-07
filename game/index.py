@@ -733,7 +733,17 @@ class Game:
                 # Level 0 = 50, Level 1 = 100, Level 2 = 200, etc.
                 self.level_bonus_earned = 50 * (2 ** current_level)
                 self.economy.add_coins(self.level_bonus_earned)
-                
+
+                # Health reward for clearing all aliens 
+                # Restore 25 health points (capped at 100)
+                health_reward = 25
+                old_health = self.player.sprite.health
+                self.player.sprite.health = min(100, self.player.sprite.health + health_reward)
+                self.health_restored = self.player.sprite.health - old_health
+
+                if self.lives < 3:
+                    self.lives += 1
+
                 # Save earned coins to wallet immediately so they persist
                 self.economy.save_session_coins()
                 
@@ -756,6 +766,12 @@ class Game:
                 bonus_text = self.font.render(f"+{self.level_bonus_earned} GOLD COIN BONUS!", True, (255, 215, 0))
                 bonus_rect = bonus_text.get_rect(center=(SCREEN_WIDTH//2, SCREEN_HEIGHT//2 + 10))
                 screen.blit(bonus_text, bonus_rect)
+
+                # Display health restored
+            if hasattr(self, 'health_restored') and self.health_restored > 0:
+                health_text = self.font.render(f"+{self.health_restored} HEALTH RESTORED!", True, (0, 255, 0))
+                health_rect = health_text.get_rect(center=(SCREEN_WIDTH//2, SCREEN_HEIGHT//2 + 50))
+                screen.blit(health_text, health_rect)
             
             self.level_complete_counter -= 1
             if self.level_complete_counter <= 0:
