@@ -947,9 +947,125 @@ def main():
                 pygame.time.wait(3000)
                 running = False
         
-        # Update display
+        # Update display and control frame rate
         pygame.display.flip()
         clock.tick(60)
+
+class Key(pygame.sprite.Sprite):
+    """
+    Key object that spawns when the mystery ship is destroyed.
+    The player can collect this key to unlock a special treasure chest.
+    """
+    # Asset paths (update these when assets are available)
+    KEY_ASSET_PATH = "assets/key.png"
+    TREASURE_CHEST_ASSET_PATH = "assets/treasure_chest.png"
+    
+    def __init__(self, x, y):
+        super().__init__()
+        self.collected = False
+        self.spawn_x = x
+        self.spawn_y = y
+        
+        # Try to load key image, fallback to a placeholder surface
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        project_root = os.path.dirname(script_dir)
+        key_path = os.path.join(project_root, self.KEY_ASSET_PATH)
+        
+        try:
+            self.image = pygame.image.load(key_path).convert_alpha()
+        except (pygame.error, FileNotFoundError):
+            # Create a placeholder golden key shape if asset not found
+            self.image = pygame.Surface((30, 50), pygame.SRCALPHA)
+            pygame.draw.circle(self.image, (255, 215, 0), (15, 10), 10)  # Key ring
+            pygame.draw.rect(self.image, (255, 215, 0), (12, 20, 6, 25))  # Key shaft
+            pygame.draw.rect(self.image, (255, 215, 0), (8, 40, 8, 5))   # Key tooth
+        
+        self.rect = self.image.get_rect(center=(x, y))
+        self.float_offset = 0
+        self.float_speed = 0.1
+    
+    def update(self):
+        """Animate the key with a floating effect."""
+        if not self.collected:
+            self.float_offset += self.float_speed
+            self.rect.y = self.spawn_y + int(5 * pygame.math.Vector2(0, 1).rotate(self.float_offset * 50).y)
+    
+    @staticmethod
+    def on_mystery_ship_destroyed(mystery_ship):
+        """
+        Called when the mystery ship is destroyed.
+        Returns a new Key instance spawned at the mystery ship's location.
+        """
+        if mystery_ship.health <= 0:
+            key_x = mystery_ship.rect.centerx
+            key_y = mystery_ship.rect.centery
+            print("🚀 Mystery Ship destroyed! A mysterious key has appeared!")
+            return Key(key_x, key_y)
+        return None
+    
+    def grant_key_to_hero(self, hero_ship):
+        """
+        Grant key to hero when they collect it.
+        This allows the hero to unlock the special treasure chest.
+        """
+        if not self.collected:
+            self.collected = True
+            hero_ship.has_key = True
+            print("🔑 Hero collected the Key! Find the Treasure Chest to unlock your reward!")
+            self.kill()  # Remove key sprite from the game
+            return True
+        return False
+    
+    def check_player_collision(self, player_sprite):
+        """Check if player collides with the key and collect it."""
+        if pygame.sprite.collide_rect(self, player_sprite):
+            return self.grant_key_to_hero(player_sprite)
+        return False
+
+
+class TreasureChest(pygame.sprite.Sprite):
+    """
+    Treasure chest that can be unlocked with the Key.
+    Spawns after the key is collected and grants special rewards.
+    """
+    TREASURE_CHEST_ASSET_PATH = "assets/treasure_chest.png"
+    
+    def __init__(self, x, y):
+        super().__init__()
+        self.locked = True
+        self.opened = False
+        self.reward_value = 1000  # Bonus points for opening
+        
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        project_root = os.path.dirname(script_dir)
+        chest_path = os.path.join(project_root, self.TREASURE_CHEST_ASSET_PATH)
+        
+        try:
+            self.image = pygame.image.load(chest_path).convert_alpha()
+        except (pygame.error, FileNotFoundError):
+            # Create a placeholder treasure chest if asset not found
+            self.image = pygame.Surface((50, 40), pygame.SRCALPHA)
+            pygame.draw.rect(self.image, (139, 69, 19), (0, 15, 50, 25))  # Chest body
+            pygame.draw.rect(self.image, (101, 67, 33), (0, 0, 50, 18))   # Chest lid
+            pygame.draw.rect(self.image, (255, 215, 0), (20, 20, 10, 10)) # Lock
+        
+        self.rect = self.image.get_rect(center=(x, y))
+    
+    def unlock(self, player_sprite):
+        """Attempt to unlock the chest if player has the key."""
+        if hasattr(player_sprite, 'has_key') and player_sprite.has_key and self.locked:
+            self.locked = False
+            self.opened = True
+            player_sprite.has_key = False  # Consume the key
+            print("🎉 Treasure Chest unlocked! You earned {} bonus points!".format(self.reward_value))
+            return self.reward_value
+        return 0
+    
+    def check_player_collision(self, player_sprite):
+        """Check if player collides with chest and try to unlock."""
+        if pygame.sprite.collide_rect(self, player_sprite):
+            return self.unlock(player_sprite)
+        return 0
 
     # Game loop ended - return to caller (main menu or exit)
     # Don't quit pygame here as main menu may still be running
@@ -960,22 +1076,7 @@ class StrictStartError(Exception):
 if __name__ == "__main__":
     main()
 
-# new 'Key' class that will hold the object that appears on the players screen when the mystery_ship is destroyed
-class Key:
-    def __init__(self):
-        self.mystery_ship_alive = True
-    
-    def mystery_ship_destroyed(self, x, y):
-        if self.mystery_ship_alive is False:
-            return 'mystery ship has been destroyed'
-        else:
-            return None
-    
-    def grant_key_to_hero(self, hero_ship):
-        """Grant key to hero when mystery ship is destroyed"""
-        hero_ship.has_key = True
-        print("Hero gained a Key!🔑")
-                    
+        
             
 try:
     from pygame.locals import QUIT
