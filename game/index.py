@@ -253,12 +253,6 @@ class Level (pygame.sprite.Sprite):
 from laser import Laser
 # alien collisions
 alien = Alien(1, 2, 100, 100)  # Create an alien instance
-laser_audio_path = os.path.join(project_root, "audio/audio_laser.wav")
-
-def shoot_laser(self):
-    if self.laser == True: #if laser is fired, play the laser audio
-        laser_sound = pygame.mixer.Sound(laser_audio_path)
-        laser_sound.play()
 
 # Initialize score and create aliens group
 score = 0
@@ -883,7 +877,6 @@ def main():
     # Setup obstacles
     game.create_multiple_obstacles(*game.obstacle_x_positions, x_start=SCREEN_WIDTH / 15, y_start=480)
 
-    # Game loop
     while running:
         mouse_pos = pygame.mouse.get_pos()
         mouse_clicked = False

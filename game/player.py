@@ -1,15 +1,18 @@
 
 import pygame
 import sys
+import os
 from pygame.locals import * #For useful variables
 from laser import Laser
 
-
+# Get absolute paths for assets
+script_dir = os.path.dirname(os.path.abspath(__file__))
+project_root = os.path.dirname(script_dir)
 
 class Player(pygame.sprite.Sprite):
 	def __init__(self,pos,constraint,speed):
 		super().__init__()
-		self.image = pygame.image.load('assets/spaceship.png').convert_alpha()
+		self.image = pygame.image.load(os.path.join(project_root, 'assets/spaceship.png')).convert_alpha()
 		self.rect = self.image.get_rect(midbottom = pos)
 		self.speed = speed
 		self.max_x_constraint = constraint
@@ -18,9 +21,10 @@ class Player(pygame.sprite.Sprite):
 		self.laser_cooldown = 600
 		self.lasers = pygame.sprite.Group()
 		try:
-			self.laser_sound = pygame.mixer.Sound('../audio/laser.wav')
+			self.laser_sound = pygame.mixer.Sound(os.path.join(project_root, 'audio/audio_laser.wav'))
 			self.laser_sound.set_volume(0.5)
-		except:
+		except Exception as e:
+			print(f"Warning: Could not load laser sound: {e}")
 			self.laser_sound = None
 		self.cool_down_time = 600
 		self.recharge_time = 0
