@@ -360,11 +360,81 @@ class Game:
         
         # Pause state
         self.is_paused = False
+        
+        # Mute button setup (speaker icon)
+        self.is_muted = False
+        self.mute_button_size = 30
+        self.mute_button_pos = (SCREEN_WIDTH - 280, 30)
+        self._create_speaker_icons()
 
         # Background theme setup
         self.current_theme = "PURPLE_NEBULA"  # Default theme
         self.backgrounds = {}
         self._load_backgrounds()
+
+    def _create_speaker_icons(self):
+        """Create speaker icons for mute/unmute button"""
+        size = self.mute_button_size
+        
+        # Unmuted speaker icon (speaker with sound waves)
+        self.speaker_unmuted = pygame.Surface((size, size), pygame.SRCALPHA)
+        # Speaker body
+        pygame.draw.polygon(self.speaker_unmuted, (215, 252, 212), [
+            (4, 10), (10, 10), (18, 4), (18, 26), (10, 20), (4, 20)
+        ])
+        # Sound waves
+        pygame.draw.arc(self.speaker_unmuted, (215, 252, 212), (16, 6, 10, 18), -1.0, 1.0, 2)
+        pygame.draw.arc(self.speaker_unmuted, (215, 252, 212), (20, 3, 12, 24), -1.0, 1.0, 2)
+        
+        # Muted speaker icon (speaker with X)
+        self.speaker_muted = pygame.Surface((size, size), pygame.SRCALPHA)
+        # Speaker body (grayed out)
+        pygame.draw.polygon(self.speaker_muted, (150, 150, 150), [
+            (4, 10), (10, 10), (18, 4), (18, 26), (10, 20), (4, 20)
+        ])
+        # Red X for muted
+        pygame.draw.line(self.speaker_muted, (255, 80, 80), (20, 8), (28, 22), 3)
+        pygame.draw.line(self.speaker_muted, (255, 80, 80), (28, 8), (20, 22), 3)
+        
+        # Button rect for click detection
+        self.mute_button_rect = pygame.Rect(
+            self.mute_button_pos[0] - size // 2,
+            self.mute_button_pos[1] - size // 2,
+            size, size
+        )
+
+    def toggle_mute(self):
+        """Toggle mute state for laser sound"""
+        self.is_muted = not self.is_muted
+        # Update player's laser sound
+        if self.player.sprite.laser_sound:
+            if self.is_muted:
+                self.player.sprite.laser_sound.set_volume(0)
+            else:
+                self.player.sprite.laser_sound.set_volume(0.5)
+        return self.is_muted
+
+    def draw_mute_button(self, screen, mouse_pos=None):
+        """Draw the mute/unmute button"""
+        # Choose icon based on mute state
+        icon = self.speaker_muted if self.is_muted else self.speaker_unmuted
+        
+        # Draw with hover effect
+        icon_rect = icon.get_rect(center=self.mute_button_pos)
+        
+        # Highlight on hover
+        if mouse_pos and self.mute_button_rect.collidepoint(mouse_pos):
+            # Draw highlight circle behind icon
+            pygame.draw.circle(screen, (100, 100, 100), self.mute_button_pos, self.mute_button_size // 2 + 4)
+        
+        screen.blit(icon, icon_rect)
+
+    def check_mute_button_click(self, mouse_pos):
+        """Check if mute button was clicked"""
+        if self.mute_button_rect.collidepoint(mouse_pos):
+            self.toggle_mute()
+            return True
+        return False
 
     def _load_backgrounds(self):
         """Load all available background themes"""
@@ -835,6 +905,7 @@ class Game:
             self.pause_button.change_color(mouse_pos)
         self.menu_button.update(screen)
         self.pause_button.update(screen)
+        self.draw_mute_button(screen, mouse_pos)
         
         # Check if menu button was clicked
         if mouse_clicked and mouse_pos:
@@ -843,6 +914,8 @@ class Game:
             if self.pause_button.check_input(mouse_pos):
                 self.toggle_pause()
                 return "paused"  # Signal game is paused
+            # Check mute button click
+            self.check_mute_button_click(mouse_pos)
         
         # Sync economy score with game score
         self.economy.score = self.score
@@ -898,6 +971,9 @@ def main():
                     game.economy.save_session_coins()
                     from mainMenu import main_menu
                     return main_menu()
+                elif event.key == pygame.K_m:
+                    # M key to toggle mute
+                    game.toggle_mute()
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 mouse_clicked = True
 
@@ -917,6 +993,11 @@ def main():
             game.display_level()
             game.display_health()
             game.display_pause_screen(screen, mouse_pos)
+            # Draw mute button on pause screen too
+            game.draw_mute_button(screen, mouse_pos)
+            # Handle mute button click while paused
+            if mouse_clicked:
+                game.check_mute_button_click(mouse_pos)
         else:
             # Run game update (handles all updates, collisions, and drawing)
             game_result = game.run(screen, mouse_pos, mouse_clicked)
