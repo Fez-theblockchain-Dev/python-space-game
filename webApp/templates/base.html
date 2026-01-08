@@ -1,9 +1,13 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Space Game</title>
+    <title>Space Invaders Store 🚀</title>
+
+    <!-- stylesheet link -->
+    <link rel="stylesheet" href="{% static 'css/default.css' %}">
     
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -13,13 +17,17 @@
     <!-- Stripe.js - Required for Apple Pay -->
     <script src="https://js.stripe.com/v3/"></script>
     
+    <!-- Background image styling -->
+    <style>
+        body {
+            --background-primary: url('{% static images/main_menu_background.png %}');
+        }
+    </style>
 
 </head>
-<title>Space Invaders Store 🚀</title>
 <body>
-    <div class="site-title">
-        <h2 href=landing.html>Space Invaders Store</h2>
-    </div> 
+    <!-- Animated starfield background -->
+    <div class="bg-animation"></div>
     
     <nav class="nav">
         <a href="/" class="logo">SPACE GAME</a>
@@ -42,4 +50,3 @@
     {% block extra_scripts %}{% endblock %}
 </body>
 </html>
-

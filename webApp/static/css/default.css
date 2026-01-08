@@ -1,9 +1,21 @@
-
 :root {
-    --primary-cyan: #00f0ff;
-    --primary-magenta: #ff00aa;
-    --primary-purple: #8b5cf6;
-    --dark-bg: #0a0a0f;
+    /* Primary background */
+    --background-primary: url('/static/images/main_menu_background.png');
+    
+    /* Text colors */
+    --text-primary: #ffffff;
+    --text-secondary: #a1a1aa;
+    
+    /* Gradients */
+    --gradient-cyber: linear-gradient(135deg, #00f0ff, #ff00aa);
+    
+    /* Glows */
+    --glow-cyan: 0 0 20px rgba(0, 240, 255, 0.4);
+    --glow-magenta: 0 0 20px rgba(255, 0, 170, 0.4);
+    
+    /* Game colors */
+    --gold: #ffd700;
+    --health-green: #22c55e;
 }
 
 * {
@@ -14,13 +26,18 @@
 
 body {
     font-family: 'Exo 2', sans-serif;
-    background: var(--dark-bg);
+    background-size: cover;
+    background-position: center center;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    background-color: #0a0a0f;
     color: var(--text-primary);
     min-height: 100vh;
     overflow-x: hidden;
+    position: relative;
 }
 
-/* Animated background */
+/* Animated background overlay */
 .bg-animation {
     position: fixed;
     top: 0;
@@ -32,6 +49,7 @@ body {
         radial-gradient(ellipse at 20% 20%, rgba(0, 240, 255, 0.08) 0%, transparent 50%),
         radial-gradient(ellipse at 80% 80%, rgba(255, 0, 170, 0.08) 0%, transparent 50%),
         radial-gradient(ellipse at 50% 50%, rgba(139, 92, 246, 0.05) 0%, transparent 60%);
+    pointer-events: none;
 }
 
 .bg-animation::before {
@@ -41,8 +59,15 @@ body {
     left: 0;
     right: 0;
     bottom: 0;
+    /* Starfield effect using radial gradients */
     background-image: 
-    "menu_bg_path";
+        radial-gradient(1px 1px at 10% 20%, rgba(255, 255, 255, 0.8), transparent),
+        radial-gradient(1px 1px at 30% 60%, rgba(255, 255, 255, 0.6), transparent),
+        radial-gradient(1px 1px at 50% 10%, rgba(255, 255, 255, 0.7), transparent),
+        radial-gradient(1px 1px at 70% 80%, rgba(255, 255, 255, 0.5), transparent),
+        radial-gradient(1px 1px at 90% 40%, rgba(255, 255, 255, 0.6), transparent),
+        radial-gradient(2px 2px at 15% 85%, rgba(0, 240, 255, 0.4), transparent),
+        radial-gradient(2px 2px at 85% 15%, rgba(255, 0, 170, 0.4), transparent);
     background-size: 200px 200px;
     animation: stars 60s linear infinite;
 }
