@@ -1,8 +1,8 @@
 # this config file wil centrally store the imports for the game to avoid circular imports
 
 # Screen dimensions
-SCREEN_WIDTH = 800
-SCREEN_HEIGHT = 600
+SCREEN_WIDTH = 1280
+SCREEN_HEIGHT = 720
 
 # Free currency (earned through gameplay)
 INITIAL_COINS = 0

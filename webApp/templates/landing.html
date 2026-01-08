@@ -34,13 +34,9 @@
             {% for package in packages %}
             <div class="card package-card {% if package.id == 'starter_bundle' %}featured{% endif %}">
                 <div class="package-icon {% if package.gold_coins > 0 and package.health_packs > 0 %}bundle{% elif package.gold_coins > 0 %}gold{% else %}health{% endif %}">
-                    {% if package.gold_coins > 0 and package.health_packs > 0 %}
-                    ⚡
-                    {% elif package.gold_coins > 0 %}
-                    🪙
-                    {% else %}
-                    💚
-                    {% endif %}
+                   <div>
+                        <button-lg>Buy 10</button-lg>
+                    </div>
                 </div>
                 <h3 class="package-name">{{ package.name }}</h3>
                 <p class="package-desc">

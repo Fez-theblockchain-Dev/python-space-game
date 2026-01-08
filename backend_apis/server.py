@@ -17,7 +17,6 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session
 
 from .models import Base, PackageType, PACKAGES
-from .adyen_service import AdyenPaymentService
 from .payment_handler import PaymentHandler
 
 
