@@ -1,5 +1,5 @@
 """
-Payment Handler - Orchestrates payment flow between Adyen and database.
+Stripe Payment Handler - Orchestrates payment flow between Stripe and database.
 """
 import json
 from datetime import datetime
@@ -11,10 +11,10 @@ from .models import (
     Player, PlayerWallet, Transaction, 
     PackageType, PACKAGES, TransactionStatus
 )
-from .adyen_service import (
-    AdyenPaymentService, 
-    PaymentSessionResult, 
-    WebhookVerificationResult
+from .stripe_service import (
+    StripePaymentService, 
+    StripePaymentResult, 
+    StripeWebhookResult
 )
 
 
@@ -28,16 +28,16 @@ class CreditResult:
     error: Optional[str] = None
 
 
-class PaymentHandler:
+class StripePaymentHandler:
     """
-    Handles the complete payment flow:
-    - Creating payment sessions with database tracking
+    Handles the complete Stripe payment flow:
+    - Creating payment intents and checkout sessions with database tracking
     - Processing webhooks and crediting accounts
     - Managing player wallets
     """
     
-    def __init__(self, adyen_service: AdyenPaymentService):
-        self.adyen = adyen_service
+    def __init__(self, stripe_service: StripePaymentService):
+        self.stripe = stripe_service
     
     def get_or_create_player(self, db: Session, player_uuid: str) -> Player:
         """Get existing player or create a new one with wallet."""
@@ -61,30 +61,30 @@ class PaymentHandler:
         
         return player.wallet.to_dict()
     
-    def initiate_purchase(
+    def initiate_purchase_payment_intent(
         self,
         db: Session,
         player_uuid: str,
         package_type: PackageType,
-        use_payment_link: bool = False,
-        shopper_email: Optional[str] = None,
-    ) -> PaymentSessionResult:
+        customer_email: Optional[str] = None,
+    ) -> StripePaymentResult:
         """
-        Initiate a purchase by creating an Adyen session and database transaction.
+        Initiate a purchase by creating a Stripe PaymentIntent.
+        
+        This is used with the Express Checkout Element for Apple Pay.
         
         Args:
             db: Database session
             player_uuid: Player's unique identifier
             package_type: Type of package to purchase
-            use_payment_link: Use payment link instead of checkout session
-            shopper_email: Optional email for receipt
+            customer_email: Optional email for receipt
             
         Returns:
-            PaymentSessionResult with checkout details
+            StripePaymentResult with PaymentIntent details
         """
         # Validate package
         if package_type not in PACKAGES:
-            return PaymentSessionResult(
+            return StripePaymentResult(
                 success=False,
                 error=f"Invalid package: {package_type}"
             )
@@ -94,19 +94,12 @@ class PaymentHandler:
         # Ensure player exists
         player = self.get_or_create_player(db, player_uuid)
         
-        # Create Adyen session
-        if use_payment_link:
-            result = self.adyen.create_payment_link(
-                player_uuid=player_uuid,
-                package_type=package_type,
-                shopper_email=shopper_email,
-            )
-        else:
-            result = self.adyen.create_checkout_session(
-                player_uuid=player_uuid,
-                package_type=package_type,
-                shopper_email=shopper_email,
-            )
+        # Create Stripe PaymentIntent
+        result = self.stripe.create_payment_intent(
+            player_uuid=player_uuid,
+            package_type=package_type,
+            customer_email=customer_email,
+        )
         
         if not result.success:
             return result
@@ -115,7 +108,72 @@ class PaymentHandler:
         transaction = Transaction(
             player_id=player.id,
             merchant_reference=result.merchant_reference,
-            session_id=result.session_id,
+            psp_reference=result.payment_intent_id,  # Store PaymentIntent ID
+            package_type=package_type.value,
+            amount_cents=int(package["price"] * 100),
+            currency="USD",
+            status=TransactionStatus.PENDING,
+            gold_coins_reward=package["gold_coins"],
+            health_packs_reward=package["health_packs"],
+        )
+        
+        db.add(transaction)
+        db.commit()
+        
+        return result
+    
+    def initiate_purchase_checkout(
+        self,
+        db: Session,
+        player_uuid: str,
+        package_type: PackageType,
+        success_url: str = None,
+        cancel_url: str = None,
+        customer_email: Optional[str] = None,
+    ) -> StripePaymentResult:
+        """
+        Initiate a purchase using Stripe Checkout (hosted page).
+        
+        Args:
+            db: Database session
+            player_uuid: Player's unique identifier
+            package_type: Type of package to purchase
+            success_url: URL to redirect on success
+            cancel_url: URL to redirect on cancel
+            customer_email: Optional email for receipt
+            
+        Returns:
+            StripePaymentResult with checkout details
+        """
+        # Validate package
+        if package_type not in PACKAGES:
+            return StripePaymentResult(
+                success=False,
+                error=f"Invalid package: {package_type}"
+            )
+        
+        package = PACKAGES[package_type]
+        
+        # Ensure player exists
+        player = self.get_or_create_player(db, player_uuid)
+        
+        # Create Stripe Checkout Session
+        result = self.stripe.create_checkout_session(
+            player_uuid=player_uuid,
+            package_type=package_type,
+            success_url=success_url,
+            cancel_url=cancel_url,
+            customer_email=customer_email,
+        )
+        
+        if not result.success:
+            return result
+        
+        # Create transaction record
+        transaction = Transaction(
+            player_id=player.id,
+            merchant_reference=result.merchant_reference,
+            psp_reference=result.payment_intent_id,
             package_type=package_type.value,
             amount_cents=int(package["price"] * 100),
             currency="USD",
@@ -132,20 +190,22 @@ class PaymentHandler:
     def process_webhook_notification(
         self,
         db: Session,
-        payload: dict,
+        payload: bytes,
+        signature: str,
     ) -> tuple[bool, str]:
         """
-        Process an Adyen webhook notification.
+        Process a Stripe webhook notification.
         
         Args:
             db: Database session
-            payload: Webhook JSON payload
+            payload: Raw request body
+            signature: Stripe-Signature header
             
         Returns:
             Tuple of (success, message)
         """
         # Verify and parse webhook
-        webhook_result = self.adyen.process_webhook(payload)
+        webhook_result = self.stripe.process_webhook(payload, signature)
         
         if not webhook_result.valid:
             return False, webhook_result.error or "Invalid webhook"
@@ -153,7 +213,16 @@ class PaymentHandler:
         merchant_reference = webhook_result.merchant_reference
         
         if not merchant_reference:
-            return False, "Missing merchant reference in webhook"
+            # Try to get from payment intent if not in metadata
+            if webhook_result.payment_intent_id:
+                transaction = db.query(Transaction).filter(
+                    Transaction.psp_reference == webhook_result.payment_intent_id
+                ).first()
+                if transaction:
+                    merchant_reference = transaction.merchant_reference
+        
+        if not merchant_reference:
+            return True, f"No merchant reference for event: {webhook_result.event_type}"
         
         # Find the transaction
         transaction = db.query(Transaction).filter(
@@ -161,25 +230,23 @@ class PaymentHandler:
         ).first()
         
         if not transaction:
-            # Transaction not found - might be from a different system
-            # Still acknowledge to prevent retry
             return True, f"Transaction not found: {merchant_reference}"
         
         # Update transaction with webhook data
-        transaction.psp_reference = webhook_result.psp_reference
-        transaction.payment_method = webhook_result.payment_method
+        transaction.psp_reference = webhook_result.payment_intent_id or transaction.psp_reference
+        transaction.payment_method = webhook_result.payment_method_type
         transaction.webhook_data = json.dumps(webhook_result.raw_data)
         transaction.updated_at = datetime.utcnow()
         
         # Map event to status
-        new_status = self.adyen.get_transaction_status_from_event(
-            webhook_result.event_code,
-            webhook_result.success
+        new_status = self.stripe.get_transaction_status_from_event(
+            webhook_result.event_type,
+            webhook_result.success or False
         )
         transaction.status = new_status
         
         # Check if we should credit the player
-        if self.adyen.should_credit_player(webhook_result.event_code, webhook_result.success):
+        if self.stripe.should_credit_player(webhook_result.event_type, webhook_result.success or False):
             credit_result = self._credit_player_for_transaction(db, transaction)
             
             if credit_result.success:
@@ -189,11 +256,11 @@ class PaymentHandler:
         
         # Handle failed payments
         if new_status == TransactionStatus.FAILED:
-            transaction.error_message = f"Payment failed: {webhook_result.event_code}"
+            transaction.error_message = f"Payment failed: {webhook_result.event_type}"
         
         db.commit()
         
-        return True, f"Processed {webhook_result.event_code} for {merchant_reference}"
+        return True, f"Processed {webhook_result.event_type} for {merchant_reference}"
     
     def _credit_player_for_transaction(
         self,
@@ -202,15 +269,7 @@ class PaymentHandler:
     ) -> CreditResult:
         """
         Credit a player's wallet for a completed transaction.
-        
-        Args:
-            db: Database session
-            transaction: The transaction to credit
-            
-        Returns:
-            CreditResult with details of the credit
         """
-        # Get the player and wallet
         player = transaction.player
         
         if not player:
@@ -222,7 +281,6 @@ class PaymentHandler:
         wallet = player.wallet
         
         if not wallet:
-            # Create wallet if missing
             wallet = PlayerWallet(player_id=player.id)
             db.add(wallet)
         
@@ -243,35 +301,42 @@ class PaymentHandler:
             new_balance=wallet.to_dict(),
         )
     
-    def verify_and_credit_redirect(
+    def verify_payment_result(
         self,
         db: Session,
-        merchant_reference: str,
-        redirect_result: Optional[str] = None,
+        merchant_reference: str = None,
+        payment_intent_id: str = None,
     ) -> CreditResult:
         """
-        Verify payment after redirect (for Drop-in/Components integration).
-        This is a fallback - primary crediting should happen via webhooks.
+        Verify payment after redirect or confirmation.
         
         Args:
             db: Database session
             merchant_reference: The merchant reference from URL params
-            redirect_result: Optional redirectResult from Adyen
+            payment_intent_id: Optional PaymentIntent ID
             
         Returns:
-            CreditResult (may just confirm pending status)
+            CreditResult with status
         """
-        transaction = db.query(Transaction).filter(
-            Transaction.merchant_reference == merchant_reference
-        ).first()
+        # Find transaction
+        if merchant_reference:
+            transaction = db.query(Transaction).filter(
+                Transaction.merchant_reference == merchant_reference
+            ).first()
+        elif payment_intent_id:
+            transaction = db.query(Transaction).filter(
+                Transaction.psp_reference == payment_intent_id
+            ).first()
+        else:
+            return CreditResult(success=False, error="No reference provided")
         
         if not transaction:
             return CreditResult(
                 success=False,
-                error=f"Transaction not found: {merchant_reference}"
+                error="Transaction not found"
             )
         
-        # If already completed, return current balance
+        # If already completed, return success
         if transaction.status == TransactionStatus.CAPTURED:
             return CreditResult(
                 success=True,
@@ -280,68 +345,23 @@ class PaymentHandler:
                 new_balance=transaction.player.wallet.to_dict() if transaction.player.wallet else None,
             )
         
-        # If still pending, inform that webhook will handle it
-        if transaction.status == TransactionStatus.PENDING:
-            return CreditResult(
-                success=True,
-                error="Payment is being processed. Credits will be added shortly."
-            )
-        
-        # If authorized (webhook already processed), return success
-        if transaction.status == TransactionStatus.AUTHORIZED:
-            return CreditResult(
-                success=True,
-                gold_coins_added=transaction.gold_coins_reward,
-                health_packs_added=transaction.health_packs_reward,
-                new_balance=transaction.player.wallet.to_dict() if transaction.player.wallet else None,
-            )
-        
-        return CreditResult(
-            success=False,
-            error=f"Transaction status: {transaction.status.value}"
-        )
-    
-    def get_transaction_history(
-        self,
-        db: Session,
-        player_uuid: str,
-        limit: int = 20,
-    ) -> list[dict]:
-        """
-        Get transaction history for a player.
-        
-        Args:
-            db: Database session
-            player_uuid: Player's unique identifier
-            limit: Maximum number of transactions to return
+        # If pending, check with Stripe
+        if transaction.status == TransactionStatus.PENDING and transaction.psp_reference:
+            intent_data = self.stripe.retrieve_payment_intent(transaction.psp_reference)
             
-        Returns:
-            List of transaction dictionaries
-        """
-        player = db.query(Player).filter(Player.player_uuid == player_uuid).first()
+            if intent_data and intent_data["status"] == "succeeded":
+                # Credit the player
+                credit_result = self._credit_player_for_transaction(db, transaction)
+                transaction.status = TransactionStatus.CAPTURED
+                transaction.completed_at = datetime.utcnow()
+                db.commit()
+                return credit_result
         
-        if not player:
-            return []
-        
-        transactions = db.query(Transaction).filter(
-            Transaction.player_id == player.id
-        ).order_by(
-            Transaction.created_at.desc()
-        ).limit(limit).all()
-        
-        return [
-            {
-                "reference": t.merchant_reference,
-                "package": t.package_type,
-                "amount_usd": t.amount_cents / 100.0,
-                "status": t.status.value,
-                "gold_coins": t.gold_coins_reward,
-                "health_packs": t.health_packs_reward,
-                "created_at": t.created_at.isoformat(),
-                "completed_at": t.completed_at.isoformat() if t.completed_at else None,
-            }
-            for t in transactions
-        ]
+        # Still processing
+        return CreditResult(
+            success=True,
+            error="Payment is being processed. Credits will be added shortly."
+        )
     
     def get_available_packages(self) -> list[dict]:
         """Get list of available packages for purchase."""
