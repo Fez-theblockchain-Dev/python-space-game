@@ -16,8 +16,8 @@ from pydantic import BaseModel
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session
 
-from .models import Base, PackageType, PACKAGES
-from .payment_handler import PaymentHandler
+# from .models import Base, PackageType, PACKAGES
+# from .payment_handler import PaymentHandler
 
 
 # ============================================================================
@@ -26,16 +26,7 @@ from .payment_handler import PaymentHandler
 
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./game_economy.db")
 
-# Adyen configuration - set these in environment variables for production
-ADYEN_CONFIG = {
-    "api_key": os.getenv("ADYEN_API_KEY"),
-    "merchant_account": os.getenv("ADYEN_MERCHANT_ACCOUNT"),
-    "environment": os.getenv("ADYEN_ENVIRONMENT", "test"),
-    "hmac_key": os.getenv("ADYEN_HMAC_KEY"),
-    "return_url": os.getenv("ADYEN_RETURN_URL", "http://localhost:8000/api/payment/result"),
-}
-
-
+# === Deleted the ayden configuration constants ===
 # ============================================================================
 # Database Setup
 # ============================================================================
