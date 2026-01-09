@@ -2,15 +2,15 @@ import sys
 import pygame
 import os
 from button import Button
+from config import SCREEN_WIDTH, SCREEN_HEIGHT, DEFAULT_BACKGROUND_THEME
 
 # Initialize pygame
 pygame.init()
 
-# Screen dimensions
-SCREEN_WIDTH = 1280
-SCREEN_HEIGHT = 720
+# Screen setup (using dimensions from config)
 SCREEN = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption("Space Invaders - Main Menu")
+
 
 # Theme management
 class ThemeManager:
@@ -24,10 +24,15 @@ class ThemeManager:
         # Get the base directory (parent of game directory)
         base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         
-        # Default black background
-        black_bg = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
-        black_bg.fill((0, 0, 0))
-        self.themes.append(("Black", black_bg))
+        # Load default purple nebula background first (using config constant)
+        nebula_bg_path = os.path.join(base_dir, DEFAULT_BACKGROUND_THEME)
+        if os.path.exists(nebula_bg_path):
+            try:
+                nebula_bg_img = pygame.image.load(nebula_bg_path).convert()
+                nebula_bg = pygame.transform.scale(nebula_bg_img, (SCREEN_WIDTH, SCREEN_HEIGHT))
+                self.themes.append(("Purple Nebula", nebula_bg))
+            except pygame.error:
+                print(f"Warning: Could not load {nebula_bg_path}")
         
         # Load main menu background if it exists
         menu_bg_path = os.path.join(base_dir, 'assets', 'main_menu_background.png')
@@ -38,16 +43,6 @@ class ThemeManager:
                 self.themes.append(("Menu Background", menu_bg))
             except pygame.error:
                 print(f"Warning: Could not load {menu_bg_path}")
-        
-        # Load nebula background if it exists
-        nebula_bg_path = os.path.join(base_dir, 'assets', '512x512_purple_nebula_1.png')
-        if os.path.exists(nebula_bg_path):
-            try:
-                nebula_bg_img = pygame.image.load(nebula_bg_path).convert()
-                nebula_bg = pygame.transform.scale(nebula_bg_img, (SCREEN_WIDTH, SCREEN_HEIGHT))
-                self.themes.append(("Purple Nebula", nebula_bg))
-            except pygame.error:
-                print(f"Warning: Could not load {nebula_bg_path}")
     
     def get_current_background(self):
         """Get the current background surface"""

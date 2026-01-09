@@ -8,7 +8,7 @@ import random
 import json
 from pygame.locals import * #For useful variables
 from typing import Any
-from config import SCREEN_WIDTH, SCREEN_HEIGHT
+from config import SCREEN_WIDTH, SCREEN_HEIGHT, DEFAULT_BACKGROUND_THEME
 from obstacle import Block, shape
 from spaceship import SpaceShip
 from laser import Laser
@@ -63,7 +63,7 @@ script_dir = os.path.dirname(os.path.abspath(__file__))
 project_root = os.path.dirname(script_dir)
 
 # Window background space image
-nebula_image = pygame.image.load(os.path.join(project_root, 'assets/512x512_purple_nebula_1.png')).convert()
+nebula_image = pygame.image.load(os.path.join(project_root, DEFAULT_BACKGROUND_THEME)).convert()
 nebula_bg = pygame.transform.scale(nebula_image, (SCREEN_WIDTH, SCREEN_HEIGHT))
 
 # Font link
@@ -443,8 +443,8 @@ class Game:
         black_bg.fill(BLACK)
         self.backgrounds["BLACK"] = black_bg
         
-        # Purple nebula background
-        nebula_image = pygame.image.load(os.path.join(project_root, 'assets/512x512_purple_nebula_1.png')).convert()
+        # Purple nebula background (using config default)
+        nebula_image = pygame.image.load(os.path.join(project_root, DEFAULT_BACKGROUND_THEME)).convert()
         nebula_bg = pygame.transform.scale(nebula_image, (SCREEN_WIDTH, SCREEN_HEIGHT))
         self.backgrounds["PURPLE_NEBULA"] = nebula_bg
         

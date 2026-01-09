@@ -23,6 +23,8 @@ COINS_PER_ALIEN_KILL = 10
 COINS_PER_LEVEL_COMPLETE = 50
 COINS_PER_BONUS_SHIP = 100
 
-# Default background Theme
-
+# ============================================
+# BACKGROUND THEMES
+# ============================================
+# Default background theme (relative path from project root)
 DEFAULT_BACKGROUND_THEME = "assets/512x512_purple_nebula_1.png"
