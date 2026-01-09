@@ -7,8 +7,8 @@ uvicorn[standard]>=0.24.0
 # Database
 sqlalchemy>=2.0.0
 
-# Adyen Payment SDK
-Adyen>=9.0.0
+# Stripe Payment SDK
+stripe>=7.0.0
 
 # HTTP Client (for game client)
 requests>=2.31.0

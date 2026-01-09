@@ -3,7 +3,7 @@ Game Backend API Server
 
 Handles:
 - Player wallet management
-- Adyen payment integration (checkout sessions, webhooks)
+- Stripe payment integration (checkout sessions, webhooks)
 - Transaction history
 """
 import os
@@ -26,7 +26,6 @@ from sqlalchemy.orm import sessionmaker, Session
 
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./game_economy.db")
 
-# === Deleted the ayden configuration constants ===
 # ============================================================================
 # Database Setup
 # ============================================================================
@@ -47,9 +46,6 @@ def get_db():
 # ============================================================================
 # Service Setup
 # ============================================================================
-
-adyen_service = AdyenPaymentService(**ADYEN_CONFIG)
-payment_handler = PaymentHandler(adyen_service)
 
 
 # ============================================================================
@@ -259,9 +255,9 @@ def add_earned_coins(request: AddEarnedCoinsRequest, db: Session = Depends(get_d
 @app.post("/api/payment/create-session", response_model=CreateSessionResponse)
 def create_payment_session(request: CreateSessionRequest, db: Session = Depends(get_db)):
     """
-    Create an Adyen checkout session for a package purchase.
+    Create a Stripe checkout session for a package purchase.
     
-    Returns session data for Drop-in/Components, or a checkout URL for redirect.
+    Returns session data or a checkout URL for redirect.
     """
     # Validate package
     try:
@@ -295,7 +291,7 @@ def payment_result(ref: str, redirectResult: Optional[str] = None, db: Session =
     """
     Handle redirect after payment completion.
     
-    This endpoint is called when the user returns from the Adyen hosted payment page.
+    This endpoint is called when the user returns from the Stripe checkout page.
     The actual crediting happens via webhooks, but this confirms the transaction status.
     """
     result = payment_handler.verify_and_credit_redirect(
@@ -325,26 +321,23 @@ def payment_result(ref: str, redirectResult: Optional[str] = None, db: Session =
 
 
 @app.post("/api/payment/webhook")
-async def adyen_webhook(request: Request, db: Session = Depends(get_db)):
+async def stripe_webhook(request: Request, db: Session = Depends(get_db)):
     """
-    Handle Adyen webhook notifications.
+    Handle Stripe webhook notifications.
     
-    This is called by Adyen when payment events occur (authorization, capture, etc.).
-    Must respond with [accepted] to acknowledge receipt.
+    This is called by Stripe when payment events occur (payment_intent.succeeded, etc.).
     """
     try:
         payload = await request.json()
     except Exception:
-        return Response(content="[accepted]", media_type="text/plain")
+        return Response(status_code=400)
     
     success, message = payment_handler.process_webhook_notification(db, payload)
     
-    # Always respond with [accepted] to prevent Adyen from retrying
-    # Log failures for debugging but don't reject the webhook
     if not success:
         print(f"Webhook processing warning: {message}")
     
-    return Response(content="[accepted]", media_type="text/plain")
+    return Response(status_code=200)
 
 
 @app.get("/api/payment/transactions/{player_uuid}", response_model=list[TransactionResponse])
