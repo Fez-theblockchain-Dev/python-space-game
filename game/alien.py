@@ -163,31 +163,3 @@ class MysteryShip(pygame.sprite.Sprite):
             self.kill()
             print("Mystery Ship Destroyed. Mystery treasure chest key has been claimed!")
 
-
-# variables for Key class
-key = random.randint(1, 100)
-
-
-class Key(pygame.sprite.Sprite):
-    def __init__(self, x, y):
-        super().__init__()
-        self.image = pygame.image.load("assets/key.png").convert_alpha()
-        self.rect = self.image.get_rect(center=(x, y))
-
-class TreasureBox(pygame.sprite.Sprite):
-    def __init__(self, x, y):
-        super().__init__()
-        self.image = pygame.image.load("assets/treasure_box.png").convert_alpha()
-        self.rect = self.image.get_rect(center=(x, y))
-        self.locked = True
-
-        def unlock(self):
-            self.locked = False
-            print("🎉 Mystery Treasure Box unlocked! Reward granted!")
-
-
-    
-         
-        
-    
-

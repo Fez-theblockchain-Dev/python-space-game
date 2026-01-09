@@ -23,6 +23,13 @@ COINS_PER_ALIEN_KILL = 10
 COINS_PER_LEVEL_COMPLETE = 50
 COINS_PER_BONUS_SHIP = 100
 
+# Treasure chest rewards
+TREASURE_CHEST_MIN_COINS = 1000
+TREASURE_CHEST_MAX_COINS = 50000
+TRESURE_CHEST_HEALTH_PACK_CHANCE = .3 # 1/3 chance of receiving health pack from treasure chest 
+TREASURE_CHEST_MIN_HEALTH_PACK = 1
+TREASURE_CHEST_MAX_HEALTH_PACK = 5
+
 # ============================================
 # BACKGROUND THEMES
 # ============================================
