@@ -7,117 +7,87 @@ Designed as a showcase project for a Junior Python Developer, it also introduces
 
 📜 Table of Contents
 
-Installation
+Installation:
 
-Usage
+Prerequisites - Python 3.8+ and Pygame are required for the game client.
 
-Features
+Steps:
 
-Project Structure
+1.Clone the repository:
+git clone https://github.com/Fez-theblockchain-Dev/python-space-game
+cd python-space-game
 
-Dependencies
+2.(Recommended) Create and activate a virtual environment:
+python -m venv .venv
+source .venv/bin/activate  # macOS/Linux
+.venv\Scripts\activate     # Windows
 
-Configuration
-
-Examples
-
-Troubleshooting
-
-Contributors: Ramez Festek
-
-License: MIT
-
-💾 Installation
-
-Clone the repository:
-
-git clone [https://github.com/yourusername/space-invaders.git](https://github.com/Fez-theblockchain-Dev/python-space-game)
-cd space-invaders
+3.Install the game dependency (Pygame):
+pip install pygame
 
 
-Install dependencies:
-
-pip install -r requirements.txt
-
-
-Run the game:
-
+4.Run the game:
 python game/index.py
 
-🚀 Usage
+5.Backend API dependencies - Install the backend API required software to get full bemefits of the game, such as, in-progress shop/payment features, install backend dependencies from the API folder:
 
-Use the keyboard to navigate and shoot enemies. Earn gold coins by defeating aliens. A shop system and Apple Pay integration for purchasing gold is currently under development.
+pip install -r backend_apis/requirements.txt
 
-Controls:
+Usage:
+Movement - Arrow keys move the ship.
 
-Arrow keys to move
+Shoot - Spacebar fires lasers.
 
-Spacebar to shoot
+Game includes a main menu and themed backgrounds handled by the menu system.
 
-✨ Features
+Features:
+Object-oriented design with dedicated classes for player, enemies, lasers, and obstacles.
 
-Object-Oriented Design
+In-game currency system (gold coins).
 
-Custom player, enemy, laser, and obstacle classes
+Planned Apple Pay integration for purchases (in progress).
 
-In-game currency system (gold coins)
+Interactive main menu, sound, sprites, and increasing difficulty mechanics.
 
-Planned support for Apple Pay
+Project Structure:
+game/index.py — main game loop and runtime setup.
 
-Interactive main menu with buttons
+game/config.py — game settings and constants (screen size, economy values).
 
-Sound and sprite effects
+game/mainMenu.py — menu rendering and theme management.
 
-Increasing difficulty mechanics
+assets/ — image and font assets loaded by the game (backgrounds, fonts, ship sprite).
 
-📁 Project Structure
-.
-├── index.py            # Main game loop
-├── config.py           # Game settings and constants
-├── player.py           # Player class logic
-├── alien.py            # Alien enemy behavior
-├── obstacle.py         # Destructible barriers
-├── laser.py            # Laser projectile logic
-├── spaceship.py        # Base class for player/enemy ships
-├── button.py           # Button UI logic
-├── gameEconomy.py      # Coin system and (future) Apple Pay integration
-├── mainMenu.py         # Main menu rendering and navigation
+audio/ — sound effects (laser sound loaded by the player class).
 
-📦 Dependencies
+backend_apis/ — backend services and economy integration (optional).
+
+Dependencies:
+Game Client
 
 Python 3.8+
 
 Pygame
 
-To install:
+Backend API
 
-pip install pygame
-
-⚙️ Configuration
-
-Settings such as screen dimensions, player attributes, and colors are defined in config.py. You can tweak these values to customize the game.
-
-🧪 Examples
-# Run the main game
-python gmae/index.py
+FastAPI, SQLAlchemy, Requests, Pydantic (for the backend server)
 
 
-As the game starts, aliens will descend and shoot lasers. Eliminate them to collect gold coins. The game will continue until the player loses all lives.
+Configuration:
+-Gameplay and economy constants (screen size, coin rates, rewards) live in game/config.py.
 
-🛠️ Troubleshooting
+-The backend API base URL is configurable via the GAME_BACKEND_URL environment variable (defaults to http://localhost:8000).
 
-Ensure Python and Pygame are correctly installed.
+Troubleshooting:
+-Ensure Python and Pygame are installed correctly.
+-If the game window doesn’t launch, check display drivers or reinstall Pygame.
+-Audio warnings can appear if sound files are missing or fail to load (the game will continue).
+-In-app purchases are a work in progress and may be disabled.
 
-If the game window doesn't launch, verify the display drivers or Pygame installation.
+📝 License: MIT
 
-In-app purchase system is a work in progress and currently disabled.
+👨‍💻 Contributors - Ramez L. Festek ( Full-Stack Software Engineer): 
 
-👨‍💻 Contributors
+Hello! Thanks for reading thru the full md file, I'm looking for opportunities to contribute to larger Python projects or join a development team! Preferably in TX/FL/Remote, however open to relocating elsewhere.
 
-Created by a Junior Python Developer passionate about game development and object-oriented programming.
-
-Looking for opportunities to contribute to larger Python projects or join a development team!
-
-📝 License
-
-This project is licensed under the MIT License
