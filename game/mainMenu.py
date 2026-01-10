@@ -24,7 +24,12 @@ class ThemeManager:
         # Get the base directory (parent of game directory)
         base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         
-        # Load default purple nebula background first (using config constant)
+        # Flat black background
+        black_bg = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
+        black_bg.fill((0, 0, 0))
+        self.themes.append(("Black", black_bg))
+        
+        # Load default purple nebula background (using config constant)
         nebula_bg_path = os.path.join(base_dir, DEFAULT_BACKGROUND_THEME)
         if os.path.exists(nebula_bg_path):
             try:
