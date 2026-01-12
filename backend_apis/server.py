@@ -12,7 +12,6 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Depends, HTTPException, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session
 

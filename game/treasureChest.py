@@ -19,7 +19,7 @@ class TreasureChest(pygame.sprite.Sprite):
         project_root = os.path.dirname(script_dir)
         
         # Load treasure chest image
-        path = os.path.join(project_root, "assets/treasure_box.png")
+        path = os.path.join(project_root, "assets/treasure_chest.jpg")
         if os.path.exists(path):
             self.image = pygame.image.load(path).convert_alpha()
         else:
