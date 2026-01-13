@@ -146,7 +146,7 @@ def main_menu():
                     # Start the game
                     print("Starting game...")
                     try:
-                        from index import main
+                        from main import main
                         main()  # This will return when menu button is clicked
                         # Ensures display is still active after game returns
                         pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))

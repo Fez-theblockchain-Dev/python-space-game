@@ -489,7 +489,7 @@ class Game:
         _agent_log({
             "runId": "pre-fix",
             "hypothesisId": "A",
-            "location": "game/index.py:collision_checks:entry",
+            "location": "game/main.py:collision_checks:entry",
             "message": "collision_checks_entry",
             "data": {
                 "lives": self.lives,
@@ -546,7 +546,7 @@ class Game:
             _agent_log({
                 "runId": "pre-fix",
                 "hypothesisId": "A",
-                "location": "game/index.py:collision_checks:alien_player_collision",
+                "location": "game/main.py:collision_checks:alien_player_collision",
                 "message": "alien_player_collision",
                 "data": {
                     "collisions": len(aliens_touching_player),
@@ -561,7 +561,7 @@ class Game:
                 _agent_log({
                     "runId": "pre-fix",
                     "hypothesisId": "A",
-                    "location": "game/index.py:collision_checks:game_over",
+                    "location": "game/main.py:collision_checks:game_over",
                     "message": "player_out_of_lives",
                     "data": {"lives": self.lives},
                 })
@@ -572,7 +572,7 @@ class Game:
         _agent_log({
             "runId": "pre-fix",
             "hypothesisId": "A",
-            "location": "game/index.py:collision_checks:exit",
+            "location": "game/main.py:collision_checks:exit",
             "message": "collision_checks_exit",
             "data": {
                 "lives": self.lives,
