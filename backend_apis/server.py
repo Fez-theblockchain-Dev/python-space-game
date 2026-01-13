@@ -1,373 +1,254 @@
 """
 Game Backend API Server
+=======================
+A simple FastAPI server that other computers can connect to for multiplayer gaming.
 
-Handles:
-- Player wallet management
-- Stripe payment integration (checkout sessions, webhooks)
-- Transaction history
+Run with: 
+    cd backend_apis
+    python server.py
+
+Or with auto-reload for development:
+    uvicorn server:app --host 0.0.0.0 --port 8000 --reload
 """
+
 import os
+import uuid
 from typing import Optional
-from contextlib import asynccontextmanager
+from datetime import datetime
 
-from fastapi import FastAPI, Depends, HTTPException, Request, Response
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, Session
-
-# from .models import Base, PackageType, PACKAGES
-# from .payment_handler import PaymentHandler
+from pydantic import BaseModel
 
 
 # ============================================================================
-# Configuration
+# Step 1: Create the FastAPI App
 # ============================================================================
-
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./game_economy.db")
-
-# ============================================================================
-# Database Setup
-# ============================================================================
-
-engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
-
-def get_db():
-    """Dependency to get database session."""
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
-
-# ============================================================================
-# Service Setup
-# ============================================================================
-
-
-# ============================================================================
-# FastAPI App
-# ============================================================================
-
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    # Startup: create database tables
-    Base.metadata.create_all(bind=engine)
-    yield
-    # Shutdown: cleanup if needed
 
 app = FastAPI(
     title="Space Game Economy API",
-    description="Backend API for in-game purchases and wallet management",
+    description="Backend API for multiplayer game connections and wallet management",
     version="1.0.0",
-    lifespan=lifespan,
 )
 
-# CORS middleware for game client
+# ============================================================================
+# Step 2: Add CORS Middleware (allows connections from different origins)
+# ============================================================================
+# This is CRITICAL for allowing other computers/browsers to connect
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Configure appropriately for production
+    allow_origins=["*"],  # Allow all origins (restrict in production)
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["*"],  # Allow all HTTP methods
+    allow_headers=["*"],  # Allow all headers
 )
 
+# ============================================================================
+# Step 3: In-Memory Data Storage
+# ============================================================================
+# Simple dictionaries for demo. In production, use a database.
+
+# Global storage for connected players
+# Key: player_id (str), Value: dict with player info (name, x, y, score, joined_at)
+connected_players: dict[str, dict] = {}
+
+game_state: dict = {
+    "active_games": [],
+    "leaderboard": [],
+}
+
 
 # ============================================================================
-# Pydantic Models (Request/Response)
+# Step 4: Pydantic Models (Request/Response Validation)
 # ============================================================================
 
-class CreateSessionRequest(BaseModel):
-    player_uuid: str
-    package_id: str  # e.g., "gold_100", "health_pack_5"
-    use_payment_link: bool = False
-    email: Optional[str] = None
+class PlayerJoinRequest(BaseModel):
+    """Request body when a player joins the game"""
+    player_name: str
 
 
-class CreateSessionResponse(BaseModel):
+class PlayerJoinResponse(BaseModel):
+    """Response when a player successfully joins"""
     success: bool
-    session_id: Optional[str] = None
-    session_data: Optional[str] = None
-    checkout_url: Optional[str] = None
-    merchant_reference: Optional[str] = None
-    error: Optional[str] = None
+    player_id: str
+    player_name: str
+    message: str
 
 
-class WalletResponse(BaseModel):
-    gold_coins: int
-    health_packs: int
-    total_earned_coins: int
-    total_earned_health_packs: int
-    total_spent_usd: float
+class PlayerPosition(BaseModel):
+    """Player position update"""
+    player_id: str
+    x: float
+    y: float
 
 
-class PackageResponse(BaseModel):
-    id: str
-    name: str
-    price_usd: float
-    gold_coins: int
-    health_packs: int
-
-
-class TransactionResponse(BaseModel):
-    reference: str
-    package: str
-    amount_usd: float
-    status: str
-    gold_coins: int
-    health_packs: int
-    created_at: str
-    completed_at: Optional[str] = None
-
-
-class SpendCoinsRequest(BaseModel):
-    player_uuid: str
-    amount: int
-
-
-class UseHealthPackRequest(BaseModel):
-    player_uuid: str
-
-
-class AddEarnedCoinsRequest(BaseModel):
-    player_uuid: str
-    amount: int
+class PlayerScore(BaseModel):
+    """Player score update"""
+    player_id: str
+    score: int
 
 
 # ============================================================================
-# API Routes - Health Check
+# Step 5: API Routes - Health Check
 # ============================================================================
 
 @app.get("/")
 def root():
-    return {"status": "ok", "service": "Space Game Economy API"}
+    """
+    Root endpoint - confirms server is running.
+    Test with: curl http://localhost:8000/
+    """
+    return {
+        "status": "online",
+        "service": "Space Game Server",
+        "version": "1.0.0",
+        "message": "Welcome to the Space Game Server! 🚀"
+    }
 
 
 @app.get("/health")
 def health_check():
-    return {"status": "healthy"}
-
-
-# ============================================================================
-# API Routes - Packages
-# ============================================================================
-
-@app.get("/api/packages", response_model=list[PackageResponse])
-def get_packages():
-    """Get all available purchase packages."""
-    return payment_handler.get_available_packages()
-
-
-# ============================================================================
-# API Routes - Wallet
-# ============================================================================
-
-@app.get("/api/wallet/{player_uuid}", response_model=WalletResponse)
-def get_wallet(player_uuid: str, db: Session = Depends(get_db)):
-    """Get player's wallet balance."""
-    # Ensure player exists
-    payment_handler.get_or_create_player(db, player_uuid)
-    
-    wallet = payment_handler.get_player_wallet(db, player_uuid)
-    
-    if not wallet:
-        raise HTTPException(status_code=404, detail="Wallet not found")
-    
-    return WalletResponse(**wallet)
-
-
-@app.post("/api/wallet/spend")
-def spend_coins(request: SpendCoinsRequest, db: Session = Depends(get_db)):
-    """Spend gold coins from wallet."""
-    from .models import Player
-    
-    player = db.query(Player).filter(Player.player_uuid == request.player_uuid).first()
-    
-    if not player or not player.wallet:
-        raise HTTPException(status_code=404, detail="Player or wallet not found")
-    
-    if not player.wallet.spend_gold_coins(request.amount):
-        raise HTTPException(status_code=400, detail="Insufficient gold coins")
-    
-    db.commit()
-    
-    return {
-        "success": True,
-        "new_balance": player.wallet.gold_coins,
-    }
-
-
-@app.post("/api/wallet/use-health-pack")
-def use_health_pack(request: UseHealthPackRequest, db: Session = Depends(get_db)):
-    """Use a health pack from wallet."""
-    from .models import Player
-    
-    player = db.query(Player).filter(Player.player_uuid == request.player_uuid).first()
-    
-    if not player or not player.wallet:
-        raise HTTPException(status_code=404, detail="Player or wallet not found")
-    
-    if not player.wallet.use_health_pack():
-        raise HTTPException(status_code=400, detail="No health packs available")
-    
-    db.commit()
-    
-    return {
-        "success": True,
-        "health_packs_remaining": player.wallet.health_packs,
-    }
-
-
-@app.post("/api/wallet/add-earned-coins")
-def add_earned_coins(request: AddEarnedCoinsRequest, db: Session = Depends(get_db)):
     """
-    Add coins earned from gameplay to player's wallet.
-    
-    Called at the end of a level/session to save earned coins.
+    Health check endpoint for monitoring.
+    Test with: curl http://localhost:8000/health
     """
-    from .models import Player
-    
-    if request.amount <= 0:
-        raise HTTPException(status_code=400, detail="Amount must be positive")
-    
-    player = payment_handler.get_or_create_player(db, request.player_uuid)
-    
-    if not player.wallet:
-        raise HTTPException(status_code=404, detail="Wallet not found")
-    
-    player.wallet.add_gold_coins(request.amount)
-    db.commit()
-    
     return {
-        "success": True,
-        "coins_added": request.amount,
-        "new_balance": player.wallet.gold_coins,
+        "status": "healthy",
+        "connected_players": len(connected_players),
+        "timestamp": datetime.now().isoformat()
     }
 
 
 # ============================================================================
-# API Routes - Payments
+# Step 6: API Routes - Player Management
 # ============================================================================
 
-@app.post("/api/payment/create-session", response_model=CreateSessionResponse)
-def create_payment_session(request: CreateSessionRequest, db: Session = Depends(get_db)):
+@app.post("/api/player/join", response_model=PlayerJoinResponse)
+def player_join(request: PlayerJoinRequest):
     """
-    Create a Stripe checkout session for a package purchase.
+    Register a new player to the game.
     
-    Returns session data or a checkout URL for redirect.
+    Example request body:
+    {"player_name": "SpaceHero42"}
     """
-    # Validate package
-    try:
-        package_type = PackageType(request.package_id)
-    except ValueError:
-        raise HTTPException(
-            status_code=400, 
-            detail=f"Invalid package_id. Available: {[p.value for p in PackageType]}"
-        )
+    # Generate unique player ID
+    player_id = str(uuid.uuid4())[:8]  # Short UUID for simplicity
     
-    result = payment_handler.initiate_purchase(
-        db=db,
-        player_uuid=request.player_uuid,
-        package_type=package_type,
-        use_payment_link=request.use_payment_link,
-        shopper_email=request.email,
-    )
+    # Store player data
+    connected_players[player_id] = {
+        "name": request.player_name,
+        "x": 400,  # Starting position
+        "y": 300,
+        "score": 0,
+        "joined_at": datetime.now().isoformat(),
+    }
     
-    return CreateSessionResponse(
-        success=result.success,
-        session_id=result.session_id,
-        session_data=result.session_data,
-        checkout_url=result.checkout_url,
-        merchant_reference=result.merchant_reference,
-        error=result.error,
+    print(f"🎮 Player joined: {request.player_name} (ID: {player_id})")
+    
+    return PlayerJoinResponse(
+        success=True,
+        player_id=player_id,
+        player_name=request.player_name,
+        message=f"Welcome to the game, {request.player_name}!"
     )
 
 
-@app.get("/api/payment/result")
-def payment_result(ref: str, redirectResult: Optional[str] = None, db: Session = Depends(get_db)):
-    """
-    Handle redirect after payment completion.
+@app.post("/api/player/leave/{player_id}")
+def player_leave(player_id: str):
+    """Remove a player from the game."""
+    if player_id not in connected_players:
+        raise HTTPException(status_code=404, detail="Player not found")
     
-    This endpoint is called when the user returns from the Stripe checkout page.
-    The actual crediting happens via webhooks, but this confirms the transaction status.
-    """
-    result = payment_handler.verify_and_credit_redirect(
-        db=db,
-        merchant_reference=ref,
-        redirect_result=redirectResult,
-    )
+    player_name = connected_players[player_id]["name"]
+    del connected_players[player_id]
     
-    if result.success and result.new_balance:
-        return {
-            "status": "success",
-            "message": "Payment completed!",
-            "gold_coins_added": result.gold_coins_added,
-            "health_packs_added": result.health_packs_added,
-            "new_balance": result.new_balance,
-        }
-    elif result.success:
-        return {
-            "status": "pending",
-            "message": result.error or "Payment is being processed",
-        }
-    else:
-        return {
-            "status": "failed",
-            "message": result.error or "Payment could not be verified",
-        }
+    print(f"👋 Player left: {player_name} (ID: {player_id})")
+    
+    return {"success": True, "message": f"Goodbye, {player_name}!"}
 
 
-@app.post("/api/payment/webhook")
-async def stripe_webhook(request: Request, db: Session = Depends(get_db)):
-    """
-    Handle Stripe webhook notifications.
-    
-    This is called by Stripe when payment events occur (payment_intent.succeeded, etc.).
-    """
-    try:
-        payload = await request.json()
-    except Exception:
-        return Response(status_code=400)
-    
-    success, message = payment_handler.process_webhook_notification(db, payload)
-    
-    if not success:
-        print(f"Webhook processing warning: {message}")
-    
-    return Response(status_code=200)
-
-
-@app.get("/api/payment/transactions/{player_uuid}", response_model=list[TransactionResponse])
-def get_transactions(player_uuid: str, limit: int = 20, db: Session = Depends(get_db)):
-    """Get transaction history for a player."""
-    transactions = payment_handler.get_transaction_history(db, player_uuid, limit)
-    return [TransactionResponse(**t) for t in transactions]
+@app.get("/api/players")
+def get_all_players():
+    """Get list of all connected players."""
+    return {
+        "count": len(connected_players),
+        "players": connected_players
+    }
 
 
 # ============================================================================
-# API Routes - Admin/Debug (remove or protect in production)
+# Step 7: API Routes - Game State
 # ============================================================================
 
-@app.post("/api/admin/credit-test")
-def admin_credit_test(player_uuid: str, gold_coins: int = 0, health_packs: int = 0, db: Session = Depends(get_db)):
-    """
-    Admin endpoint to manually credit a player (for testing).
-    REMOVE OR PROTECT THIS IN PRODUCTION!
-    """
-    from .models import Player
+@app.post("/api/player/position")
+def update_position(position: PlayerPosition):
+    """Update a player's position (called frequently during gameplay)."""
+    if position.player_id not in connected_players:
+        raise HTTPException(status_code=404, detail="Player not found")
     
-    player = payment_handler.get_or_create_player(db, player_uuid)
+    connected_players[position.player_id]["x"] = position.x
+    connected_players[position.player_id]["y"] = position.y
     
-    if gold_coins > 0:
-        player.wallet.add_gold_coins(gold_coins)
-    if health_packs > 0:
-        player.wallet.add_health_packs(health_packs)
+    return {"success": True}
+
+
+@app.post("/api/player/score")
+def update_score(score: PlayerScore):
+    """Update a player's score."""
+    if score.player_id not in connected_players:
+        raise HTTPException(status_code=404, detail="Player not found")
     
-    db.commit()
+    connected_players[score.player_id]["score"] = score.score
+    
+    return {"success": True, "new_score": score.score}
+
+
+@app.get("/api/game/state")
+def get_game_state():
+    """Get the current game state (all players and their positions)."""
+    return {
+        "players": connected_players,
+        "timestamp": datetime.now().isoformat()
+    }
+
+
+@app.get("/api/leaderboard")
+def get_leaderboard():
+    """Get the top 10 players by score."""
+    sorted_players = sorted(
+        connected_players.items(),
+        key=lambda x: x[1]["score"],
+        reverse=True
+    )[:10]
     
     return {
-        "success": True,
-        "wallet": player.wallet.to_dict(),
+        "leaderboard": [
+            {"rank": i + 1, "player_id": pid, "name": data["name"], "score": data["score"]}
+            for i, (pid, data) in enumerate(sorted_players)
+        ]
     }
+
+
+# ============================================================================
+# Step 8: Run the Server
+# ============================================================================
+
+if __name__ == "__main__":
+    import uvicorn
+    
+    print("=" * 60)
+    print("🚀 Starting Space Game Server...")
+    print("=" * 60)
+    print()
+    print("To connect from OTHER computers on your network:")
+    print("  1. Find your IP address:")
+    print("     - Mac/Linux: ifconfig | grep 'inet '")
+    print("     - Windows: ipconfig")
+    print("  2. Use that IP, e.g.: http://192.168.1.100:8000")
+    print()
+    print("API Documentation: http://localhost:8000/docs")
+    print("=" * 60)
+    
+    # host="0.0.0.0" makes the server accessible from other computers
+    uvicorn.run(app, host="0.0.0.0", port=8000)
