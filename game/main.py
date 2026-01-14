@@ -1,5 +1,6 @@
 # this file will house the fundamental game play logic of new space invaders python web app game
 
+import asyncio  # Required for Pygbag web deployment
 import pygame
 import sys
 import time
@@ -13,7 +14,6 @@ from obstacle import Block, shape
 from spaceship import SpaceShip
 from laser import Laser
 from alien import Alien, AlienDiagonal, AlienDiver, check_alien_edges
-import tkinter as tk
 from button import Button
 from player import Player
 from mainMenu import theme_manager
@@ -172,14 +172,9 @@ class Level (pygame.sprite.Sprite):
         overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
         overlay.set_alpha(128)
         overlay.fill((0, 0, 0))
-
-      
-        # responsive screen size handeling
-        root = tk.Tk()
-        screen_width = root.winfo_screenwidth()
-        screen_height = root.winfo_screenheight()
-        print(f"Screen size:{screen_width}x{screen_height}")
-        root.destroy()
+        
+        # Use config screen dimensions (compatible with web/Pygbag)
+        print(f"Screen size: {SCREEN_WIDTH}x{SCREEN_HEIGHT}")
     
 
     def get_current_level(self, new_game = False):
@@ -926,8 +921,8 @@ class Game:
       
 
 # main game loop init function
-def main():
-    """Main game entry point - creates game instance and runs game loop"""
+async def main():
+    """Main game entry point - creates game instance and runs game loop (async for Pygbag)"""
     print("game is starting...")
     
     # Create game instance
@@ -970,7 +965,7 @@ def main():
                     # Save session coins before quitting
                     game.economy.save_session_coins()
                     from mainMenu import main_menu
-                    return main_menu()
+                    return await main_menu()
                 elif event.key == pygame.K_m:
                     # M key to toggle mute
                     game.toggle_mute()
@@ -1005,7 +1000,7 @@ def main():
             # Check if player wants to return to menu
             if game_result == "menu":
                 from mainMenu import main_menu
-                return main_menu()
+                return await main_menu()
             
             # Check if pause button was clicked
             if game_result == "paused":
@@ -1018,12 +1013,13 @@ def main():
                 text_rect = game_over_text.get_rect(center=(SCREEN_WIDTH//2, SCREEN_HEIGHT//2))
                 screen.blit(game_over_text, text_rect)
                 pygame.display.flip()
-                pygame.time.wait(3000)
+                await asyncio.sleep(3)  # Non-blocking wait (Pygbag compatible)
                 running = False
         
         # Update display and control frame rate
         pygame.display.flip()
         clock.tick(60)
+        await asyncio.sleep(0)  # Yield control to browser/event loop (required for Pygbag)
 
 class Key(pygame.sprite.Sprite):
     """
@@ -1147,15 +1143,10 @@ class TreasureChest(pygame.sprite.Sprite):
 # custom exception defined
 class StrictStartError(Exception):
     pass
-if __name__ == "__main__":
-    main()
 
-        
-            
-try:
-    from pygame.locals import QUIT
-except ImportError:
-    print("Could not import QUIT from pygame.locals. Check if pygame is installed.")
+# Entry point - use asyncio.run for Pygbag web compatibility
+if __name__ == "__main__":
+    asyncio.run(main())
 
 
 

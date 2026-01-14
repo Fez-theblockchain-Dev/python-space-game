@@ -1,3 +1,4 @@
+import asyncio  # Required for Pygbag web deployment
 import sys
 import pygame
 import os
@@ -81,8 +82,8 @@ def get_font(size):
     except:
         return pygame.font.Font(None, size)
 
-def main_menu():
-    """Main menu screen"""
+async def main_menu():
+    """Main menu screen (async for Pygbag)"""
     clock = pygame.time.Clock()
     
     while True:
@@ -147,7 +148,7 @@ def main_menu():
                     print("Starting game...")
                     try:
                         from main import main
-                        main()  # This will return when menu button is clicked
+                        await main()  # Await async main function
                         # Ensures display is still active after game returns
                         pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
                         pygame.display.set_caption("Space Invaders - Main Menu")
@@ -168,6 +169,7 @@ def main_menu():
         
         pygame.display.update()
         clock.tick(60)
+        await asyncio.sleep(0)  # Yield control to browser (required for Pygbag)
 
 def play():
     """Play screen (placeholder)"""
@@ -205,4 +207,4 @@ def play():
         clock.tick(60)
 
 if __name__ == "__main__":
-    main_menu()
+    asyncio.run(main_menu())
