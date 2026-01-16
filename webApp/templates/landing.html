@@ -1,3 +1,4 @@
+{% load static %}
 {% extends 'base.html' %}
 
 
@@ -29,14 +30,36 @@
             <h2>Power Up Your Journey</h2>
             <p>Choose from our selection of game-enhancing packages</p>
         </div>
+
+        <div class="card" style="margin-bottom: 24px;">
+            <h3 style="margin-top: 0;">Quick Checkout</h3>
+            <form id="quick-checkout-form" style="display: grid; gap: 12px; max-width: 520px;">
+                <label for="checkout-package-1">Gold Coins</label>
+                <select id="gold_coins" name="Gold Coins" required>
+                    {% for package in packages %}
+                    <option value="{{ package.id }}">{{ package.name }} — ${{ package.price }}</option>
+                    {% endfor %}
+                </select>
+                <label for="checkout-package-2">Health Packs</label>
+                <select id="health_packs" name="Health Packs" required>
+                    {% for package in packages %}
+                    <option value="{{ package.id }}">{{ package.name }} — ${{ package.price }}</option>
+                    {% endfor %}
+                </select>
+
+                <label for="checkout-quantity">Quantity</label>
+                <input id="checkout-quantity" name="quantity" type="number" min="1" max="99" value="1" required>
+
+                <button type="submit" class="btn btn-primary">Checkout</button>
+                <div id="checkout-error" style="color: #ff6b6b; display: none;"></div>
+            </form>
+        </div>
         
         <div class="packages-grid">
             {% for package in packages %}
             <div class="card package-card {% if package.id == 'starter_bundle' %}featured{% endif %}">
                 <div class="package-icon {% if package.gold_coins > 0 and package.health_packs > 0 %}bundle{% elif package.gold_coins > 0 %}gold{% else %}health{% endif %}">
-                   <div>
-                        <button-lg>Buy 10</button-lg>
-                    </div>
+                    <div></div>
                 </div>
                 <h3 class="package-name">{{ package.name }}</h3>
                 <p class="package-desc">
@@ -109,5 +132,23 @@
         </div>
     </div>
 </section>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  window.__SPACEGAME_STRIPE_PUBLISHABLE_KEY__ = "{{ stripe_publishable_key|escapejs }}";
+  window.__SPACEGAME_PLAYER_UUID__ = "{{ player_uuid|default:''|escapejs }}";
+  window.addEventListener("DOMContentLoaded", function () {
+    if (window.SpaceGameStripe && typeof window.SpaceGameStripe.setupLandingCheckout === "function") {
+      window.SpaceGameStripe.setupLandingCheckout({
+        formId: "quick-checkout-form",
+        packageSelectId: "checkout-package",
+        quantityInputId: "checkout-quantity",
+        errorId: "checkout-error",
+        createCheckoutUrl: "/api/create-checkout-session/"
+      });
+    }
+  });
+</script>
 {% endblock %}
 

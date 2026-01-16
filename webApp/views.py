@@ -39,8 +39,10 @@ def landing_page(request):
     """
     Main landing page for the Space Game.
     """
+    player_uuid = get_or_create_player_uuid(request)
     context = {
         'stripe_publishable_key': settings.STRIPE_PUBLISHABLE_KEY,
+        'player_uuid': player_uuid,
         'packages': [
             {
                 'id': pkg_id,
@@ -177,15 +179,124 @@ def create_checkout_session(request):
     """
     try:
         data = json.loads(request.body)
-        package_id = data.get('package_id')
         player_uuid = data.get('player_uuid') or get_or_create_player_uuid(request)
-        
-        if package_id not in PACKAGES:
-            return JsonResponse({'error': 'Invalid package'}, status=400)
-        
-        package = PACKAGES[package_id]
-        amount_cents = int(package['price'] * 100)
-        merchant_reference = f"{player_uuid[:8]}_{package_id}_{uuid.uuid4().hex[:8]}"
+
+        # Backwards compatible input:
+        # - package_id: "gold_100" (single item)
+        # - quantity: 1..99 (optional, defaults to 1)
+        # - items: [{ "id": "gold_100", "quantity": 2 }, ...] (optional)
+        # - gold_coins + health_packs: two separate package IDs (optional)
+        package_id = data.get('package_id')
+        quantity = data.get('quantity', 1)
+        items = data.get('items')
+        gold_package_id = data.get('gold_coins') or data.get('gold_package_id') or data.get('Gold Coins')
+        health_package_id = data.get('health_packs') or data.get('health_package_id') or data.get('Health Packs')
+
+        line_items = []
+        normalized_items = []
+
+        # If the frontend sent separate selectors (gold + health), turn them into a multi-item checkout.
+        if items is None and (gold_package_id or health_package_id):
+            try:
+                quantity = int(quantity)
+            except Exception:
+                return JsonResponse({'error': 'Invalid quantity'}, status=400)
+            if quantity < 1 or quantity > 99:
+                return JsonResponse({'error': 'Quantity must be between 1 and 99'}, status=400)
+
+            combined: dict[str, int] = {}
+            for selected_id in [gold_package_id, health_package_id]:
+                if not selected_id:
+                    continue
+                if selected_id not in PACKAGES:
+                    return JsonResponse({'error': f'Invalid package: {selected_id}'}, status=400)
+                combined[selected_id] = combined.get(selected_id, 0) + quantity
+
+            if not combined:
+                return JsonResponse({'error': 'No items selected'}, status=400)
+
+            for item_id, item_qty in combined.items():
+                pkg = PACKAGES[item_id]
+                amount_cents = int(pkg['price'] * 100)
+                line_items.append(
+                    {
+                        'price_data': {
+                            'currency': 'usd',
+                            'product_data': {
+                                'name': pkg['name'],
+                                'description': f"Gold Coins: {pkg['gold_coins']}, Health Packs: {pkg['health_packs']}",
+                            },
+                            'unit_amount': amount_cents,
+                        },
+                        'quantity': item_qty,
+                    }
+                )
+                normalized_items.append({'id': item_id, 'quantity': item_qty})
+
+        elif items is not None:
+            if not isinstance(items, list) or len(items) == 0:
+                return JsonResponse({'error': 'Invalid items'}, status=400)
+
+            for item in items:
+                if not isinstance(item, dict):
+                    return JsonResponse({'error': 'Invalid items'}, status=400)
+                item_id = item.get('id')
+                item_qty = item.get('quantity', 1)
+
+                if item_id not in PACKAGES:
+                    return JsonResponse({'error': f'Invalid package: {item_id}'}, status=400)
+                try:
+                    item_qty = int(item_qty)
+                except Exception:
+                    return JsonResponse({'error': 'Invalid quantity'}, status=400)
+                if item_qty < 1 or item_qty > 99:
+                    return JsonResponse({'error': 'Quantity must be between 1 and 99'}, status=400)
+
+                pkg = PACKAGES[item_id]
+                amount_cents = int(pkg['price'] * 100)
+                line_items.append(
+                    {
+                        'price_data': {
+                            'currency': 'usd',
+                            'product_data': {
+                                'name': pkg['name'],
+                                'description': f"Gold Coins: {pkg['gold_coins']}, Health Packs: {pkg['health_packs']}",
+                            },
+                            'unit_amount': amount_cents,
+                        },
+                        'quantity': item_qty,
+                    }
+                )
+                normalized_items.append({'id': item_id, 'quantity': item_qty})
+        else:
+            if package_id not in PACKAGES:
+                return JsonResponse({'error': 'Invalid package'}, status=400)
+            try:
+                quantity = int(quantity)
+            except Exception:
+                return JsonResponse({'error': 'Invalid quantity'}, status=400)
+            if quantity < 1 or quantity > 99:
+                return JsonResponse({'error': 'Quantity must be between 1 and 99'}, status=400)
+
+            package = PACKAGES[package_id]
+            amount_cents = int(package['price'] * 100)
+            line_items = [
+                {
+                    'price_data': {
+                        'currency': 'usd',
+                        'product_data': {
+                            'name': package['name'],
+                            'description': f"Gold Coins: {package['gold_coins']}, Health Packs: {package['health_packs']}",
+                        },
+                        'unit_amount': amount_cents,
+                    },
+                    'quantity': quantity,
+                }
+            ]
+            normalized_items = [{'id': package_id, 'quantity': quantity}]
+
+        merchant_reference_seed = normalized_items[0]['id'] if normalized_items else 'multi'
+        merchant_reference = f"{player_uuid[:8]}_{merchant_reference_seed}_{uuid.uuid4().hex[:8]}"
         
         # Build URLs
         domain = request.build_absolute_uri('/').rstrip('/')
@@ -196,25 +307,11 @@ def create_checkout_session(request):
             mode='payment',
             success_url=success_url,
             cancel_url=cancel_url,
-            line_items=[
-                {
-                    'price_data': {
-                        'currency': 'usd',
-                        'product_data': {
-                            'name': package['name'],
-                            'description': f"Gold Coins: {package['gold_coins']}, Health Packs: {package['health_packs']}",
-                        },
-                        'unit_amount': amount_cents,
-                    },
-                    'quantity': 1,
-                }
-            ],
+            line_items=line_items,
             metadata={
                 'player_uuid': player_uuid,
-                'package_id': package_id,
                 'merchant_reference': merchant_reference,
-                'gold_coins': str(package['gold_coins']),
-                'health_packs': str(package['health_packs']),
+                'items': json.dumps(normalized_items),
             },
         )
         
@@ -273,9 +370,20 @@ def stripe_webhook(request):
         elif event_type == 'checkout.session.completed':
             metadata = data_object.metadata
             player_uuid = metadata.get('player_uuid')
-            package_id = metadata.get('package_id')
-            
-            print(f"Checkout completed for player {player_uuid}, package {package_id}")
+            package_id = metadata.get('package_id')  # legacy
+            items_raw = metadata.get('items')
+
+            items = None
+            if items_raw:
+                try:
+                    items = json.loads(items_raw)
+                except Exception:
+                    items = items_raw
+
+            if package_id:
+                print(f"Checkout completed for player {player_uuid}, package {package_id}")
+            else:
+                print(f"Checkout completed for player {player_uuid}, items {items}")
         
         elif event_type == 'payment_intent.payment_failed':
             print(f"Payment failed: {data_object.id}")

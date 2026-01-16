@@ -20,7 +20,7 @@
     <!-- Background image styling -->
     <style>
         body {
-            --background-primary: url('{% static images/main_menu_background.png %}');
+            --background-primary: url('{% static "images/main_menu_background.png" %}');
         }
     </style>
 
@@ -47,6 +47,7 @@
         </div>
     </footer>
     
+    <script src="{% static 'js/stripe.js' %}"></script>
     {% block extra_scripts %}{% endblock %}
 </body>
 </html>
