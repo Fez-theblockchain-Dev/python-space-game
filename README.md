@@ -60,7 +60,10 @@ assets/ — image and font assets loaded by the game (backgrounds, fonts, ship s
 
 audio/ — sound effects (laser sound loaded by the player class).
 
-backend_apis/ — backend services and economy integration (optional).
+backend_apis/ — backend services and economy integration.
+
+Demo:
+- Space Invaders Shop screen recording: [https://share.icloud.com/photos/04aff3DEOm7JH6AvxIznxHbeA]
 
 Dependencies:
 Game Client
