@@ -7,8 +7,12 @@
   }
 
   function showError(el, message) {
-    if (!el) return;
-    el.textContent = message || "Something went wrong. Please try again.";
+    const msg = message || "Something went wrong. Please try again.";
+    if (!el) {
+      window.alert(msg);
+      return;
+    }
+    el.textContent = msg;
     el.style.display = "block";
   }
 
@@ -68,6 +72,48 @@
     });
   }
 
+  function setupPackageCheckout(opts) {
+    const buttons = document.querySelectorAll(opts.buttonSelector || "");
+    const errorEl = opts.errorId ? byId(opts.errorId) : null;
+    const createCheckoutUrl = opts.createCheckoutUrl;
+
+    if (!buttons.length || !createCheckoutUrl) return;
+
+    buttons.forEach(function (button) {
+      button.addEventListener("click", async function (e) {
+        e.preventDefault();
+        if (errorEl) errorEl.style.display = "none";
+
+        const packageId = button.getAttribute("data-package-id");
+        if (!packageId) {
+          showError(errorEl, "Package is missing.");
+          return;
+        }
+
+        const payload = {
+          package_id: packageId,
+          quantity: 1
+        };
+
+        if (window.__SPACEGAME_PLAYER_UUID__) {
+          payload.player_uuid = window.__SPACEGAME_PLAYER_UUID__;
+        }
+
+        try {
+          const data = await postJson(createCheckoutUrl, payload);
+          if (data.url) {
+            window.location.href = data.url;
+            return;
+          }
+          showError(errorEl, "Checkout URL missing from server response.");
+        } catch (err) {
+          showError(errorEl, err && err.message ? err.message : String(err));
+        }
+      });
+    });
+  }
+
   window.SpaceGameStripe = window.SpaceGameStripe || {};
   window.SpaceGameStripe.setupLandingCheckout = setupLandingCheckout;
+  window.SpaceGameStripe.setupPackageCheckout = setupPackageCheckout;
 })();

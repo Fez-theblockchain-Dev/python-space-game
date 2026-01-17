@@ -1,5 +1,5 @@
-{% load static %}
 {% extends 'base.html' %}
+{% load static %}
 
 
 {% block content %}
@@ -80,7 +80,7 @@
                     {% endif %}
                 </div>
                 <div class="package-price">${{ package.price }} <span>USD</span></div>
-                <a href="/shop/{{ package.id }}/" class="btn btn-primary">Buy Now</a>
+                <a href="#" class="btn btn-primary js-package-checkout" data-package-id="{{ package.id }}">Buy Now</a>
             </div>
             {% endfor %}
         </div>
@@ -108,10 +108,6 @@
 
 <section class="features-section">
     <div class="container">
-        <div class="section-header">
-            <h2>Why Choose Us</h2>
-            <p>Your cosmic journey starts here</p>
-        </div>
         
         <div class="features-grid">
             <div class="card feature-card">
@@ -144,6 +140,13 @@
         formId: "quick-checkout-form",
         packageSelectId: "checkout-package",
         quantityInputId: "checkout-quantity",
+        errorId: "checkout-error",
+        createCheckoutUrl: "/api/create-checkout-session/"
+      });
+    }
+    if (window.SpaceGameStripe && typeof window.SpaceGameStripe.setupPackageCheckout === "function") {
+      window.SpaceGameStripe.setupPackageCheckout({
+        buttonSelector: ".js-package-checkout",
         errorId: "checkout-error",
         createCheckoutUrl: "/api/create-checkout-session/"
       });
