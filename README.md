@@ -62,7 +62,7 @@ audio/ — sound effects (laser sound loaded by the player class).
 
 backend_apis/ — backend services and economy integration.
 
-Demo:
+Demo of Space Invaders Shop:
 - Space Invaders Shop screen recording: [https://share.icloud.com/photos/04aff3DEOm7JH6AvxIznxHbeA]
 
 Dependencies:
