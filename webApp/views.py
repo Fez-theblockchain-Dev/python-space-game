@@ -422,3 +422,91 @@ def payment_cancelled(request):
     }
     return render(request, 'payment_cancelled.html', context)
 
+
+# ============================================================================
+# Wallet API Endpoints
+# ============================================================================
+
+@require_http_methods(["GET"])
+def get_wallet_balance(request):
+    """
+    Get player's wallet balance.
+    
+    Query params:
+        player_uuid: Player's unique identifier
+    
+    Returns:
+        JSON with gold_coins and health_packs balance
+    """
+    player_uuid = request.GET.get('player_uuid') or get_or_create_player_uuid(request)
+    
+    # For now, return mock data
+    # TODO: Integrate with backend_apis/stripe_payment_handler.py for real wallet data
+    # You can integrate with the FastAPI backend or use the SQLAlchemy models directly
+    
+    # Example integration with FastAPI backend:
+    # try:
+    #     import requests
+    #     response = requests.get(
+    #         f"{settings.BACKEND_API_URL}/api/wallet/{player_uuid}"
+    #     )
+    #     if response.ok:
+    #         return JsonResponse(response.json())
+    # except Exception:
+    #     pass
+    
+    return JsonResponse({
+        'player_uuid': player_uuid,
+        'gold_coins': 0,
+        'health_packs': 0,
+        'total_earned_coins': 0,
+        'total_earned_health_packs': 0,
+        'total_spent_usd': 0.0,
+    })
+
+
+@require_http_methods(["GET"])
+def get_packages(request):
+    """
+    Get all available packages for purchase.
+    
+    Returns:
+        JSON array of packages with id, name, price, gold_coins, health_packs
+    """
+    packages_list = [
+        {
+            'id': pkg_id,
+            'name': pkg['name'],
+            'price': pkg['price'],
+            'gold_coins': pkg['gold_coins'],
+            'health_packs': pkg['health_packs'],
+        }
+        for pkg_id, pkg in PACKAGES.items()
+    ]
+    return JsonResponse({'packages': packages_list})
+
+
+@require_http_methods(["GET"])
+def get_transaction_history(request):
+    """
+    Get player's transaction history.
+    
+    Query params:
+        player_uuid: Player's unique identifier
+        limit: Maximum number of transactions (default: 10)
+    
+    Returns:
+        JSON array of transactions
+    """
+    player_uuid = request.GET.get('player_uuid') or get_or_create_player_uuid(request)
+    limit = int(request.GET.get('limit', 10))
+    
+    # TODO: Integrate with backend_apis/stripe_payment_handler.py for real transaction data
+    # For now, return empty list
+    
+    return JsonResponse({
+        'player_uuid': player_uuid,
+        'transactions': [],
+        'total_count': 0,
+    })
+
