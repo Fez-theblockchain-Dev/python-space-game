@@ -107,13 +107,10 @@ player_wallets: dict[str, dict] = {}
 # Initialize Stripe service (uses environment variables)
 stripe_service = StripePaymentService()
 
+# Serve the Pygbag game at /play\
 GAME_BUILD_PATH = os.path.join(os.path.dirname(__file__), "..", "game", "build", "web")
 if os.path.exists(GAME_BUILD_PATH):
     app.mount("/play", StaticFiles(directory=GAME_BUILD_PATH, html=True), name="game")
-
-
-# Serve the Pygbag game at /play
-app.mount("/play", StaticFiles(directory="../game/build/web", html=True), name="game")
 
 # ============================================================================
 # Step 4: Pydantic Models (Request/Response Validation)
