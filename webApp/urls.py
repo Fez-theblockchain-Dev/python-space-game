@@ -27,8 +27,6 @@ import os
 
 
 
-GAME_BUILD_PATH = os.path.join(os.path.dirname(__file__), '..', 'game', 'build', 'web')
-
 urlpatterns = [
     # Landing page
     path('', views.landing_page, name='landing'),
@@ -52,7 +50,7 @@ urlpatterns = [
     path('payment/cancelled/', views.payment_cancelled, name='payment_cancelled'),
 
     # Route for web hosting connection through fast api of space invaders game
-     path('play/', lambda r: serve(r, 'index.html', document_root=GAME_BUILD_PATH)),
+    path('play/', lambda r: serve(r, 'index.html', document_root=GAME_BUILD_PATH)),
     re_path(r'^play/(?P<path>.*)$', serve, {'document_root': GAME_BUILD_PATH}),
 ]
 

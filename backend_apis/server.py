@@ -38,7 +38,6 @@ Payment (Stripe):
     POST /api/payments/webhook          - Stripe webhook handler
 """
 
-import os
 import uuid
 from typing import Optional
 from datetime import datetime
@@ -47,6 +46,8 @@ from fastapi import FastAPI, HTTPException, Request, Header
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
+from fastapi.staticfiles import StaticFiles
+import os
 
 # Import payment models and services
 try:
@@ -66,7 +67,7 @@ except ImportError:
 
 app = FastAPI(
     title="Space Game Economy API",
-    description="Backend API for multiplayer game connections, wallet management, and Stripe payments",
+    description="Backend API for browser game connections, wallet management, and Stripe payments",
     version="1.0.0",
 )
 
@@ -106,6 +107,13 @@ player_wallets: dict[str, dict] = {}
 # Initialize Stripe service (uses environment variables)
 stripe_service = StripePaymentService()
 
+GAME_BUILD_PATH = os.path.join(os.path.dirname(__file__), "..", "game", "build", "web")
+if os.path.exists(GAME_BUILD_PATH):
+    app.mount("/play", StaticFiles(directory=GAME_BUILD_PATH, html=True), name="game")
+
+
+# Serve the Pygbag game at /play
+app.mount("/play", StaticFiles(directory="../game/build/web", html=True), name="game")
 
 # ============================================================================
 # Step 4: Pydantic Models (Request/Response Validation)
