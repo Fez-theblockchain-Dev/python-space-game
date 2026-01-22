@@ -20,8 +20,14 @@ Pages:
     GET  /payment/success/               - Success page after payment
     GET  /payment/cancelled/             - Cancelled payment page
 """
-from django.urls import path
+from django.urls import path, re_path
 from . import views
+from django.views.static import serve
+import os
+
+
+
+GAME_BUILD_PATH = os.path.join(os.path.dirname(__file__), '..', 'game', 'build', 'web')
 
 urlpatterns = [
     # Landing page
@@ -44,5 +50,9 @@ urlpatterns = [
     # Payment result pages
     path('payment/success/', views.payment_success, name='payment_success'),
     path('payment/cancelled/', views.payment_cancelled, name='payment_cancelled'),
+
+    # Route for web hosting connection through fast api of space invaders game
+     path('play/', lambda r: serve(r, 'index.html', document_root=GAME_BUILD_PATH)),
+    re_path(r'^play/(?P<path>.*)$', serve, {'document_root': GAME_BUILD_PATH}),
 ]
 
