@@ -860,6 +860,9 @@ class Game:
         """Main game loop update method"""
         self.player.update()
         
+        # Update spaceship (for wallet data sync)
+        spaceship_group.update()
+        
         # Removed alien_lasers.update() - aliens don't shoot
         self.extra.update()
         
@@ -893,6 +896,9 @@ class Game:
         self.display_level()
         self.display_health()
         self.victory_message()
+        
+        # Draw player wallet ID (from SpaceShip class)
+        spaceship.draw_wallet_id(screen)
         
         # Display and handle main menu button
         if mouse_pos:
@@ -987,6 +993,8 @@ async def main():
             game.display_coins()
             game.display_level()
             game.display_health()
+            # Draw player wallet ID on pause screen
+            spaceship.draw_wallet_id(screen)
             game.display_pause_screen(screen, mouse_pos)
             # Draw mute button on pause screen too
             game.draw_mute_button(screen, mouse_pos)
