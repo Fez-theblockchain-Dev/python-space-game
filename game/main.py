@@ -13,7 +13,8 @@ from config import SCREEN_WIDTH, SCREEN_HEIGHT, DEFAULT_BACKGROUND_THEME
 from obstacle import Block, shape
 from spaceship import SpaceShip
 from laser import Laser
-from alien import Alien, AlienDiagonal, AlienDiver, check_alien_edges
+from alien import Alien, AlienDiagonal, AlienDiver, MysteryShip, check_alien_edges
+from treasureChest import TreasureChest, Key
 from button import Button
 from player import Player
 from mainMenu import theme_manager
@@ -305,6 +306,13 @@ class Game:
         self.alien_setup()  # Uses level config for predetermined alien counts
         self.alien_direction = 1
         
+        # Mystery Ship and Treasure Chest setup
+        self.mystery_ship = pygame.sprite.GroupSingle()
+        self.treasure_chests = pygame.sprite.Group()
+        self.keys = pygame.sprite.Group()
+        self.mystery_ship_spawn_time = random.randint(400, 800)  # Frames until mystery ship spawns
+        self.player_has_key = False
+        
         # Level completion tracking
         self.level_just_completed = False
         self.level_complete_counter = 0
@@ -511,6 +519,26 @@ class Game:
                 # Type 3: Diver aliens
                 diver_hit = pygame.sprite.spritecollide(laser, self.diver_aliens, True)
                 
+                # Mystery Ship collision
+                mystery_hit = pygame.sprite.spritecollide(laser, self.mystery_ship, False)
+                if mystery_hit:
+                    for mystery in mystery_hit:
+                        mystery.health -= 50  # Damage the mystery ship
+                        if mystery.health <= 0:
+                            self.score += mystery.value
+                            self.economy.add_score(mystery.value)
+                            self.economy.add_coins(mystery.value * 2)  # Double coins for mystery ship
+                            # Spawn treasure chest at mystery ship location
+                            treasure = TreasureChest.spawn_from_mystery_ship(mystery.rect)
+                            self.treasure_chests.add(treasure)
+                            # Spawn a key that falls down for the player to collect
+                            key = Key(mystery.rect.centerx + 50, mystery.rect.centery)
+                            self.keys.add(key)
+                            mystery.kill()
+                            if self.explosion_sound:
+                                self.explosion_sound.play()
+                    laser.kill()
+                
                 all_hits = aliens_hit + diagonal_hit + diver_hit
                 if all_hits:
                     for alien in all_hits:
@@ -521,6 +549,30 @@ class Game:
                     laser.kill()
                     if self.explosion_sound:
                         self.explosion_sound.play()
+        
+        # Player collision with keys
+        for key in list(self.keys):
+            if pygame.sprite.collide_rect(self.player.sprite, key):
+                key.collect()
+                self.player_has_key = True
+        
+        # Player collision with treasure chests
+        for chest in list(self.treasure_chests):
+            if pygame.sprite.collide_rect(self.player.sprite, chest):
+                if chest.locked and self.player_has_key:
+                    rewards = chest.unlock(has_key=True)
+                    if rewards:
+                        self.score += rewards['coins']
+                        self.economy.add_coins(rewards['coins'])
+                        # Apply health packs if any
+                        if rewards.get('health_packs', 0) > 0:
+                            health_gain = rewards['health_packs'] * 10
+                            self.player.sprite.health = min(100, self.player.sprite.health + health_gain)
+                        self.player_has_key = False  # Consume the key
+                        chest.kill()  # Remove chest after unlocking
+                elif chest.locked and not self.player_has_key:
+                    # Visual feedback that player needs a key (optional)
+                    pass
 
         # direct alien collision with player (aliens touching player) - check all groups
         aliens_touching_player = pygame.sprite.spritecollide(self.player.sprite, self.aliens, True)
@@ -672,6 +724,21 @@ class Game:
         self.extra_spawn_time -= 1
         if self.extra_spawn_time <= 0:
             self.extra_spawn_time = random.randint(400, 800)
+    
+    def mystery_ship_timer(self):
+        """Handle mystery ship spawning"""
+        self.mystery_ship_spawn_time -= 1
+        if self.mystery_ship_spawn_time <= 0 and not self.mystery_ship:
+            # Spawn mystery ship from left or right side randomly
+            side = random.choice(['left', 'right'])
+            if side == 'left':
+                x = -50
+            else:
+                x = SCREEN_WIDTH + 50
+            mystery = MysteryShip(x, 50)
+            mystery.direction = 1 if side == 'left' else -1
+            self.mystery_ship.add(mystery)
+            self.mystery_ship_spawn_time = random.randint(600, 1200)  # Reset timer
 
     def display_lives(self):
         """Display player lives"""
@@ -720,6 +787,12 @@ class Game:
         health_text = self.font.render(f"Health: {self.player.sprite.health}%", True, (255, 255, 255))
         text_rect = health_text.get_rect(center=(SCREEN_WIDTH // 2, bar_y - 15))
         screen.blit(health_text, text_rect)
+    
+    def display_key_indicator(self):
+        """Display key indicator if player has a key"""
+        if self.player_has_key:
+            key_text = self.font.render("🔑 KEY", True, (255, 215, 0))
+            screen.blit(key_text, (10, 100))
 
     def toggle_pause(self):
         """Toggle game pause state and sync with economy"""
@@ -871,6 +944,19 @@ class Game:
         self.diagonal_aliens.update()  # Type 2: diagonal movement
         self.diver_aliens.update()  # Type 3: straight down dive
         
+        # Update mystery ship
+        self.mystery_ship_timer()
+        if self.mystery_ship:
+            for mystery in self.mystery_ship:
+                mystery.update(getattr(mystery, 'direction', 1))
+                # Remove if off screen
+                if mystery.rect.right < 0 or mystery.rect.left > SCREEN_WIDTH:
+                    mystery.kill()
+        
+        # Update treasure chests and keys
+        self.treasure_chests.update()
+        self.keys.update()
+        
         self.alien_position_checker()
         self.extra_alien_timer()
         self.remove_offscreen_aliens()  # Remove aliens that passed below the screen
@@ -888,6 +974,13 @@ class Game:
         self.diagonal_aliens.draw(screen)  # Type 2
         self.diver_aliens.draw(screen)  # Type 3
         
+        # Draw mystery ship
+        self.mystery_ship.draw(screen)
+        
+        # Draw treasure chests and keys
+        self.treasure_chests.draw(screen)
+        self.keys.draw(screen)
+        
         # Removed alien_lasers.draw() - aliens don't shoot
         self.extra.draw(screen)
         self.display_lives()
@@ -895,6 +988,7 @@ class Game:
         self.display_coins()
         self.display_level()
         self.display_health()
+        self.display_key_indicator()
         self.victory_message()
         
         # Draw player wallet ID (from SpaceShip class)

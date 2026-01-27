@@ -144,21 +144,34 @@ class AlienDiver(pygame.sprite.Sprite):
 
 
 class MysteryShip(pygame.sprite.Sprite):
-    """Mystery ship that flies across the screen for bonus points."""
-    def __init__(self, x, y):
+    """Mystery ship that flies across the screen for bonus points. Uses assets/mystery.png image."""
+    def __init__(self, x, y, scale_size=(60, 50)):
         super().__init__()
         script_dir = os.path.dirname(os.path.abspath(__file__))
         project_root = os.path.dirname(script_dir)
         path = os.path.join(project_root, "assets/mystery.png")
-        self.image = pygame.image.load(path)
+        
+        # Load and scale the mystery ship image
+        if os.path.exists(path):
+            original_image = pygame.image.load(path).convert_alpha()
+            self.image = pygame.transform.scale(original_image, scale_size)
+        else:
+            # Fallback to a red rectangle if image doesn't exist
+            self.image = pygame.Surface(scale_size, pygame.SRCALPHA)
+            self.image.fill((255, 0, 0))  # Red color
+            print(f"Warning: Could not load mystery ship image from {path}")
+        
         self.rect = self.image.get_rect(topleft=(x, y))
         self.health = 250
         self.speed = 3
         self.value = 500
+        self.direction = 1  # Default direction
 
-    def update(self, direction=1):
+    def update(self, direction=None):
         """Move horizontally across screen."""
-        self.rect.x += direction * self.speed
+        if direction is not None:
+            self.direction = direction
+        self.rect.x += self.direction * self.speed
         if self.health <= 0:
             self.kill()
             print("Mystery Ship Destroyed. Mystery treasure chest key has been claimed!")
