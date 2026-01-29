@@ -305,6 +305,7 @@ def create_checkout_session(request):
         
         session = stripe.checkout.Session.create(
             mode='payment',
+            automatic_tax={'enabled': True}, # how tax is handeled in game economy checkout shop
             success_url=success_url,
             cancel_url=cancel_url,
             line_items=line_items,
