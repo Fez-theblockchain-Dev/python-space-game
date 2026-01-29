@@ -165,13 +165,13 @@ class MysteryShip(pygame.sprite.Sprite):
         self.health = 250
         self.speed = 3
         self.value = 500
-        self.direction = 1  # Default direction
+        self.direction = random.choice([-1, 1])  # Randomize direction: -1 = left, 1 = right
 
     def update(self, direction=None):
         """Move horizontally across screen."""
-        if direction is not None:
-            self.direction = direction
-        self.rect.x += self.direction * self.speed
+        # Use instance direction if none provided
+        move_direction = direction if direction is not None else self.direction
+        self.rect.x += move_direction * self.speed
         if self.health <= 0:
             self.kill()
             print("Mystery Ship Destroyed. Mystery treasure chest key has been claimed!")
