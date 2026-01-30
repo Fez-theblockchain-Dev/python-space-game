@@ -109,6 +109,7 @@ class TreasureChest(pygame.sprite.Sprite):
 class Key(pygame.sprite.Sprite):
     """
     Key item that drops from MysteryShip and unlocks TreasureChests.
+    Appears on screen for 3 seconds after MysteryShip is destroyed.
     """
     def __init__(self, x, y):
         super().__init__()
@@ -127,10 +128,35 @@ class Key(pygame.sprite.Sprite):
         self.rect = self.image.get_rect(center=(x, y))
         self.collected = False
         self.fall_speed = 2
+        
+        # Timer for 3-second visibility after MysteryShip is destroyed
+        self.spawn_time = pygame.time.get_ticks()
+        self.display_duration = 3000  # 3 seconds in milliseconds
+        self.is_active = True
+
+    @classmethod
+    def spawn_from_mystery_ship(cls, mystery_ship_rect):
+        """
+        Factory method to create a Key at the MysteryShip's position.
+        Called when a MysteryShip is destroyed.
+        """
+        x = mystery_ship_rect.centerx
+        y = mystery_ship_rect.centery
+        print("🔑 A Key has dropped from the Mystery Ship!")
+        return cls(x, y)
 
     def update(self):
-        """Key falls down after spawning."""
-        if not self.collected:
+        """Key falls down after spawning and disappears after 3 seconds."""
+        if not self.collected and self.is_active:
+            # Check if 3 seconds have passed since spawn
+            current_time = pygame.time.get_ticks()
+            if current_time - self.spawn_time >= self.display_duration:
+                self.is_active = False
+                self.kill()
+                print("🔑 Key disappeared!")
+                return
+            
+            # Fall down movement
             self.rect.y += self.fall_speed
             
             # Remove if off screen
