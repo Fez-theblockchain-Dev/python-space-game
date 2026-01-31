@@ -27,7 +27,7 @@ if not IS_BROWSER:
 # ============================================================================
 
 PLAYER_ID_FILE = "player_id.json"
-BACKEND_URL = os.getenv("GAME_BACKEND_URL", "http://localhost:8002")
+BACKEND_URL = os.getenv("GAME_BACKEND_URL", "http://localhost:8080")
 
 
 # ============================================================================
