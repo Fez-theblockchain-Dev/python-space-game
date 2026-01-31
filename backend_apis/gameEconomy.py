@@ -5,23 +5,29 @@ This module provides:
 - Local game economy management (score, health, in-game session state)
 - Backend API client for wallet sync and purchases
 - Player ID management
+- Browser (Pygbag) compatibility for web deployment
 """
 import uuid
 import os
 import json
 import webbrowser
+import sys
 from typing import Optional
 from dataclasses import dataclass
 
-# For API calls to backend
-import requests
+# Detect if running in browser (Pygbag/Emscripten)
+IS_BROWSER = sys.platform == "emscripten"
+
+# Conditional import for HTTP requests
+if not IS_BROWSER:
+    import requests  # Only available on desktop
 
 # ============================================================================
 # Configuration
 # ============================================================================
 
 PLAYER_ID_FILE = "player_id.json"
-BACKEND_URL = os.getenv("GAME_BACKEND_URL", "http://localhost:8000")
+BACKEND_URL = os.getenv("GAME_BACKEND_URL", "http://localhost:8002")
 
 
 # ============================================================================
@@ -34,26 +40,56 @@ def generate_player_id() -> str:
 
 
 def get_or_create_player_id() -> str:
-    """Get existing player ID or create a new one and save it."""
-    if os.path.exists(PLAYER_ID_FILE):
+    """Get existing player ID or create a new one and save it.
+    
+    Uses localStorage in browser, file system on desktop.
+    """
+    if IS_BROWSER:
+        # Use browser localStorage for persistence
         try:
-            with open(PLAYER_ID_FILE, 'r') as f:
-                data = json.load(f)
-                player_id = data.get('player_id')
-                if player_id:
-                    return player_id
-        except (json.JSONDecodeError, KeyError):
-            pass
+            from platform import window
+            stored_id = window.localStorage.getItem("player_id")
+            if stored_id and stored_id != "null":
+                return stored_id
+            # Generate and store new ID
+            new_id = generate_player_id()
+            window.localStorage.setItem("player_id", new_id)
+            return new_id
+        except Exception as e:
+            print(f"Browser localStorage error: {e}")
+            # Fallback to session-only ID
+            return generate_player_id()
+    else:
+        # Desktop: use file-based storage
+        if os.path.exists(PLAYER_ID_FILE):
+            try:
+                with open(PLAYER_ID_FILE, 'r') as f:
+                    data = json.load(f)
+                    player_id = data.get('player_id')
+                    if player_id:
+                        return player_id
+            except (json.JSONDecodeError, KeyError):
+                pass
 
-    player_id = generate_player_id()
-    save_player_id(player_id)
-    return player_id
+        player_id = generate_player_id()
+        save_player_id(player_id)
+        return player_id
 
 
 def save_player_id(player_id: str):
-    """Save player ID to file."""
-    with open(PLAYER_ID_FILE, 'w') as f:
-        json.dump({'player_id': player_id}, f)
+    """Save player ID to persistent storage.
+    
+    Uses localStorage in browser, file system on desktop.
+    """
+    if IS_BROWSER:
+        try:
+            from platform import window
+            window.localStorage.setItem("player_id", player_id)
+        except Exception as e:
+            print(f"Browser localStorage save error: {e}")
+    else:
+        with open(PLAYER_ID_FILE, 'w') as f:
+            json.dump({'player_id': player_id}, f)
 
 
 # Initialize player ID on module load
@@ -101,22 +137,78 @@ class Package:
 
 
 class BackendClient:
-    """Client for communicating with the game backend API."""
+    """Client for communicating with the game backend API.
+    
+    Supports both desktop (requests library) and browser (JavaScript fetch) environments.
+    """
     
     def __init__(self, base_url: str = None, player_uuid: str = None):
         self.base_url = (base_url or BACKEND_URL).rstrip('/')
         self.player_uuid = player_uuid or get_player_id()
         self._cached_wallet: Optional[WalletBalance] = None
+        self._pending_requests = []  # For async browser requests
     
     def _request(self, method: str, endpoint: str, **kwargs) -> Optional[dict]:
-        """Make an HTTP request to the backend."""
+        """Make an HTTP request to the backend.
+        
+        Uses requests library on desktop, JavaScript fetch in browser.
+        """
         url = f"{self.base_url}{endpoint}"
+        
+        if IS_BROWSER:
+            return self._browser_request_sync(method, url, **kwargs)
+        else:
+            return self._desktop_request(method, url, **kwargs)
+    
+    def _desktop_request(self, method: str, url: str, **kwargs) -> Optional[dict]:
+        """Desktop HTTP request using requests library."""
         try:
             response = requests.request(method, url, timeout=10, **kwargs)
             response.raise_for_status()
             return response.json()
         except requests.RequestException as e:
             print(f"Backend request failed: {e}")
+            return None
+    
+    def _browser_request_sync(self, method: str, url: str, **kwargs) -> Optional[dict]:
+        """Browser HTTP request using JavaScript fetch (synchronous wrapper).
+        
+        Note: In browser, we use a synchronous XMLHttpRequest for compatibility
+        with the existing synchronous API. For better performance, consider
+        using async methods.
+        """
+        try:
+            from platform import window
+            
+            # Create XMLHttpRequest for synchronous call
+            xhr = window.XMLHttpRequest.new()
+            xhr.open(method, url, False)  # False = synchronous
+            
+            # Set headers for JSON
+            xhr.setRequestHeader("Content-Type", "application/json")
+            
+            # Prepare body if present
+            body = None
+            if "json" in kwargs:
+                body = json.dumps(kwargs["json"])
+            
+            # Send request
+            if body:
+                xhr.send(body)
+            else:
+                xhr.send()
+            
+            # Check response
+            if xhr.status >= 200 and xhr.status < 300:
+                response_text = xhr.responseText
+                if response_text:
+                    return json.loads(response_text)
+            else:
+                print(f"Browser request failed with status: {xhr.status}")
+            
+            return None
+        except Exception as e:
+            print(f"Browser request error: {e}")
             return None
     
     def get_wallet(self, force_refresh: bool = False) -> Optional[WalletBalance]:
@@ -222,8 +314,19 @@ class BackendClient:
         )
         
         if session.success and session.checkout_url:
-            webbrowser.open(session.checkout_url)
-            return True
+            if IS_BROWSER:
+                # In browser, use JavaScript to open URL in new tab
+                try:
+                    from platform import window
+                    window.open(session.checkout_url, "_blank")
+                    return True
+                except Exception as e:
+                    print(f"Failed to open checkout URL in browser: {e}")
+                    return False
+            else:
+                # On desktop, use webbrowser module
+                webbrowser.open(session.checkout_url)
+                return True
         
         print(f"Failed to initiate purchase: {session.error}")
         return False

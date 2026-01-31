@@ -20,16 +20,24 @@ from player import Player
 from mainMenu import theme_manager
 # Note: main_menu imported lazily inside main() to avoid circular import
 
+# Detect if running in browser (Pygbag/Emscripten)
+IS_BROWSER = sys.platform == "emscripten"
+
 # Add parent directory to path so we can import from backend_apis
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from backend_apis.gameEconomy import GameEconomy
 
-DEBUG_LOG_PATH = "/Users/ramez/Desktop/ramezdev/python-space-game/.cursor/debug.log"
+# Debug logging configuration - only used on desktop
+DEBUG_LOG_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), ".cursor", "debug.log")
 DEBUG_SESSION_ID = "debug-session"
 
 #region agent log
 def _agent_log(payload):
-    """Write NDJSON debug log entry; keep failures silent for gameplay."""
+    """Write NDJSON debug log entry; skip in browser environment."""
+    # Skip file logging in browser - no filesystem access
+    if IS_BROWSER:
+        return
+    
     try:
         os.makedirs(os.path.dirname(DEBUG_LOG_PATH), exist_ok=True)
         base = {
