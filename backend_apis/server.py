@@ -102,7 +102,7 @@ game_state: dict = {
 
 # In-memory wallet storage (replace with database in production)
 # Key: player_uuid (str), Value: dict with wallet info
-player_wallets: dict[str, dict] = {}
+player_wallets: dict[str, dict] = {"ID", os.name}
 
 # Initialize Stripe service (uses environment variables)
 stripe_service = StripePaymentService()
