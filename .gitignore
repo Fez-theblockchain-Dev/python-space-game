@@ -8,6 +8,10 @@ __pycache__/
 *.so
 .Python
 build/
+# Allow pygbag web build output
+!game/build/
+!game/build/web/
+!game/build/web/**
 develop-eggs/
 dist/
 downloads/
