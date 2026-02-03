@@ -44,10 +44,16 @@ from datetime import datetime
 
 from fastapi import FastAPI, HTTPException, Request, Header
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, FileResponse
 from pydantic import BaseModel
 from fastapi.staticfiles import StaticFiles
 import os
+import mimetypes
+
+# Register MIME types for pygbag files
+mimetypes.add_type("application/zip", ".apk")
+mimetypes.add_type("application/wasm", ".wasm")
+mimetypes.add_type("application/javascript", ".js")
 
 # Import payment models and services
 try:
@@ -102,15 +108,29 @@ game_state: dict = {
 
 # In-memory wallet storage (replace with database in production)
 # Key: player_uuid (str), Value: dict with wallet info
-player_wallets: dict[str, dict] = {"ID", os.name}
+player_wallets: dict[str, dict] = {}
 
 # Initialize Stripe service (uses environment variables)
 stripe_service = StripePaymentService()
 
-# Serve the Pygbag game at /play\
+# Serve the Pygbag game at /play
+# Note: pygbag builds require specific MIME types for .apk files (zip archives)
 GAME_BUILD_PATH = os.path.join(os.path.dirname(__file__), "..", "game", "build", "web")
+print(f"📁 Game build path: {GAME_BUILD_PATH}")
+print(f"📁 Game build exists: {os.path.exists(GAME_BUILD_PATH)}")
+
 if os.path.exists(GAME_BUILD_PATH):
+    # List files in the build directory for debugging
+    try:
+        files = os.listdir(GAME_BUILD_PATH)
+        print(f"📁 Game build files: {files}")
+    except Exception as e:
+        print(f"⚠️ Could not list game build files: {e}")
+    
     app.mount("/play", StaticFiles(directory=GAME_BUILD_PATH, html=True), name="game")
+    print("✅ Mounted pygbag game at /play")
+else:
+    print(f"⚠️ Game build not found at {GAME_BUILD_PATH}")
 
 # ============================================================================
 # Step 4: Pydantic Models (Request/Response Validation)
@@ -195,6 +215,50 @@ def health_check():
         "status": "healthy",
         "connected_players": len(connected_players),
         "timestamp": datetime.now().isoformat()
+    }
+
+
+@app.get("/play/game.apk")
+async def serve_game_apk():
+    """
+    Serve the pygbag game APK with correct MIME type and CORS headers.
+    The .apk file is actually a ZIP archive containing the game assets.
+    """
+    apk_path = os.path.join(GAME_BUILD_PATH, "game.apk")
+    if not os.path.exists(apk_path):
+        raise HTTPException(status_code=404, detail="Game APK not found")
+    
+    return FileResponse(
+        apk_path,
+        media_type="application/zip",
+        headers={
+            "Access-Control-Allow-Origin": "*",
+            "Cache-Control": "no-cache",
+        }
+    )
+
+
+@app.get("/game-status")
+def game_status():
+    """
+    Check if the pygbag game build is available.
+    Test with: curl http://localhost:8000/game-status
+    """
+    game_available = os.path.exists(GAME_BUILD_PATH)
+    files = []
+    
+    if game_available:
+        try:
+            files = os.listdir(GAME_BUILD_PATH)
+        except Exception:
+            pass
+    
+    return {
+        "game_available": game_available,
+        "game_path": GAME_BUILD_PATH,
+        "game_url": "/play" if game_available else None,
+        "files": files,
+        "instructions": "Access the game at http://localhost:8000/play" if game_available else "Run 'pygbag game/main.py' to build the game first"
     }
 
 

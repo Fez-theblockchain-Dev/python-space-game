@@ -66,7 +66,7 @@ class Player(Base):
 
     id = Column(Integer, primary_key=True)
     player_uuid = Column(String(64), unique=True, nullable=False, index=True)
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime, default=datetime, nullable=False)
 
     wallet = relationship("PlayerWallet", back_populates="player", uselist=False)
     transactions = relationship("Transaction", back_populates="player")
