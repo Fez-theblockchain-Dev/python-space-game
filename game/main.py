@@ -66,7 +66,7 @@ RED = (255, 0, 0) #red for laser
 ROYAL_BLUE = (65, 105, 225) 
 BLACK = (0, 0, 0) #screen overlay to create multiple screens illusion
 
-screen.fill('black')
+screen.fill('assets/512x512_purple_nebula_1.png')
 # Get the directory of this script to handle paths correctly
 script_dir = os.path.dirname(os.path.abspath(__file__))
 project_root = os.path.dirname(script_dir)
