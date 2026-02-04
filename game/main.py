@@ -66,7 +66,7 @@ RED = (255, 0, 0) #red for laser
 ROYAL_BLUE = (65, 105, 225) 
 BLACK = (0, 0, 0) #screen overlay to create multiple screens illusion
 
-screen.fill('assets/512x512_purple_nebula_1.png')
+
 # Get the directory of this script to handle paths correctly
 script_dir = os.path.dirname(os.path.abspath(__file__))
 project_root = os.path.dirname(script_dir)
@@ -76,7 +76,9 @@ nebula_image = pygame.image.load(os.path.join(project_root, DEFAULT_BACKGROUND_T
 nebula_bg = pygame.transform.scale(nebula_image, (SCREEN_WIDTH, SCREEN_HEIGHT))
 
 # Font link
-font = pygame.font.Font(os.path.join(project_root, 'assets/Fonts/hyperspace/Hyperspace Bold Italic.otf'), 20)
+title_font = pygame.font.Font(os.path.join(project_root, 'assets/Fonts/hyperspace/Hyperspace Bold Italic.otf'), 36)
+title_surface = title_font.render("Space Invaders", True, (255, 255, 255))
+title_rect = title_surface.get_rect(centerx=SCREEN_WIDTH // 2, y=20)  # 20px from top
 
 # HeroShip class definition
 class HeroShip(pygame.sprite.Sprite):
@@ -531,8 +533,8 @@ class Game:
                 mystery_hit = pygame.sprite.spritecollide(laser, self.mystery_ship, False)
                 if mystery_hit:
                     for mystery in mystery_hit:
-                        mystery.health -= 50  # Damage the mystery ship
-                        if mystery.health <= 0:
+                        is_destroyed = mystery.take_damage(50)  # 3 hits to destroy (50 damage × 3 = 150 health)
+                        if is_destroyed:
                             self.score += mystery.value
                             self.economy.add_score(mystery.value)
                             self.economy.add_coins(mystery.value * 2)  # Double coins for mystery ship
@@ -1081,7 +1083,9 @@ async def main():
                 mouse_clicked = True
 
         # Draw background using current theme
-        screen.blit(game.get_current_background(), (0, 0)) 
+        screen.blit(game.get_current_background(), (0, 0))
+        # Renders the title of the game on the screen
+        screen.blit(title_surface, title_rect)
 
         # Handle pause state
         if game.is_paused:

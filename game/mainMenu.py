@@ -25,12 +25,7 @@ class ThemeManager:
         # Get the base directory (parent of game directory)
         base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         
-        # Flat black background
-        black_bg = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
-        black_bg.fill((0, 0, 0))
-        self.themes.append(("Black", black_bg))
-        
-        # Load default purple nebula background (using config constant)
+        # Load default purple nebula background FIRST (using config constant)
         nebula_bg_path = os.path.join(base_dir, DEFAULT_BACKGROUND_THEME)
         if os.path.exists(nebula_bg_path):
             try:
@@ -39,6 +34,11 @@ class ThemeManager:
                 self.themes.append(("Purple Nebula", nebula_bg))
             except pygame.error:
                 print(f"Warning: Could not load {nebula_bg_path}")
+        
+        # Flat black background
+        black_bg = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
+        black_bg.fill((0, 0, 0))
+        self.themes.append(("Black", black_bg))
         
         # Load main menu background if it exists
         menu_bg_path = os.path.join(base_dir, 'assets', 'main_menu_background.png')

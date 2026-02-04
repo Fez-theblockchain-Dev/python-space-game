@@ -162,17 +162,35 @@ class MysteryShip(pygame.sprite.Sprite):
             print(f"Warning: Could not load mystery ship image from {path}")
         
         self.rect = self.image.get_rect(topleft=(x, y))
-        self.health = 250
+        self.health = 150  # 3 hits to destroy (each hit does 50 damage)
         self.speed = 3
         self.value = 500
         self.direction = random.choice([-1, 1])  # Randomize direction: -1 = left, 1 = right
+        self.hits_taken = 0  # Track number of hits for debugging
 
     def update(self, direction=None):
         """Move horizontally across screen."""
         # Use instance direction if none provided
         move_direction = direction if direction is not None else self.direction
         self.rect.x += move_direction * self.speed
+        
+        # Check if ship should be destroyed
         if self.health <= 0:
             self.kill()
             print("Mystery Ship Destroyed. Mystery treasure chest key has been claimed!")
+        
+        # Remove if off screen
+        if self.rect.right < 0 or self.rect.left > SCREEN_WIDTH:
+            self.kill()
+
+    def take_damage(self, damage=50):
+        """Apply damage to the mystery ship. Returns True if ship is destroyed."""
+        self.hits_taken += 1
+        self.health -= damage
+        print(f"Mystery Ship hit! ({self.hits_taken}/3 hits) - Health: {self.health}/150")
+        
+        if self.health <= 0:
+            print("Mystery Ship Destroyed! Key unlocked!")
+            return True
+        return False
 
