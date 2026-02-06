@@ -5,9 +5,6 @@ import urllib.request
 import urllib.error
 
 class SpaceShip(pygame.sprite.Sprite):
-    # API endpoint for wallet data
-    API_BASE_URL = "http://localhost:8000"
-    
     def __init__(self, x, y, health=10):
         super().__init__()
         script_dir = os.path.dirname(os.path.abspath(__file__))

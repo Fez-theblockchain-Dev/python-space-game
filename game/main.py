@@ -80,6 +80,9 @@ title_font = pygame.font.Font(os.path.join(project_root, 'assets/Fonts/hyperspac
 title_surface = title_font.render("Space Invaders", True, (255, 255, 255))
 title_rect = title_surface.get_rect(centerx=SCREEN_WIDTH // 2, y=20)  # 20px from top
 
+# General font for UI text (health, level messages, game over, etc.)
+font = pygame.font.Font(os.path.join(project_root, 'assets/Fonts/hyperspace/Hyperspace Bold Italic.otf'), 20)
+
 # HeroShip class definition
 class HeroShip(pygame.sprite.Sprite):
     def __init__(self, x, y, width, height, lives,level, health=100, ):
@@ -256,7 +259,6 @@ class Level (pygame.sprite.Sprite):
 
     # alien 'collisions' w/ laser logic
 
-from laser import Laser
 # alien collisions
 alien = Alien(1, 2, 100, 100)  # Create an alien instance
 
@@ -590,14 +592,12 @@ class Game:
         diver_touching_player = pygame.sprite.spritecollide(self.player.sprite, self.diver_aliens, True)
         aliens_touching_player = aliens_touching_player + diagonal_touching_player + diver_touching_player
         if aliens_touching_player:
-            # if player/alien collide, take one player life for each time a collision occurs
+            # if player/alien collide, decrement health by 25% for each collision
             for alien in aliens_touching_player:
-                self.lives -= 1  # decrement a life by 1 (5 lives before losing game)
                 decrement_health(self.player.sprite, screen)
 
-            # Update economy health based on lives (each life = 33.33 health points)
-            health_percentage = (self.lives / 3.0) * 100
-            self.economy.update_health(int(health_percentage))
+            # Update economy health based on player's actual health
+            self.economy.update_health(int(self.player.sprite.health))
 
             #region agent log
             _agent_log({
@@ -607,20 +607,20 @@ class Game:
                 "message": "alien_player_collision",
                 "data": {
                     "collisions": len(aliens_touching_player),
-                    "lives_after": self.lives,
-                    "health_percentage": health_percentage,
+                    "player_health": self.player.sprite.health,
+                    "health_percentage": self.player.sprite.health,
                 },
             })
             #endregion
 
-            if self.lives <= 0:
+            if self.player.sprite.health <= 0:
                 #region agent log
                 _agent_log({
                     "runId": "pre-fix",
                     "hypothesisId": "A",
                     "location": "game/main.py:collision_checks:game_over",
-                    "message": "player_out_of_lives",
-                    "data": {"lives": self.lives},
+                    "message": "player_out_of_health",
+                    "data": {"health": self.player.sprite.health},
                 })
                 #endregion
                 return False  # Signal game over
