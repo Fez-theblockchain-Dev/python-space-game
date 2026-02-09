@@ -16,7 +16,7 @@ class SpaceShip(pygame.sprite.Sprite):
         self.speed = 5
         
         # Wallet tracking
-        self.player_wallet_id = self._load_player_id(project_root)
+        self.player_wallet_id = self.load_player_id(project_root)
         self.gold_coins = 0
         self.wallet_last_fetched = 0
         self.wallet_fetch_interval = 5000  # Fetch wallet every 5 seconds (milliseconds)
@@ -29,9 +29,9 @@ class SpaceShip(pygame.sprite.Sprite):
             self.wallet_font = pygame.font.SysFont('arial', 14)
         
         # Initial wallet fetch
-        self._fetch_wallet_data()
+        self.fetch_wallet_data()
     
-    def _load_player_id(self, project_root):
+    def load_player_id(self, project_root):
         """Load the player's wallet ID from player_id.json"""
         player_id_path = os.path.join(project_root, 'player_id.json')
         try:
@@ -42,22 +42,23 @@ class SpaceShip(pygame.sprite.Sprite):
             print(f"Warning: Could not load player_id.json: {e}")
             return None
     
-    def _fetch_wallet_data(self):
+    def fetch_wallet_data(self):
         """Fetch wallet data from the backend API to get gold_coins from past matches"""
         if not self.player_wallet_id:
-            return
-        
+            return 
+           
         try:
-            url = f"{self.API_BASE_URL}/api/wallet/{self.player_wallet_id}"
+            # Backend API (pygbag game served at /play on same host:8000)
+            url = f"http://localhost:8000/api/wallet/{self.player_wallet_id}"
             req = urllib.request.Request(url, method='GET')
             req.add_header('Content-Type', 'application/json')
             
             with urllib.request.urlopen(req, timeout=2) as response:
                 data = json.loads(response.read().decode('utf-8'))
                 self.gold_coins = data.get('gold_coins', 0)
-        except (urllib.error.URLError, urllib.error.HTTPError, json.JSONDecodeError) as e:
+        except (urllib.error.URLError, urllib.error.HTTPError, json.JSONDecodeError):
             # Silently fail - API might not be running
-            pass
+                pass
     
     def update(self):
         """Update spaceship state, including periodic wallet data refresh"""

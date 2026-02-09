@@ -34,7 +34,7 @@ BACKEND_URL = os.getenv("GAME_BACKEND_URL", "http://localhost:8080")
 # Player ID Management
 # ============================================================================
 
-def generate_player_id() -> str:
+def generate_player_id(self) -> str:
     """Generate a new unique player ID."""
     return str(uuid.uuid4())
 

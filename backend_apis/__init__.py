@@ -4,3 +4,6 @@
 from backend_apis.server import app
 
 __all__ = ["app"]
+
+
+API_BASE_LAYER="(e.g. http://localhost:8000)"
