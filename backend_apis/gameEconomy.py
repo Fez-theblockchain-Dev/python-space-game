@@ -14,7 +14,6 @@ import webbrowser
 import sys
 from typing import Optional
 from dataclasses import dataclass
-
 # Detect if running in browser (Pygbag/Emscripten)
 IS_BROWSER = sys.platform == "emscripten"
 
@@ -491,8 +490,9 @@ class GameEconomy:
             amount: Number of coins to add to session earnings
         """
         if amount > 0:
-            self.session_coins_earned += amount
-
+            self.session_coins_earned += amount 
+            pass
+       
 # save session analytics function for gold coins 
     
     def save_session_coins(self) -> dict:
@@ -521,7 +521,7 @@ class GameEconomy:
         if result.get("success"):
             saved_amount = self.session_coins_earned
             self.session_coins_earned = 0  # Reset session earnings
-            self.sync_wallet()  # Refresh wallet balance
+            self.sync_wallet()  # Refresh wallet balance from backend
             return {
                 "success": True,
                 "coins_added": saved_amount,
