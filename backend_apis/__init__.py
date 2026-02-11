@@ -1,9 +1,8 @@
 """Backend APIs package for the space game."""
 
-# Export the FastAPI app from server module for easy access
-from backend_apis.server import app
+# Note: FastAPI app lives in server.py at project root (from server import app)
+# Avoid importing app here to prevent circular import (server imports backend_apis.*)
 
-__all__ = ["app"]
+__all__: list[str] = []
 
-
-API_BASE_LAYER="(e.g. http://localhost:8000)"
+API_BASE_LAYER = "(e.g. http://localhost:8000)"
