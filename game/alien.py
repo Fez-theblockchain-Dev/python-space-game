@@ -1,3 +1,4 @@
+from tkinter import HORIZONTAL
 import pygame, random, os
 from config import SCREEN_WIDTH, SCREEN_HEIGHT
 
@@ -64,7 +65,8 @@ class Alien(pygame.sprite.Sprite):
         return {
             1: {'file': 'alien_1.png', 'movement': 'horizontal', 'description': 'Standard formation alien'},
             2: {'file': 'alien_2.png', 'movement': 'diagonal', 'description': 'Diagonal movement alien'},
-            3: {'file': 'alien_3.png', 'movement': 'dive', 'description': 'Diving alien (flipped, moves straight down)'}
+            3: {'file': 'alien_3.png', 'movement': 'dive', 'description': 'Diving alien (flipped, moves straight down)'},
+            4: {'file': 'mystery.png', 'movement': 'horizontal-fast', 'description': 'periodically moves across the top of the screen horizontally and quickly.'}
         }
 
 

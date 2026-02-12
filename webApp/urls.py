@@ -24,7 +24,7 @@ from django.urls import path, re_path
 from . import views
 from django.views.static import serve
 import os
-from backend_apis.server import GAME_BUILD_PATH 
+from server import GAME_BUILD_PATH 
 
 
 
