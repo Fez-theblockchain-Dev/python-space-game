@@ -66,7 +66,10 @@ class SpaceShip(pygame.sprite.Sprite):
         
         # Periodically fetch wallet data to keep gold_coins in sync
         if current_time - self.wallet_last_fetched >= self.wallet_fetch_interval:
-            self._fetch_wallet_data()
+            try:
+                self.fetch_wallet_data()
+            except Exception:
+                pass  # Don't crash game loop on network errors (especially in Emscripten)
             self.wallet_last_fetched = current_time
     
     def draw_wallet_id(self, screen):

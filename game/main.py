@@ -516,12 +516,14 @@ class Game:
         })
         #endregion
 
-        # player lasers 
+        # player lasers - use list() copy to safely remove sprites during iteration
+        # (Pygbag/Emscripten crashes if sprite group is modified during iteration)
         if self.player.sprite.lasers:
-            for laser in self.player.sprite.lasers:
+            for laser in list[Laser](self.player.sprite.lasers):
                 # obstacle collisions
                 if pygame.sprite.spritecollide(laser, self.blocks, True):
                     laser.kill()
+                    continue  # laser is gone, skip remaining checks
                 
                 # alien collisions - check all alien groups
                 # Type 1: Standard formation aliens
@@ -550,6 +552,7 @@ class Game:
                             if self.explosion_sound:
                                 self.explosion_sound.play()
                     laser.kill()
+                    continue  # laser is gone, skip remaining checks
                 
                 all_hits = aliens_hit + diagonal_hit + diver_hit
                 if all_hits:
@@ -954,10 +957,10 @@ class Game:
         self.diagonal_aliens.update()  # Type 2: diagonal movement
         self.diver_aliens.update()  # Type 3: straight down dive
         
-        # Update mystery ship
+        # Update mystery ship - use list() to avoid modifying group during iteration
         self.mystery_ship_timer()
         if self.mystery_ship:
-            for mystery in self.mystery_ship:
+            for mystery in list[MysteryShip](self.mystery_ship):
                 mystery.update(getattr(mystery, 'direction', 1))
                 # Remove if off screen
                 if mystery.rect.right < 0 or mystery.rect.left > SCREEN_WIDTH:
