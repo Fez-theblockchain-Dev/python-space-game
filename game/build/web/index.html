@@ -256,7 +256,6 @@ config = {
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes"/>
 
-    <link name="favicon" href="game/build/web/Favicon_for_browser_game.png">
     <link rel="prefetch" href="https://pygame-web.github.io/archives/0.9/pythonrc.py">
     <link rel="prefetch" href="https://pygame-web.github.io/archives/0.9/vt/xterm.js">
     <link rel="prefetch" href="https://pygame-web.github.io/archives/0.9/vt/xterm-addon-image.js">
@@ -349,7 +348,7 @@ config = {
 <body>
 
     <div id="transfer" align=center>
-<!--    <div class="spinner" id='spinner'></div> -->
+<!--        <div class="spinner" id='spinner'></div> -->
         <div class="emscripten" id="status">Downloading...</div>
         <div class="emscripten">
             <progress value="0" max="100" id="progress"></progress>
@@ -365,7 +364,7 @@ height="1px"
 
     <div id=html></div>
 
-    <div id=crt  class="bottom-right" >
+    <div id=crt  class=bottomright >
 
         <div id="system" hidden>
             <div class="button-container">
@@ -376,9 +375,9 @@ height="1px"
             </div>
 
             <div class="button-container">
-                <div id="load_min>min</div">
-                <div id="load_avg>avg</div">
-                <div id="load_max>max</div">
+                <div id=load_min>min</div>
+                <div id=load_avg>avg</div>
+                <div id=load_max>max</div>
               <button id="load_rst" disabled>RESET</button>
             </div>
 
@@ -387,7 +386,7 @@ height="1px"
 
         </div>
 
-        <div id="box" class="emscripten_border" hidden="True">
+        <div id=box class="emscripten_border" hidden=true>
 
             <div id="info" class="trinfo"></div>
 
