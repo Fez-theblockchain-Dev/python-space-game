@@ -1,5 +1,5 @@
 """
-Django settings for Space Game Web App.
+Django settings for Space Invaders Store landing page.
 """
 import os
 from pathlib import Path

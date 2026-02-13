@@ -18,7 +18,7 @@ from treasureChest import TreasureChest, Key
 from button import Button
 from player import Player
 from mainMenu import theme_manager
-# Note: main_menu imported lazily inside main() to avoid circular import
+from mainMenu import main_menu  # Entry point for web: menu -> play -> game
 
 # Detect if running in browser (Pygbag/Emscripten)
 IS_BROWSER = sys.platform == "emscripten"
@@ -1258,9 +1258,9 @@ class TreasureChest(pygame.sprite.Sprite):
 class StrictStartError(Exception):
     pass
 
-# Entry point - use asyncio.run for Pygbag web compatibility
+# Entry point - start from main menu for full playable flow in DOM (Pygbag/Emscripten)
 if __name__ == "__main__":
-    asyncio.run(main())
+    asyncio.run(main_menu())
 
 
 
