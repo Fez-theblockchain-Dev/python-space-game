@@ -83,7 +83,7 @@ Configuration:
 -The backend API base URL is configurable via the GAME_BACKEND_URL environment variable (defaults to http://localhost:8000).
 
 -** Pygbag server for playing the space invaders game through DOM browser can be run using:
-python -m pygbag --port 8666 game **
+python -m pygbag --template custom.tmpl --port 8666 game **
 
 Troubleshooting:
 -Ensure Python and Pygame are installed correctly.
