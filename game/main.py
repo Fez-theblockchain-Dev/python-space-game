@@ -324,6 +324,9 @@ class Game:
         self.keys = pygame.sprite.Group()
         self.mystery_ship_spawn_time = random.randint(400, 800)  # Frames until mystery ship spawns
         self.player_has_key = False
+        self.mystery_bounty_end_time = 0
+        self.mystery_bounty_duration_ms = 2500
+        self._mystery_bounty_image = None
         
         # Level completion tracking
         self.level_just_completed = False
@@ -542,6 +545,7 @@ class Game:
                             self.score += mystery.value
                             self.economy.add_score(mystery.value)
                             self.economy.add_coins(mystery.value * 2)  # Double coins for mystery ship
+                            self.mystery_bounty_end_time = pygame.time.get_ticks() + self.mystery_bounty_duration_ms
                             # Spawn treasure chest at mystery ship location
                             treasure = TreasureChest.spawn_from_mystery_ship(mystery.rect)
                             self.treasure_chests.add(treasure)
@@ -752,6 +756,48 @@ class Game:
             mystery.direction = 1 if side == 'left' else -1
             self.mystery_ship.add(mystery)
             self.mystery_ship_spawn_time = random.randint(600, 1200)  # Reset timer
+
+    def _load_mystery_bounty_image(self):
+        """Load and cache center-screen bounty chest image."""
+        if self._mystery_bounty_image is not None:
+            return self._mystery_bounty_image
+
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        project_root = os.path.dirname(script_dir)
+        chest_path = os.path.join(project_root, "assets/treasure_chest.png")
+        try:
+            image = pygame.image.load(chest_path).convert_alpha()
+            self._mystery_bounty_image = pygame.transform.scale(image, (180, 180))
+        except (pygame.error, FileNotFoundError):
+            fallback = pygame.Surface((180, 180), pygame.SRCALPHA)
+            pygame.draw.rect(fallback, (218, 165, 32), (0, 0, 180, 180), border_radius=16)
+            self._mystery_bounty_image = fallback
+
+        return self._mystery_bounty_image
+
+    def draw_mystery_bounty_overlay(self, screen):
+        """Draw center-screen mystery bounty celebration for a short time."""
+        now = pygame.time.get_ticks()
+        if now >= self.mystery_bounty_end_time:
+            return
+
+        overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
+        overlay.fill((0, 0, 0, 90))
+        screen.blit(overlay, (0, 0))
+
+        chest_image = self._load_mystery_bounty_image().copy()
+        pulse = 210 + int(45 * pygame.math.Vector2(0, 1).rotate(now * 0.25).y)
+        chest_image.set_alpha(max(120, min(255, pulse)))
+        chest_rect = chest_image.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 20))
+        screen.blit(chest_image, chest_rect)
+
+        title = self.font.render("MYSTERY BOUNTY!", True, (255, 230, 90))
+        title_rect = title.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 90))
+        screen.blit(title, title_rect)
+
+        subtitle = self.font.render("Treasure claimed after destroying the mystery ship!", True, (255, 255, 255))
+        subtitle_rect = subtitle.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 120))
+        screen.blit(subtitle, subtitle_rect)
 
     def display_lives(self):
         """Display player lives"""
@@ -965,10 +1011,12 @@ class Game:
                 # Remove if off screen
                 if mystery.rect.right < 0 or mystery.rect.left > SCREEN_WIDTH:
                     mystery.kill()
-        
+                    continue
+
         # Update treasure chests and keys
         self.treasure_chests.update()
         self.keys.update()
+
         
         self.alien_position_checker()
         self.extra_alien_timer()
@@ -1002,6 +1050,7 @@ class Game:
         self.display_level()
         self.display_health()
         self.display_key_indicator()
+        self.draw_mystery_bounty_overlay(screen)
         self.victory_message()
         
         # Draw player wallet ID (from SpaceShip class)
