@@ -10,7 +10,7 @@ import json
 from pygame.locals import * #For useful variables
 from typing import Any
 from config import SCREEN_WIDTH, SCREEN_HEIGHT, DEFAULT_BACKGROUND_THEME
-from game import treasureChest
+from treasureChest import TreasureChest
 from obstacle import Block, shape
 from spaceship import SpaceShip
 from laser import Laser
