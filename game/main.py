@@ -10,6 +10,7 @@ import json
 from pygame.locals import * #For useful variables
 from typing import Any
 from config import SCREEN_WIDTH, SCREEN_HEIGHT, DEFAULT_BACKGROUND_THEME
+from game import treasureChest
 from obstacle import Block, shape
 from spaceship import SpaceShip
 from laser import Laser
@@ -283,10 +284,7 @@ class Game:
         # Player setup
         player_sprite = Player((SCREEN_WIDTH / 2, SCREEN_HEIGHT), SCREEN_WIDTH, 5)
         self.player = pygame.sprite.GroupSingle(player_sprite)
-        x_start = (0,0)
-        y_start = (0,100)
         
-
         # Economy system setup
         self.economy = GameEconomy(initial_health=100)
 
@@ -375,6 +373,17 @@ class Game:
             base_color="#d7fcd4",
             hovering_color="White"
         )
+
+        # Wallet button setup
+        self.wallet_button = Button(
+            image=None,
+            pos=(SCREEN_WIDTH - 360, 30),
+            text_input="WALLET",
+            font=menu_button_font,
+            base_color="#d7fcd4",
+            hovering_color="White"
+        )
+        self.show_wallet_panel = False
         
         # Pause state
         self.is_paused = False
@@ -581,8 +590,14 @@ class Game:
                 if chest.locked and self.player_has_key:
                     rewards = chest.unlock(has_key=True)
                     if rewards:
-                        self.score += rewards['coins']
-                        self.economy.add_coins(rewards['coins'])
+                        # Chest coins are already randomized in TreasureChest using config min/max values.
+                        randomized_bonus = rewards.get('coins', 0)
+                        if randomized_bonus > 0:
+                            self.score += randomized_bonus
+                            self.economy.add_coins(randomized_bonus)
+                            # Persist chest rewards to wallet immediately on collection.
+                            self.economy.save_session_coins()
+                            self.economy.sync_wallet()
                         # Apply health packs if any
                         if rewards.get('health_packs', 0) > 0:
                             health_gain = rewards['health_packs'] * 10
@@ -772,8 +787,8 @@ class Game:
             fallback = pygame.Surface((180, 180), pygame.SRCALPHA)
             pygame.draw.rect(fallback, (218, 165, 32), (0, 0, 180, 180), border_radius=16)
             self._mystery_bounty_image = fallback
-
         return self._mystery_bounty_image
+        
 
     def draw_mystery_bounty_overlay(self, screen):
         """Draw center-screen mystery bounty celebration for a short time."""
@@ -852,6 +867,42 @@ class Game:
         if self.player_has_key:
             key_text = self.font.render("🔑 KEY", True, (255, 215, 0))
             screen.blit(key_text, (10, 100))
+
+    def draw_wallet_panel(self, screen):
+        """Draw wallet details panel with player ID and balances."""
+        if not self.show_wallet_panel:
+            return
+
+        wallet = self.economy.get_wallet_balance()
+        wallet_id = spaceship.get_wallet_id() or "Not found"
+
+        panel_width = 460
+        panel_height = 230
+        panel_x = SCREEN_WIDTH - panel_width - 20
+        panel_y = 65
+        panel_rect = pygame.Rect(panel_x, panel_y, panel_width, panel_height)
+
+        panel_surface = pygame.Surface((panel_width, panel_height), pygame.SRCALPHA)
+        panel_surface.fill((15, 20, 35, 220))
+        screen.blit(panel_surface, panel_rect.topleft)
+        pygame.draw.rect(screen, (100, 140, 220), panel_rect, 2, border_radius=8)
+
+        line_y = panel_y + 16
+        line_gap = 30
+        wallet_lines = [
+            "Player Wallet",
+            f"Wallet ID: {wallet_id}",
+            f"Gold Coins: {wallet.get('gold_coins', 0):,}",
+            f"Health Packs: {wallet.get('health_packs', 0):,}",
+            f"Total Earned Coins: {wallet.get('total_earned_coins', 0):,}",
+            f"Session Coins: {self.economy.session_coins_earned:,}",
+        ]
+
+        for index, text in enumerate(wallet_lines):
+            color = (255, 230, 90) if index == 0 else (255, 255, 255)
+            rendered = self.font.render(text, True, color)
+            screen.blit(rendered, (panel_x + 14, line_y))
+            line_y += line_gap
 
     def toggle_pause(self):
         """Toggle game pause state and sync with economy"""
@@ -1060,9 +1111,12 @@ class Game:
         if mouse_pos:
             self.menu_button.change_color(mouse_pos)
             self.pause_button.change_color(mouse_pos)
+            self.wallet_button.change_color(mouse_pos)
         self.menu_button.update(screen)
         self.pause_button.update(screen)
+        self.wallet_button.update(screen)
         self.draw_mute_button(screen, mouse_pos)
+        self.draw_wallet_panel(screen)
         
         # Check if menu button was clicked
         if mouse_clicked and mouse_pos:
@@ -1071,6 +1125,10 @@ class Game:
             if self.pause_button.check_input(mouse_pos):
                 self.toggle_pause()
                 return "paused"  # Signal game is paused
+            if self.wallet_button.check_input(mouse_pos):
+                self.show_wallet_panel = not self.show_wallet_panel
+                if self.show_wallet_panel:
+                    self.economy.sync_wallet()
             # Check mute button click
             self.check_mute_button_click(mouse_pos)
         
