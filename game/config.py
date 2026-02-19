@@ -1,5 +1,6 @@
 # this config file wil centrally store the imports for the game to avoid circular imports
 
+import os
 # Screen dimensions
 SCREEN_WIDTH = 1280
 SCREEN_HEIGHT = 720
@@ -35,3 +36,6 @@ TREASURE_CHEST_MAX_HEALTH_PACK = 5
 # ============================================
 # Default background theme (relative path from project root)
 DEFAULT_BACKGROUND_THEME = "assets/512x512_purple_nebula_1.png"
+
+# Server constants/paths
+GAME_BUILD_PATH = os.path.join(os.path.dirname(__file__), "game", "build", "web")

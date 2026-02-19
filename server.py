@@ -60,6 +60,10 @@ from backend_apis.models import PackageType, PACKAGES, TransactionStatus
 from backend_apis.stripe_service import StripePaymentService
 from backend_apis.stripe_payment_handler import StripePaymentHandler
 
+# web socket (WS) implementation imports for persistent connection between pygbag server and client
+from fastapi import WebSocket
+from game.config import GAME_BUILD_PATH
+
 
 # ============================================================================
 # Step 1: Create the FastAPI App
@@ -107,9 +111,12 @@ player_wallets: dict[str, dict] = {}
 # Initialize Stripe service (uses environment variables)
 stripe_service = StripePaymentService()
 
+# ===================================================================================================================
+# Step 4: fastAPI web socket connection to help maintain persistent connections between client & server
+# ===================================================================================================================
+
 # Serve the Pygbag game at /play
 # Note: pygbag builds require specific MIME types for .apk files (zip archives)
-GAME_BUILD_PATH = os.path.join(os.path.dirname(__file__), "game", "build", "web")
 print(f"📁 Game build path: {GAME_BUILD_PATH}")
 print(f"📁 Game build exists: {os.path.exists(GAME_BUILD_PATH)}")
 
@@ -120,6 +127,7 @@ if os.path.exists(GAME_BUILD_PATH):
         print(f"📁 Game build files: {files}")
     except Exception as e:
         print(f"⚠️ Could not list game build files: {e}")
+        print(GAME_BUILD_PATH)
     
     app.mount("/play", StaticFiles(directory=GAME_BUILD_PATH, html=True), name="game")
     print("✅ Mounted pygbag game at /play")
