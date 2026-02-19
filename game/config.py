@@ -39,3 +39,4 @@ DEFAULT_BACKGROUND_THEME = "assets/512x512_purple_nebula_1.png"
 
 # Server constants/paths
 GAME_BUILD_PATH = os.path.join(os.path.dirname(__file__), "build", "web")
+PYGBAG_PORT = 8666

@@ -38,6 +38,7 @@ Payment (Stripe):
     POST /api/payments/webhook          - Stripe webhook handler
 """
 
+from starlette.websockets import WebSocket
 import uuid
 from typing import Optional
 from datetime import datetime
@@ -61,8 +62,10 @@ from backend_apis.stripe_service import StripePaymentService
 from backend_apis.stripe_payment_handler import StripePaymentHandler
 
 # web socket (WS) implementation imports for persistent connection between pygbag server and client
-from fastapi import WebSocket
-from game.config import GAME_BUILD_PATH
+from fastapi import WebSocket, WebSocketDisconnect
+from game.config import GAME_BUILD_PATH, PYGBAG_PORT
+import asyncio
+import json
 
 
 # ============================================================================
@@ -114,6 +117,138 @@ stripe_service = StripePaymentService()
 # ===================================================================================================================
 # Step 4: fastAPI web socket connection to help maintain persistent connections between client & server
 # ===================================================================================================================
+
+class GameConnectionManager:
+    """Tracks active WebSocket connections and provides broadcast helpers."""
+
+    def __init__(self):
+        self.active_connections: dict[str, WebSocket] = {}
+
+    async def connect(self, player_id: str, websocket: WebSocket):
+        await websocket.accept()
+        self.active_connections[player_id] = websocket
+        print(f"🔌 WebSocket connected: {player_id} (total: {len(self.active_connections)})")
+
+    def disconnect(self, player_id: str):
+        self.active_connections.pop(player_id, None)
+        print(f"🔌 WebSocket disconnected: {player_id} (total: {len(self.active_connections)})")
+
+    async def send_personal(self, player_id: str, data: dict):
+        ws = self.active_connections.get(player_id)
+        if ws:
+            await ws.send_json(data)
+
+    async def broadcast(self, data: dict, exclude: str | None = None):
+        for pid, ws in list[tuple[str, WebSocket]](self.active_connections.items()):
+            if pid != exclude:
+                try:
+                    await ws.send_json(data)
+                except Exception:
+                    self.active_connections.pop(pid, None)
+
+    async def broadcast_game_state(self):
+        state = {
+            "type": "game_state",
+            "players": {
+                pid: {"name": p["name"], "x": p["x"], "y": p["y"], "score": p["score"]}
+                for pid, p in connected_players.items()
+            },
+            "timestamp": datetime.now().isoformat(),
+        }
+        await self.broadcast(state)
+
+
+ws_manager = GameConnectionManager()
+
+
+@app.websocket("/ws/{player_id}")
+async def websocket_endpoint(websocket: WebSocket, player_id: str):
+    """
+    Persistent WebSocket session for a game client served by Pygbag (port 8666).
+
+    Connect from the browser:
+        const ws = new WebSocket("ws://localhost:8000/ws/<player_id>");
+
+    Message protocol (JSON):
+        -> { "type": "position", "x": 100, "y": 200 }
+        -> { "type": "score",    "score": 42 }
+        -> { "type": "chat",     "message": "hello" }
+        -> { "type": "ping" }
+        <- { "type": "pong" }
+        <- { "type": "game_state", "players": { ... } }
+    """
+    await ws_manager.connect(player_id, websocket)
+
+    if player_id not in connected_players:
+        connected_players[player_id] = {
+            "name": f"Player_{player_id[:4]}",
+            "x": 400,
+            "y": 300,
+            "score": 0,
+            "joined_at": datetime.now().isoformat(),
+        }
+
+    await ws_manager.send_personal(player_id, {
+        "type": "welcome",
+        "player_id": player_id,
+        "players": connected_players,
+        "pygbag_port": PYGBAG_PORT,
+    })
+
+    await ws_manager.broadcast({
+        "type": "player_joined",
+        "player_id": player_id,
+        "name": connected_players[player_id]["name"],
+    }, exclude=player_id)
+
+    try:
+        while True:
+            data = await websocket.receive_json()
+            msg_type = data.get("type")
+
+            if msg_type == "position":
+                if player_id in connected_players:
+                    connected_players[player_id]["x"] = data.get("x", 0)
+                    connected_players[player_id]["y"] = data.get("y", 0)
+                await ws_manager.broadcast({
+                    "type": "player_moved",
+                    "player_id": player_id,
+                    "x": data.get("x", 0),
+                    "y": data.get("y", 0),
+                }, exclude=player_id)
+
+            elif msg_type == "score":
+                if player_id in connected_players:
+                    connected_players[player_id]["score"] = data.get("score", 0)
+                await ws_manager.broadcast({
+                    "type": "score_update",
+                    "player_id": player_id,
+                    "score": data.get("score", 0),
+                })
+
+            elif msg_type == "chat":
+                await ws_manager.broadcast({
+                    "type": "chat",
+                    "player_id": player_id,
+                    "message": data.get("message", ""),
+                })
+
+            elif msg_type == "game_state_request":
+                await ws_manager.broadcast_game_state()
+
+            elif msg_type == "ping":
+                await ws_manager.send_personal(player_id, {"type": "pong"})
+
+    except WebSocketDisconnect:
+        ws_manager.disconnect(player_id)
+        if player_id in connected_players:
+            del connected_players[player_id]
+        await ws_manager.broadcast({
+            "type": "player_left",
+            "player_id": player_id,
+        })
+
+
 
 # Serve the Pygbag game at /play
 # Note: pygbag builds require specific MIME types for .apk files (zip archives)
