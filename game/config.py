@@ -38,4 +38,4 @@ TREASURE_CHEST_MAX_HEALTH_PACK = 5
 DEFAULT_BACKGROUND_THEME = "assets/512x512_purple_nebula_1.png"
 
 # Server constants/paths
-GAME_BUILD_PATH = os.path.join(os.path.dirname(__file__), "game", "build", "web")
+GAME_BUILD_PATH = os.path.join(os.path.dirname(__file__), "build", "web")
