@@ -14,7 +14,7 @@ from treasureChest import TreasureChest
 from obstacle import Block, shape
 from spaceship import SpaceShip
 from laser import Laser
-from alien import Alien, AlienDiagonal, AlienDiver, MysteryShip, check_alien_edges
+from alien import Alien, AlienDiagonal, AlienDiver, MysteryShip
 from treasureChest import TreasureChest, Key
 from button import Button
 from player import Player

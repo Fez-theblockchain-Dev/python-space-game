@@ -5,7 +5,7 @@ from config import SCREEN_WIDTH, SCREEN_HEIGHT
 
 aliens = pygame.sprite.Group()
 
-def check_alien_edges(alien_group, direction):
+def check_alien_edges(self, alien_group, direction):
     """Check if any alien hits screen edge. Returns reversed direction if edge hit, otherwise returns same direction."""
     edge_hit = False
     for alien in alien_group:
