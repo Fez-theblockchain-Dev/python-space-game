@@ -2,7 +2,7 @@
 Stripe Payment Handler - Orchestrates payment flow between Stripe and database.
 """
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 from dataclasses import dataclass
 from sqlalchemy.orm import Session
@@ -236,7 +236,7 @@ class StripePaymentHandler:
         transaction.psp_reference = webhook_result.payment_intent_id or transaction.psp_reference
         transaction.payment_method = webhook_result.payment_method_type
         transaction.webhook_data = json.dumps(webhook_result.raw_data)
-        transaction.updated_at = datetime.utcnow()
+        transaction.updated_at = datetime.now(timezone.utc)
         
         # Map event to status
         new_status = self.stripe.get_transaction_status_from_event(
