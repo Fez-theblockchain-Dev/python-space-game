@@ -237,7 +237,7 @@ class StripePaymentHandler:
         transaction.payment_method = webhook_result.payment_method_type
         transaction.webhook_data = json.dumps(webhook_result.raw_data)
         transaction.updated_at = datetime.utcnow()
-        
+    e    
         # Map event to status
         new_status = self.stripe.get_transaction_status_from_event(
             webhook_result.event_type,

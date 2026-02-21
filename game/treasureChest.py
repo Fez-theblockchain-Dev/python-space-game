@@ -95,8 +95,6 @@ class TreasureChest(pygame.sprite.Sprite):
                     self.rect.centery = self.target_y
                     self.is_spawning = False
         
-        # Floating animation when idle (locked and not spawning)
-        if not self.is_spawning and self.locked:
             # Gentle float effect
             float_offset = int(3 * pygame.math.Vector2(0, 1).rotate(pygame.time.get_ticks() * 0.1).y)
             self.rect.centery = self.target_y + float_offset
