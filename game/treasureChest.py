@@ -22,10 +22,8 @@ class TreasureChest(pygame.sprite.Sprite):
         path = os.path.join(project_root, "assets/treasure_chest.png")
         if os.path.exists(path):
             original_image = pygame.image.load(path).convert_alpha()
-            # Scale the image to a reasonable game size
             self.image = pygame.transform.scale(original_image, scale_size)
         else:
-            # Fallback to a colored rectangle if image doesn't exist
             self.image = pygame.Surface((40, 40))
             self.image.fill((218, 165, 32))  # Gold color
         
@@ -39,16 +37,17 @@ class TreasureChest(pygame.sprite.Sprite):
         self.spawn_time = pygame.time.get_ticks()
         self.spawn_animation_duration = 1000  # 1 second spawn animation
         self.is_spawning = True
+        self.ready_for_wallet = False
         self.alpha = 0  # Start invisible for fade-in effect
         self.fall_speed = 2  # Speed at which chest falls down
         self.target_y = y  # Final resting position
         self.rect.y = y - 100  # Start above target position
 
-    def unlock(self, has_key=True):
-        """Unlock the treasure chest if player has a key."""
-        if self.locked and has_key:
+    def unlock(self):
+        """Unlock the treasure chest and return its rewards."""
+        if self.locked:
             self.locked = False
-            self.is_spawning = False  # Stop any spawn animation
+            self.is_spawning = False
             print("🎉 Treasure Chest unlocked! Reward granted!")
             return self.get_rewards()
         return None
@@ -94,14 +93,16 @@ class TreasureChest(pygame.sprite.Sprite):
                 if self.rect.centery >= self.target_y:
                     self.rect.centery = self.target_y
                     self.is_spawning = False
+                    self.ready_for_wallet = True
         
-            # Gentle float effect
+        # Floating animation when idle (locked and not spawning)
+        if not self.is_spawning and self.locked and not self.ready_for_wallet:
             float_offset = int(3 * pygame.math.Vector2(0, 1).rotate(pygame.time.get_ticks() * 0.1).y)
             self.rect.centery = self.target_y + float_offset
         
         # Remove if off screen (fell through)
         if self.rect.top > SCREEN_HEIGHT:
-            self.kill() 
+            self.kill()
 
 
 class Key(pygame.sprite.Sprite):

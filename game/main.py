@@ -326,6 +326,9 @@ class Game:
         self.mystery_bounty_duration_ms = 2500
         self._mystery_bounty_image = None
         
+        # Wallet treasure chest inventory — chests stored here after they land
+        self.wallet_chests = []
+        
         # Level completion tracking
         self.level_just_completed = False
         self.level_complete_counter = 0
@@ -584,29 +587,21 @@ class Game:
                 key.collect()
                 self.player_has_key = True
         
-        # Player collision with treasure chests
+        # Player collision with treasure chests (no key required)
         for chest in list(self.treasure_chests):
-            if pygame.sprite.collide_rect(self.player.sprite, chest):
-                if chest.locked and self.player_has_key:
-                    rewards = chest.unlock(has_key=True)
-                    if rewards:
-                        # Chest coins are already randomized in TreasureChest using config min/max values.
-                        randomized_bonus = rewards.get('coins', 0)
-                        if randomized_bonus > 0:
-                            self.score += randomized_bonus
-                            self.economy.add_coins(randomized_bonus)
-                            # Persist chest rewards to wallet immediately on collection.
-                            self.economy.save_session_coins()
-                            self.economy.sync_wallet()
-                        # Apply health packs if any
-                        if rewards.get('health_packs', 0) > 0:
-                            health_gain = rewards['health_packs'] * 10
-                            self.player.sprite.health = min(100, self.player.sprite.health + health_gain)
-                        self.player_has_key = False  # Consume the key
-                        chest.kill()  # Remove chest after unlocking
-                elif chest.locked and not self.player_has_key:
-                    # Visual feedback that player needs a key (optional)
-                    pass
+            if pygame.sprite.collide_rect(self.player.sprite, chest) and chest.locked:
+                rewards = chest.unlock()
+                if rewards:
+                    randomized_bonus = rewards.get('coins', 0)
+                    if randomized_bonus > 0:
+                        self.score += randomized_bonus
+                        self.economy.add_coins(randomized_bonus)
+                        self.economy.save_session_coins()
+                        self.economy.sync_wallet()
+                    if rewards.get('health_packs', 0) > 0:
+                        health_gain = rewards['health_packs'] * 10
+                        self.player.sprite.health = min(100, self.player.sprite.health + health_gain)
+                    chest.kill()
 
         # direct alien collision with player (aliens touching player) - check all groups
         aliens_touching_player = pygame.sprite.spritecollide(self.player.sprite, self.aliens, True)
@@ -868,16 +863,52 @@ class Game:
             key_text = self.font.render("🔑 KEY", True, (255, 215, 0))
             screen.blit(key_text, (10, 100))
 
+    def collect_chests_to_wallet(self):
+        """Move treasure chests that finished spawning into the player's wallet inventory."""
+        for chest in list(self.treasure_chests):
+            if chest.ready_for_wallet:
+                self.wallet_chests.append(chest)
+                chest.kill()
+                print(f"Treasure Chest stored in wallet! ({chest.value} coins inside)")
+
+    def activate_wallet_chest(self, index):
+        """Open a chest from the wallet inventory and grant rewards to the player."""
+        if index < 0 or index >= len(self.wallet_chests):
+            return None
+        
+        chest = self.wallet_chests[index]
+        
+        if not chest.locked:
+            return None
+        
+        rewards = chest.unlock()
+        if rewards:
+            bonus = rewards.get('coins', 0)
+            if bonus > 0:
+                self.score += bonus
+                self.economy.add_coins(bonus)
+                self.economy.save_session_coins()
+                self.economy.sync_wallet()
+            if rewards.get('health_packs', 0) > 0:
+                health_gain = rewards['health_packs'] * 10
+                self.player.sprite.health = min(100, self.player.sprite.health + health_gain)
+            self.wallet_chests.pop(index)
+            return rewards
+        return None
+
     def draw_wallet_panel(self, screen):
-        """Draw wallet details panel with player ID and balances."""
+        """Draw wallet details panel with player ID, balances, and stored treasure chests."""
         if not self.show_wallet_panel:
             return
 
         wallet = self.economy.get_wallet_balance()
         wallet_id = spaceship.get_wallet_id() or "Not found"
 
+        chest_count = len(self.wallet_chests)
+        chest_section_height = max(0, chest_count) * 50 + (30 if chest_count > 0 else 0)
+
         panel_width = 460
-        panel_height = 230
+        panel_height = 230 + chest_section_height
         panel_x = SCREEN_WIDTH - panel_width - 20
         panel_y = 65
         panel_rect = pygame.Rect(panel_x, panel_y, panel_width, panel_height)
@@ -903,6 +934,41 @@ class Game:
             rendered = self.font.render(text, True, color)
             screen.blit(rendered, (panel_x + 14, line_y))
             line_y += line_gap
+
+        # Treasure chest inventory section
+        if chest_count > 0:
+            line_y += 10
+            header = self.font.render(f"Treasure Chests ({chest_count})", True, (255, 230, 90))
+            screen.blit(header, (panel_x + 14, line_y))
+            line_y += line_gap
+
+            self._wallet_chest_rects = []
+            for i, chest in enumerate(self.wallet_chests):
+                status = "LOCKED" if chest.locked else "OPEN"
+                hp_text = f" + {chest.health_packs} HP" if chest.health_packs > 0 else ""
+                label = f"  Chest #{i+1}: {chest.value:,} coins{hp_text} [{status}]"
+
+                btn_rect = pygame.Rect(panel_x + 10, line_y - 2, panel_width - 20, 26)
+                self._wallet_chest_rects.append(btn_rect)
+
+                mouse_pos = pygame.mouse.get_pos()
+                hovering = btn_rect.collidepoint(mouse_pos)
+
+                if hovering and chest.locked:
+                    pygame.draw.rect(screen, (60, 80, 40, 180), btn_rect, border_radius=4)
+                    label_color = (100, 255, 100)
+                else:
+                    label_color = (255, 255, 255)
+
+                rendered = self.font.render(label, True, label_color)
+                screen.blit(rendered, (panel_x + 14, line_y))
+                line_y += 50
+
+            if chest_count > 0:
+                hint = self.font.render("Click a chest to open it!", True, (200, 200, 100))
+                screen.blit(hint, (panel_x + 14, line_y))
+        else:
+            self._wallet_chest_rects = []
 
     def toggle_pause(self):
         """Toggle game pause state and sync with economy"""
@@ -1064,9 +1130,10 @@ class Game:
                     mystery.kill()
                     continue
 
-        # Update treasure chests and keys
+        # Update treasure chests then store chests into wallet
         self.treasure_chests.update()
         self.keys.update()
+        self.collect_chests_to_wallet()
 
         
         self.alien_position_checker()
@@ -1129,6 +1196,14 @@ class Game:
                 self.show_wallet_panel = not self.show_wallet_panel
                 if self.show_wallet_panel:
                     self.economy.sync_wallet()
+            # Handle clicks on treasure chests inside the wallet panel
+            if self.show_wallet_panel and hasattr(self, '_wallet_chest_rects'):
+                for i, rect in enumerate(self._wallet_chest_rects):
+                    if rect.collidepoint(mouse_pos):
+                        rewards = self.activate_wallet_chest(i)
+                        if rewards:
+                            print(f"Opened chest from wallet! +{rewards['coins']} coins")
+                        break
             # Check mute button click
             self.check_mute_button_click(mouse_pos)
         
