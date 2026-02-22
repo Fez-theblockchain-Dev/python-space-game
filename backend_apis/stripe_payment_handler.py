@@ -245,25 +245,25 @@ class StripePaymentHandler:
         )
         transaction.status = new_status
         
-        # Check if we should credit the player
-        if self.stripe.should_credit_player(webhook_result.event_type, webhook_result.success or False):
-            credit_result = self._credit_player_for_transaction(db, transaction)
-            
-            if credit_result.success:
-                transaction.completed_at = datetime.utcnow()
-            else:
-                transaction.error_message = credit_result.error
-        
-        # disable the ability for the player's checkout to be double credited
+        # Idempotency: skip if already captured
         if transaction.status == TransactionStatus.CAPTURED:
             return True, f"Already processed: {merchant_reference}"
 
         # Handle failed payments
         if new_status == TransactionStatus.FAILED:
             transaction.error_message = f"Payment failed: {webhook_result.event_type}"
-        
+
+        # Credit the player on successful payment
+        if self.stripe.should_credit_player(webhook_result.event_type, webhook_result.success or False):
+            credit_result = self._credit_player_for_transaction(db, transaction)
+
+            if credit_result.success:
+                transaction.completed_at = datetime.now(timezone.utc)
+            else:
+                transaction.error_message = credit_result.error
+
         db.commit()
-        
+
         return True, f"Processed {webhook_result.event_type} for {merchant_reference}"
     
     def _credit_player_for_transaction(
