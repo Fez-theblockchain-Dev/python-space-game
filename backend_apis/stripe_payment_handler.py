@@ -254,6 +254,10 @@ class StripePaymentHandler:
             else:
                 transaction.error_message = credit_result.error
         
+        # disable the ability for the player's checkout to be double credited
+        if transaction.status == TransactionStatus.CAPTURED:
+            return True, f"Already processed: {merchant_reference}"
+
         # Handle failed payments
         if new_status == TransactionStatus.FAILED:
             transaction.error_message = f"Payment failed: {webhook_result.event_type}"
