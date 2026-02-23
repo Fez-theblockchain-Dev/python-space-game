@@ -64,9 +64,9 @@ class TransactionStatus(str, Enum):
 class Player(Base):
     __tablename__ = "players"
 
-    id = Column(Integer, primary_key=True)
-    player_uuid = Column(String(64), unique=True, nullable=False, index=True)
-    created_at = Column(DateTime, default=datetime, nullable=False)
+    id = Column[int](Integer, primary_key=True)
+    player_uuid = Column[str](String(64), unique=True, nullable=False, index=True)
+    created_at = Column[datetime](DateTime, default=lambda: datetime.now(timezone.utc))
 
     wallet = relationship("PlayerWallet", back_populates="player", uselist=False)
     transactions = relationship("Transaction", back_populates="player")
