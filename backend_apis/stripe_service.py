@@ -75,7 +75,7 @@ class StripePaymentService:
         self.return_url = return_url or os.getenv("STRIPE_RETURN_URL", "http://localhost:8000/payment/result")
         
         # Initialize Stripe with the API key
-        stripe.api_key = self.api_key
+        stripe.api_key = stripe.StripeClient(api_key)
     
     def generate_merchant_reference(self, player_uuid: str, package_type: PackageType) -> str:
         """Generate a unique merchant reference for the transaction."""
@@ -117,7 +117,7 @@ class StripePaymentService:
         
         # Default to card (which includes Apple Pay via Express Checkout Element)
         if payment_method_types is None:
-            payment_method_types = ["card"]
+            automatic_payment_methods={"enabled": True} 
         
         try:
             # Create or retrieve customer
