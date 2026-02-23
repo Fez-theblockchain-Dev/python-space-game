@@ -3,7 +3,7 @@ Database models and shared constants for the payment system.
 """
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 
 from sqlalchemy import (
@@ -65,8 +65,8 @@ class Player(Base):
     __tablename__ = "players"
 
     id = Column(Integer, primary_key=True)
-    player_uuid = Column[str](String(64), unique=True, nullable=False, index=True)
-    created_at = Column[datetime](DateTime, default=lambda: datetime.now(timezone.utc))
+    player_uuid = Column(String(64), unique=True, nullable=False, index=True)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
 
     wallet = relationship("PlayerWallet", back_populates="player", uselist=False)
     transactions = relationship("Transaction", back_populates="player")
@@ -82,9 +82,9 @@ class PlayerWallet(Base):
     total_earned_coins = Column(Integer, default=0, nullable=False)
     total_earned_health_packs = Column(Integer, default=0, nullable=False)
     total_spent_usd = Column(Float, default=0.0, nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc), nullable=False)
+    completed_at = Column(DateTime)
     player = relationship("Player", back_populates="wallet")
 
     def add_gold_coins(self, amount: int) -> None:
@@ -92,14 +92,14 @@ class PlayerWallet(Base):
             return
         self.gold_coins += amount
         self.total_earned_coins += amount
-        self.updated_at = datetime.utcnow()
+        self.updated_at = datetime.now(timezone.utc)
 
     def add_health_packs(self, amount: int) -> None:
         if amount <= 0:
             return
         self.health_packs += amount
         self.total_earned_health_packs += amount
-        self.updated_at = datetime.utcnow()
+        self.updated_at = datetime.now(timezone.utc)
 
     def to_dict(self) -> dict:
         return {
@@ -127,8 +127,8 @@ class Transaction(Base):
     payment_method = Column(String(64))
     webhook_data = Column(Text)
     error_message = Column(Text)
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc), nullable=False)
     completed_at = Column(DateTime)
 
     player = relationship("Player", back_populates="transactions")
