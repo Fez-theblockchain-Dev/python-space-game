@@ -6,11 +6,13 @@ import os
 
 # Add the game directory to the path so we can import Player
 # This is needed because player.py uses relative imports like "from laser import Laser"
-game_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'game')
+game_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'game')
+game_dir = os.path.abspath(game_dir)
 if game_dir not in sys.path:
     sys.path.insert(0, game_dir)
 
 from player import Player
+
 
 
 class TestPlayerGetInput(unittest.TestCase):
