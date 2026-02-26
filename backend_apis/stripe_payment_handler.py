@@ -238,16 +238,16 @@ class StripePaymentHandler:
         transaction.webhook_data = json.dumps(webhook_result.raw_data)
         transaction.updated_at = datetime.now(timezone.utc)
         
+        # Idempotency: skip if already captured from a previous webhook
+        if transaction.status == TransactionStatus.CAPTURED:
+            return True, f"Already processed: {merchant_reference}"
+
         # Map event to status
         new_status = self.stripe.get_transaction_status_from_event(
             webhook_result.event_type,
             webhook_result.success or False
         )
         transaction.status = new_status
-        
-        # Idempotency: skip if already captured
-        if transaction.status == TransactionStatus.CAPTURED:
-            return True, f"Already processed: {merchant_reference}"
 
         # Handle failed payments
         if new_status == TransactionStatus.FAILED:

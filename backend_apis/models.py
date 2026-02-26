@@ -82,7 +82,7 @@ class PlayerWallet(Base):
     total_earned_coins = Column(Integer, default=0, nullable=False)
     total_earned_health_packs = Column(Integer, default=0, nullable=False)
     total_spent_usd = Column(Float, default=0.0, nullable=False)
-    total_treasure_chests = Column(int, default=0, nullable=False)
+    total_treasure_chests = Column(Integer, default=0, nullable=False)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
     updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc), nullable=False)
     completed_at = Column(DateTime)
