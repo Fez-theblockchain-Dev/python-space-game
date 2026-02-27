@@ -26,7 +26,56 @@ IS_BROWSER = sys.platform == "emscripten"
 
 # Add parent directory to path so we can import from backend_apis
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from backend_apis.gameEconomy import GameEconomy
+try:
+    from backend_apis.gameEconomy import GameEconomy
+except Exception:
+    # Browser/APK fallback: keep gameplay alive without backend dependency.
+    class GameEconomy:  # type: ignore[override]
+        def __init__(self, initial_health=100, *args, **kwargs):
+            self.score = 0
+            self.health = initial_health
+            self.max_health = initial_health
+            self.session_coins_earned = 0
+            self.is_paused = False
+            self.paused_state = None
+
+        def add_score(self, amount):
+            self.score += int(amount)
+
+        def add_coins(self, amount):
+            if amount > 0:
+                self.session_coins_earned += int(amount)
+
+        def save_session_coins(self):
+            return {"success": True, "coins_added": self.session_coins_earned}
+
+        def sync_wallet(self):
+            return False
+
+        def update_health(self, health):
+            self.health = max(0, min(self.max_health, int(health)))
+
+        def get_total_coins(self):
+            return 0
+
+        def get_wallet_balance(self):
+            return {
+                "gold_coins": 0,
+                "health_packs": 0,
+                "total_earned_coins": 0,
+                "total_earned_health_packs": 0,
+            }
+
+        def pause_game(self, game_state):
+            self.is_paused = True
+            self.paused_state = game_state
+            return {"success": True, "paused_state": game_state}
+
+        def resume_game(self):
+            state = self.paused_state
+            self.is_paused = False
+            self.paused_state = None
+            return {"success": True, "paused_state": state}
 
 # Debug logging configuration - only used on desktop
 DEBUG_LOG_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), ".cursor", "debug.log")
