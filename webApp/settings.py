@@ -1,5 +1,5 @@
 """
-Django settings for Space Invaders Store landing page.
+Django settings for Space Cowboys🚀 Store landing page.
 """
 import os
 from pathlib import Path

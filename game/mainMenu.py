@@ -10,7 +10,7 @@ pygame.init()
 
 # Screen setup (using dimensions from config)
 SCREEN = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-pygame.display.set_caption("Space Invaders - Main Menu")
+pygame.display.set_caption("Space Cowboys🚀 - Main Menu")
 
 
 # Theme management
@@ -94,7 +94,7 @@ async def main_menu():
         SCREEN.blit(current_bg, (0, 0))
         
         # Title
-        MENU_TEXT = get_font(100).render("SPACE INVADERS", True, "#b68f40")
+        MENU_TEXT = get_font(100).render("SPACE COWBOYS🚀", True, "#b68f40")
         MENU_RECT = MENU_TEXT.get_rect(center=(640, 100))
         SCREEN.blit(MENU_TEXT, MENU_RECT)
         
@@ -151,7 +151,7 @@ async def main_menu():
                         await main()  # Await async main function
                         # Ensures display is still active after game returns
                         pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-                        pygame.display.set_caption("Space Invaders - Main Menu")
+                        pygame.display.set_caption("Space Cowboys🚀 - Main Menu")
                     except Exception as e:
                         print(f"Error starting game: {e}")
                         import traceback

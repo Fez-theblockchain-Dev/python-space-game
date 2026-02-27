@@ -50,7 +50,7 @@ urlpatterns = [
     path('payment/success/', views.payment_success, name='payment_success'),
     path('payment/cancelled/', views.payment_cancelled, name='payment_cancelled'),
 
-    # Route for web hosting connection through fast api of space invaders game
+    # Route for web hosting connection through fast api of space cowboys🚀 game
     path('play/', lambda r: serve(r, 'index.html', document_root=GAME_BUILD_PATH)),
     re_path(r'^play/(?P<path>.*)$', serve, {'document_root': GAME_BUILD_PATH}),
 ]

@@ -1,4 +1,4 @@
-# this file will house the fundamental game play logic of new space invaders python web app game
+# this file will house the fundamental game play logic of new space cowboys🚀 python web app game
 
 import asyncio  # Required for Pygbag web deployment
 import pygame
@@ -108,7 +108,7 @@ pygame.init()
 
 # Set up the display
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-pygame.display.set_caption("Space Invaders")
+pygame.display.set_caption("Space Cowboys🚀")
 
 # Colors
 YELLOW = (255, 255, 100) #Yellow for alien_ships
@@ -127,7 +127,7 @@ nebula_bg = pygame.transform.scale(nebula_image, (SCREEN_WIDTH, SCREEN_HEIGHT))
 
 # Font link
 title_font = pygame.font.Font(os.path.join(project_root, 'assets/Fonts/hyperspace/Hyperspace Bold Italic.otf'), 36)
-title_surface = title_font.render("Space Invaders", True, (255, 255, 255))
+title_surface = title_font.render("Space Cowboys🚀", True, (255, 255, 255))
 title_rect = title_surface.get_rect(centerx=SCREEN_WIDTH // 2, y=20)  # 20px from top
 
 # General font for UI text (health, level messages, game over, etc.)

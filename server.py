@@ -73,7 +73,7 @@ import json
 # ============================================================================
 
 app = FastAPI(
-    title="Space Game Economy API",
+    title="Space Cowboys Game Economy API",
     description="Backend API for browser game connections, wallet management, and Stripe payments",
     version="1.0.0",
 )
@@ -342,9 +342,9 @@ def root():
     """
     return {
         "status": "online",
-        "service": "Space Game Server",
+        "service": "Space Cowboys Game Server",
         "version": "1.0.0",
-        "message": "Welcome to the Space Game Server! 🚀"
+        "message": "Welcome to the Space Cowboys Game Server! 🚀"
     }
 
 
@@ -585,7 +585,7 @@ def credit_wallet(request: CreditWalletRequest):
 @app.post("/api/wallet/add-earned-coins")
 def add_earned_coins(request: AddEarnedCoinsRequest):
     """
-    Add coins earned from a Space Invaders session to the player's wallet.
+    Add coins earned from a Space Cowboys🚀 session to the player's wallet.
     
     Called by the game client when a session ends (e.g., level complete, game over).
     Updates the player's wallet in player_wallets by their UUID.
@@ -811,7 +811,7 @@ if __name__ == "__main__":
     import uvicorn
     
     print("=" * 60)
-    print("🚀 Starting Space Game Server...")
+    print("🚀 Starting Space Cowboys Game Server...")
     print("=" * 60)
     print()
     print("To connect from OTHER computers on your network:")

@@ -1,7 +1,7 @@
-🛸 Space Invaders
+🛸 Space Cowboys🚀
 
 🎮 Introduction
-Space Invaders is a modern take on the classic retro arcade shooter, built using Python and Pygame. This project demonstrates object-oriented design principles, game development fundamentals, and a foundational understanding of rendering, event handling, and sprite-based animation.
+Space Cowboys🚀 is a modern take on the classic retro arcade shooter, built using Python and Pygame. This project demonstrates object-oriented design principles, game development fundamentals, and a foundational understanding of rendering, event handling, and sprite-based animation.
 
 Designed as a showcase project for a Junior Python Developer, it also introduces a basic game economy, including gold coin collection through gameplay and an in-progress integration of in-app purchases via Apple Pay.
 
@@ -62,8 +62,8 @@ audio/ — sound effects (laser sound loaded by the player class).
 
 backend_apis/ — backend services and economy integration.
 
-Demo of Space Invaders Shop:
-- Space Invaders Shop screen recording: [https://share.icloud.com/photos/04aff3DEOm7JH6AvxIznxHbeA]
+Demo of Space Cowboys🚀 Shop:
+- Space Cowboys🚀 Shop screen recording: [https://share.icloud.com/photos/04aff3DEOm7JH6AvxIznxHbeA]
 
 Dependencies:
 Game Client
@@ -82,7 +82,7 @@ Configuration:
 
 -The backend API base URL is configurable via the GAME_BACKEND_URL environment variable (defaults to http://localhost:8000).
 
--** Pygbag server for playing the space invaders game through DOM browser can be run using:
+-** Pygbag server for playing the space cowboys🚀 game through DOM browser can be run using:
 python -m pygbag --template custom.tmpl --port 8666 game **
 
 Troubleshooting:
