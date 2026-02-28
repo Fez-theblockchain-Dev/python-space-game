@@ -140,7 +140,7 @@
 {% block extra_scripts %}
 <script>
 // ============================================================================
-// Space Game Shop - Guest Checkout Portal
+// Space Cowboys Game Shop - Guest Checkout Portal
 // ============================================================================
 
 window.__SPACEGAME_STRIPE_PUBLISHABLE_KEY__ = "{{ stripe_publishable_key|escapejs }}";
@@ -156,7 +156,7 @@ const PACKAGES = {
     {% for package in packages %}
     "{{ package.id }}": {
         id: "{{ package.id }}",
-        name: "{{ package.name }}",
+        name: "{{ package.name|escapejs }}",,
         price: {{ package.price }},
         gold_coins: {{ package.gold_coins }},
         health_packs: {{ package.health_packs }}
