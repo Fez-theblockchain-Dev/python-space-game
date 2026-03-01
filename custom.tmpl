@@ -155,7 +155,7 @@ async def custom_site():
 
     # now that apk is mounted we have access to font cache
     # but we need to fill __file__ that is not yet set
-    __import__(__name__).__file__ = str(main)
+    __import__(__name__).__file__ = str(main.py)
 
 
     # now make a prompt
@@ -258,7 +258,7 @@ config = {
 
 </script>
 
-    <title>Space Cowboys🚀</title>
+    <title>Space Cowboys 🚀</title>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
