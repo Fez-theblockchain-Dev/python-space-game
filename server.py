@@ -100,13 +100,6 @@ app.add_middleware(
 # Key: player_id (str), Value: dict with player info (name, x, y, score, joined_at)
 connected_players: dict[str, dict] = {}
 
-# KPI tracker for user analytics
-game_state: dict = {
-    "active games": [],
-    "leaderboard": [], # Will record who eliminates the most aliens by wallet ID
-    "paid users": []
-}
-
 # In-memory wallet storage (replace with database in production)
 # Key: player_uuid (str), Value: dict with wallet info
 player_wallets: dict[str, dict] = {}
