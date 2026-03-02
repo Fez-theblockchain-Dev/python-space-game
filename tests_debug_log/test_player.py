@@ -4,7 +4,7 @@ import pygame
 import sys
 import os
 from player import Player
-from config import SCREEN_HEIGHT
+from config import SCREEN_HEIGHT, SCREEN_WIDTH  
 
 # Add the game directory to the path so we can import Player
 # This is needed because player.py uses relative imports like "from laser import Laser"

@@ -1,3 +1,9 @@
+# Add the game package directory to sys.path so sibling module imports work
+# after moving main.py to the project root (per Pygbag recommendation).
+script_dir = os.path.dirname(os.path.abspath(__file__))
+game_dir = os.path.join(script_dir, 'game')
+sys.path.insert(0, game_dir)
+
 # this file will house the fundamental game play logic of new space cowboys🚀 python web app game
 
 import asyncio  # Required for Pygbag web deployment
@@ -9,13 +15,6 @@ import random
 import json
 from pygame.locals import * #For useful variables
 from typing import Any
-
-# Add the game package directory to sys.path so sibling module imports work
-# after moving main.py to the project root (per Pygbag recommendation).
-script_dir = os.path.dirname(os.path.abspath(__file__))
-game_dir = os.path.join(script_dir, 'game')
-sys.path.insert(0, game_dir)
-
 from config import SCREEN_WIDTH, SCREEN_HEIGHT, DEFAULT_BACKGROUND_THEME
 from treasureChest import TreasureChest
 from obstacle import Block, shape
@@ -28,6 +27,7 @@ from player import Player
 from mainMenu import theme_manager
 from mainMenu import main_menu  # Entry point for web: menu -> play -> game
 
+
 # Detect if running in browser (Pygbag/Emscripten)
 IS_BROWSER = sys.platform == "emscripten"
 sys.path.append(script_dir)
@@ -35,52 +35,6 @@ try:
     from backend_apis.gameEconomy import GameEconomy
 except Exception:
     # Browser/APK fallback: keep gameplay alive without backend dependency.
-    class GameEconomy:  # type: ignore[override]
-        def __init__(self, initial_health=100, *args, **kwargs):
-            self.score = 0
-            self.health = initial_health
-            self.max_health = initial_health
-            self.session_coins_earned = 0
-            self.is_paused = False
-            self.paused_state = None
-
-        def add_score(self, amount):
-            self.score += int(amount)
-
-        def add_coins(self, amount):
-            if amount > 0:
-                self.session_coins_earned += int(amount)
-
-        def save_session_coins(self):
-            return {"success": True, "coins_added": self.session_coins_earned}
-
-        def sync_wallet(self):
-            return False
-
-        def update_health(self, health):
-            self.health = max(0, min(self.max_health, int(health)))
-
-        def get_total_coins(self):
-            return 0
-
-        def get_wallet_balance(self):
-            return {
-                "gold_coins": 0,
-                "health_packs": 0,
-                "total_earned_coins": 0,
-                "total_earned_health_packs": 0,
-            }
-
-        def pause_game(self, game_state):
-            self.is_paused = True
-            self.paused_state = game_state
-            return {"success": True, "paused_state": game_state}
-
-        def resume_game(self):
-            state = self.paused_state
-            self.is_paused = False
-            self.paused_state = None
-            return {"success": True, "paused_state": state}
 
 # Debug logging configuration - only used on desktop
 DEBUG_LOG_PATH = os.path.join(script_dir, ".cursor", "debug.log")
