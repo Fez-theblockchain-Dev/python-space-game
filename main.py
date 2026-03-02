@@ -9,6 +9,13 @@ import random
 import json
 from pygame.locals import * #For useful variables
 from typing import Any
+
+# Add the game package directory to sys.path so sibling module imports work
+# after moving main.py to the project root (per Pygbag recommendation).
+script_dir = os.path.dirname(os.path.abspath(__file__))
+game_dir = os.path.join(script_dir, 'game')
+sys.path.insert(0, game_dir)
+
 from config import SCREEN_WIDTH, SCREEN_HEIGHT, DEFAULT_BACKGROUND_THEME
 from treasureChest import TreasureChest
 from obstacle import Block, shape
@@ -23,9 +30,7 @@ from mainMenu import main_menu  # Entry point for web: menu -> play -> game
 
 # Detect if running in browser (Pygbag/Emscripten)
 IS_BROWSER = sys.platform == "emscripten"
-
-# Add parent directory to path so we can import from backend_apis
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.append(script_dir)
 try:
     from backend_apis.gameEconomy import GameEconomy
 except Exception:
@@ -78,7 +83,7 @@ except Exception:
             return {"success": True, "paused_state": state}
 
 # Debug logging configuration - only used on desktop
-DEBUG_LOG_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), ".cursor", "debug.log")
+DEBUG_LOG_PATH = os.path.join(script_dir, ".cursor", "debug.log")
 DEBUG_SESSION_ID = "debug-session"
 
 #region agent log
@@ -117,9 +122,8 @@ ROYAL_BLUE = (65, 105, 225)
 BLACK = (0, 0, 0) #screen overlay to create multiple screens illusion
 
 
-# Get the directory of this script to handle paths correctly
-script_dir = os.path.dirname(os.path.abspath(__file__))
-project_root = os.path.dirname(script_dir)
+# Asset paths: all game assets (images, fonts, audio) live inside the game/ directory.
+project_root = game_dir
 
 # Window background space image
 nebula_image = pygame.image.load(os.path.join(project_root, DEFAULT_BACKGROUND_THEME)).convert()
@@ -821,8 +825,6 @@ class Game:
         if self._mystery_bounty_image is not None:
             return self._mystery_bounty_image
 
-        script_dir = os.path.dirname(os.path.abspath(__file__))
-        project_root = os.path.dirname(script_dir)
         chest_path = os.path.join(project_root, "assets/treasure_chest.png")
         try:
             image = pygame.image.load(chest_path).convert_alpha()

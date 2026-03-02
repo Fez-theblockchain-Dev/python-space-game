@@ -27,7 +27,7 @@ pip install pygame
 
 
 4.Run the game:
-python game/main.py
+python main.py
 
 5.Backend API dependencies - Install the backend API required software to get full bemefits of the game, such as, in-progress shop/payment features, install backend dependencies from the API folder:
 
@@ -50,7 +50,7 @@ Planned Apple Pay integration for purchases (in progress).
 Interactive main menu, sound, sprites, and increasing difficulty mechanics.
 
 Project Structure:
-game/main.py — main game loop and runtime setup.
+main.py — main game loop and runtime setup (project root, per Pygbag convention).
 
 game/config.py — game settings and constants (screen size, economy values).
 

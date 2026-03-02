@@ -3,6 +3,8 @@ from unittest.mock import Mock, patch, MagicMock
 import pygame
 import sys
 import os
+from player import Player
+from config import SCREEN_HEIGHT
 
 # Add the game directory to the path so we can import Player
 # This is needed because player.py uses relative imports like "from laser import Laser"
@@ -11,7 +13,6 @@ game_dir = os.path.abspath(game_dir)
 if game_dir not in sys.path:
     sys.path.insert(0, game_dir)
 
-from player import Player
 
 
 
@@ -167,7 +168,7 @@ class TestPlayerGetInput(unittest.TestCase):
     
     def test_top_boundary_constraint(self):
         """Test that player cannot move above the top of the screen"""
-        from config import SCREEN_HEIGHT
+        
         # Move player to top boundary
         self.player.rect.top = 0
         initial_top = self.player.rect.top
@@ -181,7 +182,7 @@ class TestPlayerGetInput(unittest.TestCase):
     
     def test_bottom_boundary_constraint(self):
         """Test that player cannot move below the bottom of the screen"""
-        from config import SCREEN_HEIGHT
+        
         # Move player to bottom boundary
         self.player.rect.bottom = SCREEN_HEIGHT
         initial_bottom = self.player.rect.bottom

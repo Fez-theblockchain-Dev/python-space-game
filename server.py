@@ -394,7 +394,7 @@ def game_status():
         "game_path": GAME_BUILD_PATH,
         "game_url": "/play" if game_available else None,
         "files": files,
-        "instructions": "Access the game at http://localhost:8000/play" if game_available else "Run 'pygbag game/main.py' to build the game first"
+        "instructions": "Access the game at http://localhost:8666/play" if game_available else "Run 'pygbag .' from the project root to build the game"
     }
 
 
