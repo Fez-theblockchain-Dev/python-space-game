@@ -1,4 +1,3 @@
-from tkinter import HORIZONTAL
 import pygame, random, os
 from config import SCREEN_WIDTH, SCREEN_HEIGHT
 
