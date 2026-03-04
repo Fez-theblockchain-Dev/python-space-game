@@ -456,7 +456,51 @@ class GameEconomy:
             "Gold Coins": False,
             "Faster Bullet": False,
         }
-        
+
+        # Avatar store catalog: id -> {name, price, image_file, description}
+        self.avatar_catalog = {
+            "default": {
+                "name": "Classic Ship",
+                "price": 0,
+                "image_file": "assets/spaceship.png",
+                "description": "The original spaceship",
+            },
+            "alien_hunter": {
+                "name": "Alien Hunter",
+                "price": 2.99,
+                "image_file": "assets/alien_hunter_avatar.png",
+                "description": "A battle-worn cruiser feared by aliens",
+            },
+            "neon_falcon": {
+                "name": "Neon Falcon",
+                "price": 2.99,
+                "image_file": "assets/neon_falcon_avatar.png",
+                "description": "Sleek neon-lit interceptor",
+            },
+            "star_phoenix": {
+                "name": "Star Phoenix",
+                "price": 2.99,
+                "image_file": "assets/star_phoenix_avatar.png",
+                "description": "Legendary phoenix-class warship",
+            },
+            "shadow_viper": {
+                "name": "Shadow Viper",
+                "price": 2.99,
+                "image_file": "assets/shadow_viper_avatar.png",
+                "description": "Stealth fighter with dark energy shields",
+            },
+            "cosmic_dragon": {
+                "name": "Cosmic Dragon",
+                "price": 2.99,
+                "image_file": "assets/cosmic_dragon_avatar.png",
+                "description": "Mythical dragon-forged flagship",
+            },
+        }
+
+        # "default" is always owned; additional avatars are added on purchase
+        self.owned_avatars: set[str] = {"default"}
+        self.active_avatar: str = "default"
+
         # Sync with backend on init
         self._synced_wallet: Optional[WalletBalance] = None
         self.sync_wallet()
@@ -601,9 +645,107 @@ class GameEconomy:
     def get_paused_state(self) -> Optional[dict]:
         """Get the saved pause state without resuming."""
         return self.paused_state if self.is_paused else None
-    
 
-    
+    # ------------------------------------------------------------------ #
+    # Avatar Store
+    # ------------------------------------------------------------------ #
+
+    def get_avatar_catalog(self) -> list[dict]:
+        """Return the full avatar catalog with ownership and equipped status.
+
+        Each entry contains: id, name, price, image_file, description,
+        owned (bool), and equipped (bool).
+        """
+        catalog = []
+        for avatar_id, info in self.avatar_catalog.items():
+            catalog.append({
+                "id": avatar_id,
+                "name": info["name"],
+                "price": info["price"],
+                "image_file": info["image_file"],
+                "description": info["description"],
+                "owned": avatar_id in self.owned_avatars,
+                "equipped": avatar_id == self.active_avatar,
+            })
+        return catalog
+
+    def buy_avatar(self, avatar_id: str) -> dict:
+        """Purchase an avatar from the store using gold coins.
+
+        Args:
+            avatar_id: The catalog key of the avatar to buy.
+
+        Returns:
+            Dict with success status, a message, and the avatar info
+            on success, or an error string on failure.
+        """
+        if avatar_id not in self.avatar_catalog:
+            return {"success": False, "error": "Avatar not found in store"}
+
+        if avatar_id in self.owned_avatars:
+            return {"success": False, "error": "Avatar already owned"}
+
+        avatar_info = self.avatar_catalog[avatar_id]
+        price = avatar_info["price"]
+
+        if self.coins < price:
+            return {
+                "success": False,
+                "error": f"Not enough coins (need {price}, have {self.coins})",
+            }
+
+        if not self.spend_coins(price):
+            return {"success": False, "error": "Transaction failed"}
+
+        self.owned_avatars.add(avatar_id)
+        self.potential_prizes["New Avatar"] = True
+
+        return {
+            "success": True,
+            "message": f"Purchased {avatar_info['name']}!",
+            "avatar": {
+                "id": avatar_id,
+                "name": avatar_info["name"],
+                "image_file": avatar_info["image_file"],
+            },
+        }
+
+    def select_avatar(self, avatar_id: str) -> dict:
+        """Set an owned avatar as the active player ship image.
+
+        Args:
+            avatar_id: The catalog key of the avatar to equip.
+
+        Returns:
+            Dict with success status and the active avatar image file,
+            or an error string on failure.
+        """
+        if avatar_id not in self.avatar_catalog:
+            return {"success": False, "error": "Avatar not found"}
+
+        if avatar_id not in self.owned_avatars:
+            return {"success": False, "error": "Avatar not owned"}
+
+        self.active_avatar = avatar_id
+        avatar_info = self.avatar_catalog[avatar_id]
+        return {
+            "success": True,
+            "message": f"{avatar_info['name']} equipped!",
+            "image_file": avatar_info["image_file"],
+        }
+
+    def get_active_avatar_image(self) -> str:
+        """Return the image file path for the currently equipped avatar.
+
+        The path is relative to the game's project root (e.g.
+        ``assets/spaceship.png``).  The caller should join this with
+        the project root to build an absolute path for pygame.
+        """
+        info = self.avatar_catalog.get(self.active_avatar)
+        if info:
+            return info["image_file"]
+        return self.avatar_catalog["default"]["image_file"]
+
     @property
     def health_packs(self) -> int:
         """Get health packs count (from backend wallet)."""
@@ -714,6 +856,8 @@ class GameEconomy:
             "session_coins_earned": self.session_coins_earned,
             "wallet": self.get_wallet_balance(),
             "prizes_unlocked": [k for k, v in self.potential_prizes.items() if v],
+            "active_avatar": self.active_avatar,
+            "owned_avatars": list(self.owned_avatars),
         }
     
     def reset_session(self):

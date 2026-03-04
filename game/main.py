@@ -1,16 +1,15 @@
+import os
+import sys
+import asyncio  # Required for Pygbag web deployment
+import pygame
+
 # Add the game package directory to sys.path so sibling module imports work
 # after moving main.py to the project root (per Pygbag recommendation).
-script_dir = os.path.dirname(os.path.abspath(__file__))
-game_dir = os.path.join(script_dir, 'game')
+game_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, game_dir)
 
 # this file will house the fundamental game play logic of new space cowboys🚀 python web app game
-
-import asyncio  # Required for Pygbag web deployment
-import pygame
-import sys
 import time
-import os
 import random
 import json
 from pygame.locals import * #For useful variables
@@ -37,8 +36,8 @@ except Exception:
     # Browser/APK fallback: keep gameplay alive without backend dependency.
 
 # Debug logging configuration - only used on desktop
-DEBUG_LOG_PATH = os.path.join(script_dir, ".cursor", "debug.log")
-DEBUG_SESSION_ID = "debug-session"
+    DEBUG_LOG_PATH = os.path.join(script_dir, ".cursor", "debug.log")
+    DEBUG_SESSION_ID = "debug-session"
 
 #region agent log
 def _agent_log(payload):
@@ -298,7 +297,7 @@ class Game:
         # health and score setup
         self.lives = 3
         try:
-            self.live_surf = pygame.image.load(os.path.join(project_root, 'graphics/player.png')).convert_alpha()
+            self.live_surf = pygame.image.load(os.path.join(project_root, 'game/assets/512x512_purple_nebula_1.png')).convert_alpha()
             self.live_x_start_pos = SCREEN_WIDTH - (self.live_surf.get_size()[0] * 2 + 20)
         except:
             self.live_surf = None
@@ -1227,6 +1226,7 @@ async def main():
     
     # Create game instance
     game = Game(None)
+    print(game)
     
     # Apply the theme selected in main menu to the game
     menu_theme_name = theme_manager.get_current_theme_name()

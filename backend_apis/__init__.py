@@ -5,4 +5,4 @@
 
 __all__: list[str] = []
 
-API_BASE_LAYER = "(e.g. http://localhost:8000)"
+API_BASE_LAYER = "(e.g. http://localhost:8666)"
