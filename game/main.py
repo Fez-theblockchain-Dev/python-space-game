@@ -304,7 +304,6 @@ class Game:
             self.live_x_start_pos = SCREEN_WIDTH - 100
         self.score = 0
         self.font = pygame.font.Font(os.path.join(project_root, 'assets/Fonts/hyperspace/Hyperspace Bold Italic.otf'), 20)
-
         # Obstacle setup
         self.shape = shape
         self.block_size = 6
