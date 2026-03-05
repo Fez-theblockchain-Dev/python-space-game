@@ -25,7 +25,7 @@ class SpaceShip(pygame.sprite.Sprite):
         super().__init__()
         script_dir = os.path.dirname(os.path.abspath(__file__))
         project_root = os.path.dirname(script_dir)
-        self.image = pygame.image.load(os.path.join(project_root, "assets/spaceship.png"))
+        self.image = pygame.image.load(os.path.join(script_dir, "assets/spaceship.png"))
         self.rect = self.image.get_rect()
         self.rect.center = (x, y)
         self.health = health
@@ -38,7 +38,7 @@ class SpaceShip(pygame.sprite.Sprite):
         self.wallet_fetch_interval = 5000  # Fetch wallet every 5 seconds (milliseconds)
 
         # Font for rendering wallet ID
-        font_path = os.path.join(project_root, "assets/Fonts/hyperspace/Hyperspace Bold.otf")
+        font_path = os.path.join(script_dir, "assets/Fonts/hyperspace/Hyperspace Bold.otf")
         try:
             self.wallet_font = pygame.font.Font(font_path, 14)
         except Exception:

@@ -16,10 +16,9 @@ class TreasureChest(pygame.sprite.Sprite):
     def __init__(self, x, y, scale_size=(80, 80)):
         super().__init__()
         script_dir = os.path.dirname(os.path.abspath(__file__))
-        project_root = os.path.dirname(script_dir)
         
         # Load treasure chest image
-        path = os.path.join(project_root, "assets/treasure_chest.png")
+        path = os.path.join(script_dir, "assets/treasure_chest.png")
         if os.path.exists(path):
             original_image = pygame.image.load(path).convert_alpha()
             self.image = pygame.transform.scale(original_image, scale_size)
@@ -113,10 +112,9 @@ class Key(pygame.sprite.Sprite):
     def __init__(self, x, y):
         super().__init__()
         script_dir = os.path.dirname(os.path.abspath(__file__))
-        project_root = os.path.dirname(script_dir)
         
         # Load key image
-        path = os.path.join(project_root, "assets/key.png")
+        path = os.path.join(script_dir, "assets/key.png")
         if os.path.exists(path):
             self.image = pygame.image.load(path).convert_alpha()
         else:

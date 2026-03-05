@@ -777,7 +777,7 @@ class Game:
         if self._mystery_bounty_image is not None:
             return self._mystery_bounty_image
 
-        chest_path = os.path.join(project_root, "assets/treasure_chest.png")
+        chest_path = os.path.join(game_dir, "assets/treasure_chest.png")
         try:
             image = pygame.image.load(chest_path).convert_alpha()
             self._mystery_bounty_image = pygame.transform.scale(image, (180, 180))
