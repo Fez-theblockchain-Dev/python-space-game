@@ -27,6 +27,7 @@ if not IS_BROWSER:
 
 PLAYER_ID_FILE = "player_id.json"
 BACKEND_URL = os.getenv("GAME_BACKEND_URL", "http://localhost:8080")
+trans_id = None
 
 
 # ============================================================================
@@ -411,10 +412,12 @@ class BackendClient:
     
     def get_transaction_history(self, limit: int = 20) -> list[dict]:
         """Get recent transaction history."""
+        global trans_id
         data = self._request(
             "GET",
             f"/api/payment/transactions/{self.player_uuid}?limit={limit}"
         )
+        trans_id = self._request("GET")
         
         return data if data else []
     

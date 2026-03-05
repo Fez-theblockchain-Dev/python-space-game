@@ -15,6 +15,7 @@ import json
 import os
 import sys
 import requests
+from backend_apis.gameEconomy import trans_id
 
 BASE_URL = os.getenv("SERVER_URL", "http://127.0.0.1:8080").rstrip("/")
 
@@ -116,7 +117,7 @@ def main():
     print("\n▸ Pages")
     try_get("/", name="Landing page (GET /)")
     try_get("/shop/", name="Shop page (GET /shop/)")
-    try_get("/shop/gold_100/", name="Package detail (GET /shop/gold_100/)")
+    try_get(f"/shop/transaction{trans_id}0/", name=f"Package detail (GET /shop/transaction{trans_id})")
     try_get("/shop/nonexistent_pkg/", name="Invalid package redirects",
             expect_status=302)
     try_get("/payment/success/", name="Payment success page")
