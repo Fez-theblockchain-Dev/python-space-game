@@ -29,14 +29,14 @@ from mainMenu import main_menu  # Entry point for web: menu -> play -> game
 
 # Detect if running in browser (Pygbag/Emscripten)
 IS_BROWSER = sys.platform == "emscripten"
-sys.path.append(script_dir)
+sys.path.append(game_dir)
 try:
     from backend_apis.gameEconomy import GameEconomy
 except Exception:
     # Browser/APK fallback: keep gameplay alive without backend dependency.
 
 # Debug logging configuration - only used on desktop
-    DEBUG_LOG_PATH = os.path.join(script_dir, ".cursor", "debug.log")
+    DEBUG_LOG_PATH = os.path.join(game_dir, ".cursor", "debug.log")
     DEBUG_SESSION_ID = "debug-session"
 
 #region agent log
