@@ -539,7 +539,7 @@ class Game:
         # player lasers - use list() copy to safely remove sprites during iteration
         # (Pygbag/Emscripten crashes if sprite group is modified during iteration)
         if self.player.sprite.lasers:
-            for laser in list[Laser](self.player.sprite.lasers):
+            for laser in list(self.player.sprite.lasers):
                 # obstacle collisions
                 if pygame.sprite.spritecollide(laser, self.blocks, True):
                     laser.kill()
@@ -556,7 +556,7 @@ class Game:
                 # Mystery Ship collision
                 mystery_hit = pygame.sprite.spritecollide(laser, self.mystery_ship, False)
                 if mystery_hit:
-                    for mystery in mystery_hit:
+                    for mystery in list(self.mystery_ship):
                         is_destroyed = mystery.take_damage(50)  # 3 hits to destroy (50 damage × 3 = 150 health)
                         if is_destroyed:
                             self.score += mystery.value
