@@ -22,7 +22,7 @@ from laser import Laser
 from alien import Alien, AlienDiagonal, AlienDiver, MysteryShip
 from treasureChest import TreasureChest, Key
 from button import Button
-from player import Player
+from player import Player, script_dir
 from mainMenu import theme_manager
 from mainMenu import main_menu  # Entry point for web: menu -> play -> game
 
@@ -76,25 +76,25 @@ BLACK = (0, 0, 0) #screen overlay to create multiple screens illusion
 
 
 # Asset paths: all game assets (images, fonts, audio) live inside the game/ directory.
-project_root = game_dir
+script_dir = game_dir
 
 # Window background space image
-nebula_image = pygame.image.load(os.path.join(project_root, DEFAULT_BACKGROUND_THEME)).convert()
+nebula_image = pygame.image.load(os.path.join(script_dir, DEFAULT_BACKGROUND_THEME)).convert()
 nebula_bg = pygame.transform.scale(nebula_image, (SCREEN_WIDTH, SCREEN_HEIGHT))
 
 # Font link
-title_font = pygame.font.Font(os.path.join(project_root, 'assets/Fonts/hyperspace/Hyperspace Bold Italic.otf'), 36)
+title_font = pygame.font.Font(os.path.join(script_dir, 'assets/Fonts/hyperspace/Hyperspace Bold Italic.otf'), 36)
 title_surface = title_font.render("Space Cowboys🚀", True, (255, 255, 255))
 title_rect = title_surface.get_rect(centerx=SCREEN_WIDTH // 2, y=20)  # 20px from top
 
 # General font for UI text (health, level messages, game over, etc.)
-font = pygame.font.Font(os.path.join(project_root, 'assets/Fonts/hyperspace/Hyperspace Bold Italic.otf'), 20)
+font = pygame.font.Font(os.path.join(script_dir, 'assets/Fonts/hyperspace/Hyperspace Bold Italic.otf'), 20)
 
 # HeroShip class definition
 class HeroShip(pygame.sprite.Sprite):
     def __init__(self, x, y, width, height, lives,level, health=100, ):
         super().__init__()
-        self.image = pygame.image.load(os.path.join(project_root, 'assets/spaceship.png'))
+        self.image = pygame.image.load(os.path.join(script_dir, 'assets/spaceship.png'))
         self.rect = self.image.get_rect()
         self.rect.center = (x, y)
         self.width = width
@@ -297,13 +297,13 @@ class Game:
         # health and score setup
         self.lives = 3
         try:
-            self.live_surf = pygame.image.load(os.path.join(project_root, 'game/assets/512x512_purple_nebula_1.png')).convert_alpha()
+            self.live_surf = pygame.image.load(os.path.join(script_dir, 'game/assets/512x512_purple_nebula_1.png')).convert_alpha()
             self.live_x_start_pos = SCREEN_WIDTH - (self.live_surf.get_size()[0] * 2 + 20)
         except:
             self.live_surf = None
             self.live_x_start_pos = SCREEN_WIDTH - 100
         self.score = 0
-        self.font = pygame.font.Font(os.path.join(project_root, 'assets/Fonts/hyperspace/Hyperspace Bold Italic.otf'), 20)
+        self.font = pygame.font.Font(os.path.join(script_dir, 'assets/Fonts/hyperspace/Hyperspace Bold Italic.otf'), 20)
         # Obstacle setup
         self.shape = shape
         self.block_size = 6
@@ -345,24 +345,24 @@ class Game:
 
         # Audio setup - handle missing files gracefully
         try:
-            music = pygame.mixer.Sound(os.path.join(project_root, 'audio/music.wav'))
+            music = pygame.mixer.Sound(os.path.join(script_dir, 'audio/music.wav'))
             music.set_volume(0.2)
             music.play(loops = -1)
         except:
             pass
         try:
-            self.laser_sound = pygame.mixer.Sound(os.path.join(project_root, 'audio/laser.wav'))
+            self.laser_sound = pygame.mixer.Sound(os.path.join(script_dir, 'audio/laser.wav'))
             self.laser_sound.set_volume(0.5)
         except:
             self.laser_sound = None
         try:
-            self.explosion_sound = pygame.mixer.Sound(os.path.join(project_root, 'audio/explosion.wav'))
+            self.explosion_sound = pygame.mixer.Sound(os.path.join(script_dir, 'audio/explosion.wav'))
             self.explosion_sound.set_volume(0.3)
         except:
             self.explosion_sound = None
         
         # Main menu button setup
-        menu_button_font = pygame.font.Font(os.path.join(project_root, 'assets/Fonts/hyperspace/Hyperspace Bold Italic.otf'), 30)
+        menu_button_font = pygame.font.Font(os.path.join(script_dir, 'assets/Fonts/hyperspace/Hyperspace Bold Italic.otf'), 30)
         self.menu_button = Button(
             image=None,
             pos=(SCREEN_WIDTH - 100, 30),
@@ -479,12 +479,12 @@ class Game:
         self.backgrounds["BLACK"] = black_bg
         
         # Purple nebula background (using config default)
-        nebula_image = pygame.image.load(os.path.join(project_root, DEFAULT_BACKGROUND_THEME)).convert()
+        nebula_image = pygame.image.load(os.path.join(script_dir, DEFAULT_BACKGROUND_THEME)).convert()
         nebula_bg = pygame.transform.scale(nebula_image, (SCREEN_WIDTH, SCREEN_HEIGHT))
         self.backgrounds["PURPLE_NEBULA"] = nebula_bg
         
         # Main menu background (purple gradient)
-        menu_bg_path = os.path.join(project_root, 'assets/main_menu_background.png')
+        menu_bg_path = os.path.join(script_dir, 'assets/main_menu_background.png')
         if os.path.exists(menu_bg_path):
             try:
                 menu_bg_img = pygame.image.load(menu_bg_path).convert()
@@ -580,7 +580,7 @@ class Game:
                     for alien in all_hits:
                         self.score += alien.value
                         # Update economy: add score and coins (1 coin per alien value point)
-                        self.economy.add_score(alien.value)
+                        self.economxy.add_score(alien.value)
                         self.economy.add_coins(alien.value)
                     laser.kill()
                     if self.explosion_sound:
@@ -998,13 +998,13 @@ class Game:
         screen.blit(overlay, (0, 0))
         
         # Pause title
-        pause_font = pygame.font.Font(os.path.join(project_root, 'assets/Fonts/hyperspace/Hyperspace Bold Italic.otf'), 60)
+        pause_font = pygame.font.Font(os.path.join(script_dir, 'assets/Fonts/hyperspace/Hyperspace Bold Italic.otf'), 60)
         pause_text = pause_font.render("PAUSED", True, (255, 255, 0))
         text_rect = pause_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 3))
         screen.blit(pause_text, text_rect)
         
         # Instructions
-        instruction_font = pygame.font.Font(os.path.join(project_root, 'assets/Fonts/hyperspace/Hyperspace Bold Italic.otf'), 24)
+        instruction_font = pygame.font.Font(os.path.join(script_dir, 'assets/Fonts/hyperspace/Hyperspace Bold Italic.otf'), 24)
         
         resume_text = instruction_font.render("Press P or ESC to Resume", True, (255, 255, 255))
         resume_rect = resume_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2))
@@ -1126,7 +1126,7 @@ class Game:
         # Update mystery ship - use list() to avoid modifying group during iteration
         self.mystery_ship_timer()
         if self.mystery_ship:
-            for mystery in list[MysteryShip](self.mystery_ship):
+            for mystery in list(self.mystery_ship):
                 mystery.update(getattr(mystery, 'direction', 1))
                 # Remove if off screen
                 if mystery.rect.right < 0 or mystery.rect.left > SCREEN_WIDTH:
