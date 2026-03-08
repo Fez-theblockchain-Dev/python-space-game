@@ -22,7 +22,7 @@ from laser import Laser
 from alien import Alien, AlienDiagonal, AlienDiver, MysteryShip
 from treasureChest import TreasureChest, Key
 from button import Button
-from player import Player, script_dir
+from player import Player
 from mainMenu import theme_manager
 from mainMenu import main_menu  # Entry point for web: menu -> play -> game
 
@@ -30,14 +30,52 @@ from mainMenu import main_menu  # Entry point for web: menu -> play -> game
 # Detect if running in browser (Pygbag/Emscripten)
 IS_BROWSER = sys.platform == "emscripten"
 sys.path.append(game_dir)
+DEBUG_LOG_PATH = os.path.join(game_dir, ".cursor", "debug.log")
+DEBUG_SESSION_ID = "debug-session"
 try:
     from backend_apis.gameEconomy import GameEconomy
 except Exception:
     # Browser/APK fallback: keep gameplay alive without backend dependency.
+    class GameEconomy:
+        def __init__(self, initial_health=100):
+            self.initial_health = initial_health
+            self.score = 0
+            self.session_coins_earned = 0
+            self._wallet = {
+                "gold_coins": 0,
+                "health_packs": 0,
+                "total_earned_coins": 0,
+            }
 
-# Debug logging configuration - only used on desktop
-    DEBUG_LOG_PATH = os.path.join(game_dir, ".cursor", "debug.log")
-    DEBUG_SESSION_ID = "debug-session"
+        def add_score(self, value):
+            self.score += int(value)
+
+        def add_coins(self, value):
+            coins = int(value)
+            self.session_coins_earned += coins
+            self._wallet["gold_coins"] += coins
+            self._wallet["total_earned_coins"] += coins
+
+        def get_total_coins(self):
+            return int(self._wallet.get("gold_coins", 0))
+
+        def get_wallet_balance(self):
+            return dict(self._wallet)
+
+        def save_session_coins(self):
+            return None
+
+        def sync_wallet(self):
+            return None
+
+        def update_health(self, _health):
+            return None
+
+        def pause_game(self, _game_state):
+            return None
+
+        def resume_game(self):
+            return None
 
 #region agent log
 def _agent_log(payload):
@@ -290,6 +328,7 @@ class Game:
         # Player setup
         player_sprite = Player((SCREEN_WIDTH / 2, SCREEN_HEIGHT), SCREEN_WIDTH, 5)
         self.player = pygame.sprite.GroupSingle(player_sprite)
+        
         
         # Economy system setup
         self.economy = GameEconomy(initial_health=100)
@@ -580,7 +619,7 @@ class Game:
                     for alien in all_hits:
                         self.score += alien.value
                         # Update economy: add score and coins (1 coin per alien value point)
-                        self.economxy.add_score(alien.value)
+                        self.economy.add_score(alien.value)
                         self.economy.add_coins(alien.value)
                     laser.kill()
                     if self.explosion_sound:
