@@ -25,7 +25,7 @@ class ThemeManager:
     def load_themes(self):
         """Load all available background themes"""
         # Load default purple nebula background from the game directory.
-        nebula_bg_path = os.path.join(script_dir, DEFAULT_BACKGROUND_THEME)
+        nebula_bg_path = DEFAULT_BACKGROUND_THEME
         if os.path.exists(nebula_bg_path):
             try:
                 nebula_bg_img = pygame.image.load(nebula_bg_path).convert()

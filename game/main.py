@@ -117,7 +117,7 @@ BLACK = (0, 0, 0) #screen overlay to create multiple screens illusion
 script_dir = game_dir
 
 # Window background space image
-nebula_image = pygame.image.load(os.path.join(script_dir, DEFAULT_BACKGROUND_THEME)).convert()
+nebula_image = pygame.image.load(DEFAULT_BACKGROUND_THEME).convert()
 nebula_bg = pygame.transform.scale(nebula_image, (SCREEN_WIDTH, SCREEN_HEIGHT))
 
 # Font link
@@ -518,7 +518,7 @@ class Game:
         self.backgrounds["BLACK"] = black_bg
         
         # Purple nebula background (using config default)
-        nebula_image = pygame.image.load(os.path.join(script_dir, DEFAULT_BACKGROUND_THEME)).convert()
+        nebula_image = pygame.image.load(DEFAULT_BACKGROUND_THEME).convert()
         nebula_bg = pygame.transform.scale(nebula_image, (SCREEN_WIDTH, SCREEN_HEIGHT))
         self.backgrounds["PURPLE_NEBULA"] = nebula_bg
         
