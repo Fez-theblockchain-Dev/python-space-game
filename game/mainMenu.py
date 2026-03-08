@@ -8,6 +8,8 @@ from config import SCREEN_WIDTH, SCREEN_HEIGHT, DEFAULT_BACKGROUND_THEME
 # Initialize pygame
 pygame.init()
 
+script_dir = os.path.dirname(os.path.abspath(__file__))
+
 # Screen setup (using dimensions from config)
 SCREEN = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption("Space Cowboys🚀 - Main Menu")
@@ -22,11 +24,8 @@ class ThemeManager:
     
     def load_themes(self):
         """Load all available background themes"""
-        # Get the base directory (parent of game directory)
-        base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        
-        # Load default purple nebula background FIRST (using config constant)
-        nebula_bg_path = os.path.join(base_dir, DEFAULT_BACKGROUND_THEME)
+        # Load default purple nebula background from the game directory.
+        nebula_bg_path = os.path.join(script_dir, DEFAULT_BACKGROUND_THEME)
         if os.path.exists(nebula_bg_path):
             try:
                 nebula_bg_img = pygame.image.load(nebula_bg_path).convert()
@@ -41,7 +40,7 @@ class ThemeManager:
         self.themes.append(("Black", black_bg))
         
         # Load main menu background if it exists
-        menu_bg_path = os.path.join(base_dir, 'assets', 'main_menu_background.png')
+        menu_bg_path = os.path.join(script_dir, 'assets', 'main_menu_background.png')
         if os.path.exists(menu_bg_path):
             try:
                 menu_bg_img = pygame.image.load(menu_bg_path).convert()
@@ -75,8 +74,7 @@ theme_manager = ThemeManager()
 
 def get_font(size):
     """Font size function"""
-    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    font_path = os.path.join(base_dir, 'assets', 'Fonts', 'hyperspace', 'Hyperspace Bold Italic.otf')
+    font_path = os.path.join(script_dir, 'assets', 'Fonts', 'hyperspace', 'Hyperspace Bold Italic.otf')
     try:
         return pygame.font.Font(font_path, size)
     except:
