@@ -10,9 +10,14 @@ pygame.init()
 
 script_dir = os.path.dirname(os.path.abspath(__file__))
 
-# Screen setup (using dimensions from config)
-SCREEN = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-pygame.display.set_caption("Space Cowboys🚀 - Main Menu")
+# Screen setup - use get_surface() at runtime so we draw to the active display
+# (main.py may recreate the display; drawing to a stale SCREEN causes blank screen)
+def _get_screen():
+    surf = pygame.display.get_surface()
+    if surf is None:
+        pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+        pygame.display.set_caption("Space Cowboys🚀 - Main Menu")
+    return pygame.display.get_surface()
 
 
 # Theme management
@@ -85,21 +90,22 @@ async def main_menu():
     clock = pygame.time.Clock()
     
     while True:
+        screen = _get_screen()
         MENU_MOUSE_POS = pygame.mouse.get_pos()
         
         # Draw background using theme manager
         current_bg = theme_manager.get_current_background()
-        SCREEN.blit(current_bg, (0, 0))
+        screen.blit(current_bg, (0, 0))
         
         # Title
         MENU_TEXT = get_font(100).render("SPACE COWBOYS🚀", True, "#b68f40")
         MENU_RECT = MENU_TEXT.get_rect(center=(640, 100))
-        SCREEN.blit(MENU_TEXT, MENU_RECT)
+        screen.blit(MENU_TEXT, MENU_RECT)
         
         # Current theme display
         theme_text = get_font(30).render(f"Theme: {theme_manager.get_current_theme_name()}", True, "White")
         theme_text_rect = theme_text.get_rect(center=(640, 180))
-        SCREEN.blit(theme_text, theme_text_rect)
+        screen.blit(theme_text, theme_text_rect)
         
         # Buttons
         PLAY_BUTTON = Button(
@@ -132,7 +138,7 @@ async def main_menu():
         # Update button colors on hover
         for button in [PLAY_BUTTON, THEME_BUTTON, QUIT_BUTTON]:
             button.change_color(MENU_MOUSE_POS)
-            button.update(SCREEN)
+            button.update(screen)
         
         # Handle events
         for event in pygame.event.get():
@@ -174,12 +180,13 @@ def play():
     clock = pygame.time.Clock()
     
     while True:
+        screen = _get_screen()
         PLAY_MOUSE_POS = pygame.mouse.get_pos()
-        SCREEN.fill("black")
+        screen.fill("black")
         
         PLAY_TEXT = get_font(45).render("This is the PLAY screen.", True, "White")
         PLAY_RECT = PLAY_TEXT.get_rect(center=(640, 260))
-        SCREEN.blit(PLAY_TEXT, PLAY_RECT)
+        screen.blit(PLAY_TEXT, PLAY_RECT)
         
         PLAY_BACK = Button(
             image=None, 
@@ -191,7 +198,7 @@ def play():
         )
         
         PLAY_BACK.change_color(PLAY_MOUSE_POS)
-        PLAY_BACK.update(SCREEN)
+        PLAY_BACK.update(screen)
         
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
