@@ -351,7 +351,7 @@ config = {
         }
     </style>
 
-    <script src="{{cookiecutter.cdn}}/browserfs.min.js"></script>
+    <script src="{{cookiecutter.cdn}}browserfs.min.js"></script>
 
 </head>
 
@@ -402,8 +402,7 @@ height="1px"
             <iframe id="iframe" class="framed" name="iframe"
 width="470px" height="90%"
 allowtransparency="true"
-style="z-index: 10;"
-style="game/build/web/512x512_purple_nebula_1.png"
+style="z-index: 10; background: #FFFFFF;"
 frameborder="1"
                 allowfullscreen="true"
                 webkitallowfullscreen="true"
@@ -433,7 +432,7 @@ frameborder="1"
     async function custom_onload(debug_hidden) {
         // this is called before anything python is loaded
         // make your js customization here
-        console.log(__FILE__, "custom_onload")
+        console.log(typeof __FILE__ !== "undefined" ? __FILE__ : "custom", "custom_onload")
 
         pyconsole.hidden = debug_hidden
         system.hidden = debug_hidden
@@ -445,13 +444,13 @@ frameborder="1"
 
     function custom_prerun(){
         // no python main and no (MEMFS + VFS) yet.
-        console.log(__FILE__, "custom_prerun")
+        console.log(typeof __FILE__ !== "undefined" ? __FILE__ : "custom", "custom_prerun")
 
     }
 
     function custom_postrun(){
         // python main and no VFS filesystem yet.
-        console.log(__FILE__, "custom_postrun")
+        console.log(typeof __FILE__ !== "undefined" ? __FILE__ : "custom", "custom_postrun")
 
         // prevent ff horizontal scroll
         window.addEventListener("keydown", function(e) {
