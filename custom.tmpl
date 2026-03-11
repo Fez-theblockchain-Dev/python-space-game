@@ -155,7 +155,7 @@ async def custom_site():
 
     # now that apk is mounted we have access to font cache
     # but we need to fill __file__ that is not yet set
-    __import__(__name__).__file__ = str(main.py)
+    __import__(__name__).__file__ = str(main)
 
 
     # now make a prompt
