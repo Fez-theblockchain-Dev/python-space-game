@@ -1,5 +1,5 @@
 import pygame, random, os
-from config import SCREEN_WIDTH, SCREEN_HEIGHT
+from config import SCREEN_WIDTH, SCREEN_HEIGHT, resource_path
 
 
 aliens = pygame.sprite.Group()
@@ -26,8 +26,7 @@ class Alien(pygame.sprite.Sprite):
         super().__init__()
         self.type = type
         self.health = 100  # default health for all aliens
-        script_dir = os.path.dirname(os.path.abspath(__file__))
-        path = os.path.join(script_dir, f"assets/alien_{type}.png")
+        path = resource_path("assets", f"alien_{type}.png")
         self.image = pygame.image.load(path)
         self.rect = self.image.get_rect(center=(x, y))
         self.value = 100  # default value for all aliens
@@ -77,8 +76,7 @@ class AlienDiagonal(pygame.sprite.Sprite):
         super().__init__()
         self.type = 2
         self.health = 100
-        script_dir = os.path.dirname(os.path.abspath(__file__))
-        path = os.path.join(script_dir, "assets/alien_2.png")
+        path = resource_path("assets", "alien_2.png")
         self.image = pygame.image.load(path)
         self.rect = self.image.get_rect(center=(x, y))
         self.value = 150  # Higher value for harder alien
@@ -116,8 +114,7 @@ class AlienDiver(pygame.sprite.Sprite):
         super().__init__()
         self.type = 3
         self.health = 100
-        script_dir = os.path.dirname(os.path.abspath(__file__))
-        path = os.path.join(script_dir, "assets/alien_3.png")
+        path = resource_path("assets", "alien_3.png")
         original_image = pygame.image.load(path)
         # Flip the image 180 degrees (both horizontally and vertically)
         self.image = pygame.transform.rotate(original_image, 180)
@@ -145,8 +142,7 @@ class MysteryShip(pygame.sprite.Sprite):
     """Mystery ship that flies across the screen for bonus points. Uses assets/mystery.png image."""
     def __init__(self, x, y, scale_size=(60, 50)):
         super().__init__()
-        script_dir = os.path.dirname(os.path.abspath(__file__))
-        path = os.path.join(script_dir, "assets/mystery.png")
+        path = resource_path("assets", "mystery.png")
         
         # Load and scale the mystery ship image
         if os.path.exists(path):

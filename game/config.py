@@ -1,9 +1,26 @@
 # this config file wil centrally store the imports for the game to avoid circular imports
 
 import os
+import sys
+
 # Screen dimensions
 SCREEN_WIDTH = 1280
 SCREEN_HEIGHT = 720
+
+
+def resource_path(*parts: str) -> str:
+    """
+    Resolve asset paths for both desktop and Pygbag browser.
+    In browser, __file__-based paths can fail; use relative paths from CWD.
+    Pygbag sets CWD to the game root when loaderhome=appdir.
+    """
+    path = os.path.join(*parts)
+    if sys.platform == "emscripten":
+        # Browser: use forward slashes, relative to CWD (game root)
+        return path.replace("\\", "/")
+    # Desktop: resolve relative to config file (game dir)
+    base = os.path.dirname(os.path.abspath(__file__))
+    return os.path.join(base, path)
 
 # Free currency (earned through gameplay)
 INITIAL_COINS = 0
@@ -37,8 +54,8 @@ TREASURE_CHEST_MAX_HEALTH_PACK = 5
 # Base game directory for runtime assets.
 GAME_DIR = os.path.dirname(os.path.abspath(__file__))
 
-# Default background theme path inside the game directory.
-DEFAULT_BACKGROUND_THEME = os.path.join(GAME_DIR, "assets", "512x512_purple_nebula_1.png")
+# Default background theme path (use resource_path for browser compatibility).
+DEFAULT_BACKGROUND_THEME = resource_path("assets", "512x512_purple_nebula_1.png")
 
 # Server constants/paths
 GAME_BUILD_PATH = os.path.join(os.path.dirname(__file__), "build", "web")

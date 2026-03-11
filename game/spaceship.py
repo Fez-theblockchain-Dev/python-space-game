@@ -1,10 +1,12 @@
 import json
 import os
+import sys
 from http.client import RemoteDisconnected
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
 import pygame
+from config import resource_path
 
 
 def fetch_json(url, timeout=5):
@@ -25,20 +27,20 @@ class SpaceShip(pygame.sprite.Sprite):
         super().__init__()
         script_dir = os.path.dirname(os.path.abspath(__file__))
         project_root = os.path.dirname(script_dir)
-        self.image = pygame.image.load(os.path.join(script_dir, "assets/spaceship.png"))
+        self.image = pygame.image.load(resource_path("assets", "spaceship.png"))
         self.rect = self.image.get_rect()
         self.rect.center = (x, y)
         self.health = health
         self.speed = 5
 
-        # Wallet tracking
-        self.player_wallet_id = self.load_player_id(project_root)
+        # Wallet tracking (skip in browser - no player_id.json)
+        self.player_wallet_id = self.load_player_id(project_root) if sys.platform != "emscripten" else None
         self.gold_coins = 0
         self.wallet_last_fetched = 0
         self.wallet_fetch_interval = 5000  # Fetch wallet every 5 seconds (milliseconds)
 
         # Font for rendering wallet ID
-        font_path = os.path.join(script_dir, "assets/Fonts/hyperspace/Hyperspace Bold.otf")
+        font_path = resource_path("assets", "Fonts", "hyperspace", "Hyperspace Bold.otf")
         try:
             self.wallet_font = pygame.font.Font(font_path, 14)
         except Exception:

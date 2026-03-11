@@ -3,7 +3,7 @@ import sys
 import pygame
 import os
 from button import Button
-from config import SCREEN_WIDTH, SCREEN_HEIGHT, DEFAULT_BACKGROUND_THEME
+from config import SCREEN_WIDTH, SCREEN_HEIGHT, DEFAULT_BACKGROUND_THEME, resource_path
 
 # Initialize pygame
 pygame.init()
@@ -45,7 +45,7 @@ class ThemeManager:
         self.themes.append(("Black", black_bg))
         
         # Load main menu background if it exists
-        menu_bg_path = os.path.join(script_dir, 'assets', 'main_menu_background.png')
+        menu_bg_path = resource_path("assets", "main_menu_background.png")
         if os.path.exists(menu_bg_path):
             try:
                 menu_bg_img = pygame.image.load(menu_bg_path).convert()
@@ -79,7 +79,7 @@ theme_manager = ThemeManager()
 
 def get_font(size):
     """Font size function"""
-    font_path = os.path.join(script_dir, 'assets', 'Fonts', 'hyperspace', 'Hyperspace Bold Italic.otf')
+    font_path = resource_path("assets", "Fonts", "hyperspace", "Hyperspace Bold Italic.otf")
     try:
         return pygame.font.Font(font_path, size)
     except:

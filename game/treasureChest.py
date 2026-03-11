@@ -4,7 +4,8 @@ import random
 from config import (
     SCREEN_WIDTH, SCREEN_HEIGHT,
     TREASURE_CHEST_MIN_COINS, TREASURE_CHEST_MAX_COINS,
-    TRESURE_CHEST_HEALTH_PACK_CHANCE, TREASURE_CHEST_MIN_HEALTH_PACK, TREASURE_CHEST_MAX_HEALTH_PACK
+    TRESURE_CHEST_HEALTH_PACK_CHANCE, TREASURE_CHEST_MIN_HEALTH_PACK, TREASURE_CHEST_MAX_HEALTH_PACK,
+    resource_path,
 )
 
 
@@ -15,10 +16,7 @@ class TreasureChest(pygame.sprite.Sprite):
     """
     def __init__(self, x, y, scale_size=(80, 80)):
         super().__init__()
-        script_dir = os.path.dirname(os.path.abspath(__file__))
-        
-        # Load treasure chest image
-        path = os.path.join(script_dir, "assets/treasure_chest.png")
+        path = resource_path("assets", "treasure_chest.png")
         if os.path.exists(path):
             original_image = pygame.image.load(path).convert_alpha()
             self.image = pygame.transform.scale(original_image, scale_size)
@@ -111,10 +109,7 @@ class Key(pygame.sprite.Sprite):
     """
     def __init__(self, x, y):
         super().__init__()
-        script_dir = os.path.dirname(os.path.abspath(__file__))
-        
-        # Load key image
-        path = os.path.join(script_dir, "assets/key.png")
+        path = resource_path("assets", "key.png")
         if os.path.exists(path):
             self.image = pygame.image.load(path).convert_alpha()
         else:

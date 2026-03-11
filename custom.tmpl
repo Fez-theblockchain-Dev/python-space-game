@@ -140,7 +140,8 @@ async def custom_site():
 
 
     # preloader will change dir and prepend it to sys.path
-    platform.run_main(PyConfig, loaderhome= appdir / "assets", loadermain=None)
+    # loaderhome=appdir so CWD is game root; assets/ paths resolve correctly
+    platform.run_main(PyConfig, loaderhome=appdir, loadermain=None)
 
 
     # wait preloading complete
@@ -148,13 +149,14 @@ async def custom_site():
     while embed.counter()<0:
         await asyncio.sleep(.1)
 
-    main = appdir / "assets" / "main.py"
+    # main.py is at APK root (pygbag packs game/main.py -> /main.py)
+    main = appdir / "main.py"
 
     # start async top level machinery and add a console.
     await TopLevel_async_handler.start_toplevel(platform.shell, console=window.python.config.debug)
 
     # now that apk is mounted we have access to font cache
-    # but we need to fill __file__ that is not yet set
+    # set __file__ so script_dir / __file__-based paths resolve in game code
     __import__(__name__).__file__ = str(main)
 
 
