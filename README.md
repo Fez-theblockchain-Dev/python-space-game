@@ -28,6 +28,7 @@ pip install pygame
 
 4.Run the game:
 python -m game
+# or: python game/main.py
 
 5.Backend API dependencies - Install the backend API required software to get full bemefits of the game, such as, in-progress shop/payment features, install backend dependencies from the API folder:
 
