@@ -1369,7 +1369,8 @@ class StrictStartError(Exception):
 
 # Entry point - start from main menu for full playable flow in DOM (Pygbag/Emscripten)
 if __name__ == "__main__":
-    asyncio.run(main_menu())
+    import nest_asyncio
+    nest_asyncio.run_main(main_menu)
 
 
 
