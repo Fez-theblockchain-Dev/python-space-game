@@ -4,7 +4,7 @@ import asyncio  # Required for Pygbag web deployment
 import pygame
 
 # Add the game package directory to sys.path so sibling module imports work
-# after moving main.py to the project root (per Pygbag recommendation).
+# (per Pygbag recommendation for __main__.py entrypoint).
 game_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, game_dir)
 
@@ -563,7 +563,7 @@ class Game:
         _agent_log({
             "runId": "pre-fix",
             "hypothesisId": "A",
-            "location": "game/main.py:collision_checks:entry",
+            "location": "game/__main__.py:collision_checks:entry",
             "message": "collision_checks_entry",
             "data": {
                 "lives": self.lives,
@@ -664,7 +664,7 @@ class Game:
             _agent_log({
                 "runId": "pre-fix",
                 "hypothesisId": "A",
-                "location": "game/main.py:collision_checks:alien_player_collision",
+                "location": "game/__main__.py:collision_checks:alien_player_collision",
                 "message": "alien_player_collision",
                 "data": {
                     "collisions": len(aliens_touching_player),
@@ -679,7 +679,7 @@ class Game:
                 _agent_log({
                     "runId": "pre-fix",
                     "hypothesisId": "A",
-                    "location": "game/main.py:collision_checks:game_over",
+                    "location": "game/__main__.py:collision_checks:game_over",
                     "message": "player_out_of_health",
                     "data": {"health": self.player.sprite.health},
                 })
@@ -690,7 +690,7 @@ class Game:
         _agent_log({
             "runId": "pre-fix",
             "hypothesisId": "A",
-            "location": "game/main.py:collision_checks:exit",
+            "location": "game/__main__.py:collision_checks:exit",
             "message": "collision_checks_exit",
             "data": {
                 "lives": self.lives,
@@ -1371,9 +1371,3 @@ class StrictStartError(Exception):
 if __name__ == "__main__":
     import nest_asyncio
     nest_asyncio.run_main(main_menu)
-
-
-
-
-
-        

@@ -11,7 +11,7 @@ pygame.init()
 script_dir = os.path.dirname(os.path.abspath(__file__))
 
 # Screen setup - use get_surface() at runtime so we draw to the active display
-# (main.py may recreate the display; drawing to a stale SCREEN causes blank screen)
+# (__main__.py may recreate the display; drawing to a stale SCREEN causes blank screen)
 def _get_screen():
     surf = pygame.display.get_surface()
     if surf is None:

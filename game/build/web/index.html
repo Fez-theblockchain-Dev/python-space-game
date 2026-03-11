@@ -149,8 +149,8 @@ async def custom_site():
     while embed.counter()<0:
         await asyncio.sleep(.1)
 
-    # main.py is at APK root (pygbag packs game/main.py -> /main.py)
-    main = appdir / "main.py"
+    # __main__.py is at APK root (pygbag packs game/__main__.py -> /__main__.py)
+    main = appdir / "__main__.py"
 
     # start async top level machinery and add a console.
     await TopLevel_async_handler.start_toplevel(platform.shell, console=window.python.config.debug)
