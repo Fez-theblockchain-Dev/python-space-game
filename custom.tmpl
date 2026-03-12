@@ -140,8 +140,9 @@ async def custom_site():
 
 
     # preloader will change dir and prepend it to sys.path
-    # loaderhome=appdir so CWD is game root; assets/ paths resolve correctly
-    platform.run_main(PyConfig, loaderhome=appdir, loadermain=None)
+    # Pygbag packs game/ into APK as assets/; loaderhome=appdir/assets so CWD matches
+    # and resource_path("assets", "x.png") resolves to assets/assets/x.png
+    platform.run_main(PyConfig, loaderhome=appdir / "assets", loadermain=None)
 
 
     # wait preloading complete
@@ -149,8 +150,8 @@ async def custom_site():
     while embed.counter()<0:
         await asyncio.sleep(.1)
 
-    # __main__.py is at APK root (pygbag packs game/__main__.py -> /__main__.py)
-    main = appdir / "__main__.py"
+    # Pygbag packs game/__main__.py -> assets/__main__.py in APK
+    main = appdir / "assets" / "__main__.py"
 
     # start async top level machinery and add a console.
     await TopLevel_async_handler.start_toplevel(platform.shell, console=window.python.config.debug)

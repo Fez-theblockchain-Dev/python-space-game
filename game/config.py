@@ -11,8 +11,8 @@ SCREEN_HEIGHT = 720
 def resource_path(*parts: str) -> str:
     """
     Resolve asset paths for both desktop and Pygbag browser.
-    In browser, __file__-based paths can fail; use relative paths from CWD.
-    Pygbag sets CWD to the game root when loaderhome=appdir.
+    In browser, CWD is appdir/assets (loaderhome); assets/ subpath resolves to
+    assets/assets/ in the APK (e.g. assets/spaceship.png -> assets/assets/spaceship.png).
     """
     path = os.path.join(*parts)
     if sys.platform == "emscripten":
