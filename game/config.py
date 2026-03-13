@@ -14,10 +14,30 @@ def resource_path(*parts: str) -> str:
     In browser, CWD is appdir/assets (loaderhome); assets/ subpath resolves to
     assets/assets/ in the APK (e.g. assets/spaceship.png -> assets/assets/spaceship.png).
     """
-    path = os.path.join(*parts)
+    path = os.path.join(*parts).replace("\\", "/")
     if sys.platform == "emscripten":
-        # Browser: use forward slashes, relative to CWD (game root)
-        return path.replace("\\", "/")
+        # Browser/APK layout can vary by loaderhome:
+        # - /data/data/<bundle>/assets
+        # - /data/data/<bundle>
+        # Probe common relative candidates so asset loading is resilient.
+        normalized = path.lstrip("./")
+        candidates = [normalized]
+        candidates.append(f"assets/{normalized}")
+        if normalized.startswith("assets/"):
+            candidates.append(normalized[len("assets/"):])
+        # Keep ordering stable while removing duplicates.
+        seen = set()
+        for candidate in candidates:
+            if candidate in seen:
+                continue
+            seen.add(candidate)
+            try:
+                if os.path.exists(candidate):
+                    return candidate
+            except Exception:
+                # In browser runtimes, probing may fail before FS mount.
+                pass
+        return normalized
     # Desktop: resolve relative to config file (game dir)
     base = os.path.dirname(os.path.abspath(__file__))
     return os.path.join(base, path)

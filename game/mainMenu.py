@@ -25,7 +25,15 @@ class ThemeManager:
     def __init__(self):
         self.themes = []
         self.current_theme_index = 0
+        self._themes_loaded = False
+
+    def _ensure_themes_loaded(self):
+        if self._themes_loaded:
+            return
+        # Ensure a display surface exists before image conversion/scaling paths.
+        _get_screen()
         self.load_themes()
+        self._themes_loaded = True
     
     def load_themes(self):
         """Load all available background themes"""
@@ -56,6 +64,7 @@ class ThemeManager:
     
     def get_current_background(self):
         """Get the current background surface"""
+        self._ensure_themes_loaded()
         if self.themes:
             return self.themes[self.current_theme_index][1]
         # Fallback to black
@@ -65,12 +74,14 @@ class ThemeManager:
     
     def get_current_theme_name(self):
         """Get the name of the current theme"""
+        self._ensure_themes_loaded()
         if self.themes:
             return self.themes[self.current_theme_index][0]
         return "Default"
     
     def next_theme(self):
         """Cycle to the next theme"""
+        self._ensure_themes_loaded()
         if self.themes:
             self.current_theme_index = (self.current_theme_index + 1) % len(self.themes)
 

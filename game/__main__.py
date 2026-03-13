@@ -117,16 +117,27 @@ BLACK = (0, 0, 0) #screen overlay to create multiple screens illusion
 script_dir = game_dir
 
 # Window background space image
-nebula_image = pygame.image.load(DEFAULT_BACKGROUND_THEME).convert()
-nebula_bg = pygame.transform.scale(nebula_image, (SCREEN_WIDTH, SCREEN_HEIGHT))
+try:
+    nebula_image = pygame.image.load(DEFAULT_BACKGROUND_THEME).convert()
+    nebula_bg = pygame.transform.scale(nebula_image, (SCREEN_WIDTH, SCREEN_HEIGHT))
+except Exception as exc:
+    print(f"Warning: Could not load background image '{DEFAULT_BACKGROUND_THEME}': {exc}")
+    nebula_bg = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
+    nebula_bg.fill((10, 10, 20))
 
 # Font link
-title_font = pygame.font.Font(resource_path("assets", "Fonts", "hyperspace", "Hyperspace Bold Italic.otf"), 36)
+try:
+    title_font = pygame.font.Font(resource_path("assets", "Fonts", "hyperspace", "Hyperspace Bold Italic.otf"), 36)
+except Exception:
+    title_font = pygame.font.SysFont("arial", 36)
 title_surface = title_font.render("Space Cowboys", True, (255, 255, 255))
 title_rect = title_surface.get_rect(centerx=SCREEN_WIDTH // 2, y=20)  # 20px from top
 
 # General font for UI text (health, level messages, game over, etc.)
-font = pygame.font.Font(resource_path("assets", "Fonts", "hyperspace", "Hyperspace Bold Italic.otf"), 20)
+try:
+    font = pygame.font.Font(resource_path("assets", "Fonts", "hyperspace", "Hyperspace Bold Italic.otf"), 20)
+except Exception:
+    font = pygame.font.SysFont("arial", 20)
 
 # HeroShip class definition
 class HeroShip(pygame.sprite.Sprite):
