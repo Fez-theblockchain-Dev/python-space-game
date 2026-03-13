@@ -22,7 +22,7 @@ class Player(pygame.sprite.Sprite):
 		self.laser_cooldown = 600
 		self.lasers = pygame.sprite.Group()
 		try:
-			self.laser_sound = pygame.mixer.Sound(resource_path("audio", "audio_laser.wav"))
+			self.laser_sound = pygame.mixer.Sound(resource_path("audio", "audio_laser.ogg"))
 			self.laser_sound.set_volume(0.5)
 		except Exception as e:
 			print(f"Warning: Could not load laser sound: {e}")

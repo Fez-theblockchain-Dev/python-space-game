@@ -390,7 +390,7 @@ class Game:
         except:
             pass
         try:
-            self.laser_sound = pygame.mixer.Sound(resource_path("audio", "laser.wav"))
+            self.laser_sound = pygame.mixer.Sound(resource_path("audio", "audio_laser.ogg"))
             self.laser_sound.set_volume(0.5)
         except:
             self.laser_sound = None
