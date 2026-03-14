@@ -344,16 +344,7 @@ class Game:
         # Economy system setup
         self.economy = GameEconomy(initial_health=100)
 
-        # health and score setup
-        self.lives = 3
-        try:
-            ship_img = pygame.image.load(resource_path("assets", "spaceship.png")).convert_alpha()
-            icon_size = (24, 24)
-            self.live_surf = pygame.transform.smoothscale(ship_img, icon_size)
-            self.live_x_start_pos = SCREEN_WIDTH - (icon_size[0] * 3 + 10 * 2 + 20)
-        except Exception:
-            self.live_surf = None
-            self.live_x_start_pos = SCREEN_WIDTH - 100
+        # health and score setup (game over at 0% health; 4 alien collisions = -25% each)
         self.score = 0
         self.font = pygame.font.Font(resource_path("assets", "Fonts", "hyperspace", "Hyperspace Bold Italic.otf"), 20)
         # Obstacle setup
@@ -579,7 +570,6 @@ class Game:
             "location": "game/__main__.py:collision_checks:entry",
             "message": "collision_checks_entry",
             "data": {
-                "lives": self.lives,
                 "aliens": len(self.aliens),
                 "diagonal_aliens": len(self.diagonal_aliens),
                 "diver_aliens": len(self.diver_aliens),
@@ -706,7 +696,6 @@ class Game:
             "location": "game/__main__.py:collision_checks:exit",
             "message": "collision_checks_exit",
             "data": {
-                "lives": self.lives,
                 "aliens": len(self.aliens),
                 "diagonal_aliens": len(self.diagonal_aliens),
                 "diver_aliens": len(self.diver_aliens),
@@ -1097,9 +1086,6 @@ class Game:
                 self.player.sprite.health = min(100, self.player.sprite.health + health_reward)
                 self.health_restored = self.player.sprite.health - old_health
 
-                if self.lives < 3:
-                    self.lives += 1
-
                 # Save earned coins to wallet immediately so they persist
                 self.economy.save_session_coins()
                 
@@ -1210,7 +1196,6 @@ class Game:
         
         # Removed alien_lasers.draw() - aliens don't shoot
         self.extra.draw(screen)
-        self.display_lives()
         self.display_score()
         self.display_coins()
         self.display_level()
