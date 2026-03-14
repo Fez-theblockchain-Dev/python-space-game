@@ -96,7 +96,7 @@ def get_font(size):
     except:
         return pygame.font.Font(None, size)
 
-async def main_menu():
+async def main_menu(start_game_callback=None):
     """Main menu screen (async for Pygbag)"""
     clock = pygame.time.Clock()
     
@@ -162,8 +162,12 @@ async def main_menu():
                     # Start the game
                     print("Starting game...")
                     try:
-                        from main import main
-                        await main()  # Await async main function
+                        if start_game_callback is None:
+                            try:
+                                from __main__ import main as start_game_callback
+                            except Exception:
+                                from main import main as start_game_callback
+                        await start_game_callback()  # Await async game function
                         # Ensures display is still active after game returns
                         pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
                         pygame.display.set_caption("Space Cowboys🚀 - Main Menu")

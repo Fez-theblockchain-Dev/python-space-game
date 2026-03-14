@@ -1314,7 +1314,7 @@ async def main():
                     # Save session coins before quitting
                     game.economy.save_session_coins()
                     from mainMenu import main_menu
-                    return await main_menu()
+                    return await main_menu(main)
                 elif event.key == pygame.K_m:
                     # M key to toggle mute
                     game.toggle_mute()
@@ -1353,7 +1353,7 @@ async def main():
             # Check if player wants to return to menu
             if game_result == "menu":
                 from mainMenu import main_menu
-                return await main_menu()
+                return await main_menu(main)
             
             # Check if pause button was clicked
             if game_result == "paused":
@@ -1381,4 +1381,6 @@ class StrictStartError(Exception):
 # Entry point - start from main menu for full playable flow in DOM (Pygbag/Emscripten)
 if __name__ == "__main__":
     import nest_asyncio
-    nest_asyncio.run_main(main_menu)
+    async def boot():
+        await main_menu(main)
+    nest_asyncio.run_main(boot)
