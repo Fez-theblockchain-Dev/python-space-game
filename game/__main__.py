@@ -347,9 +347,11 @@ class Game:
         # health and score setup
         self.lives = 3
         try:
-            self.live_surf = pygame.image.load(DEFAULT_BACKGROUND_THEME).convert_alpha()
-            self.live_x_start_pos = SCREEN_WIDTH - (self.live_surf.get_size()[0] * 2 + 20)
-        except:
+            ship_img = pygame.image.load(resource_path("assets", "spaceship.png")).convert_alpha()
+            icon_size = (24, 24)
+            self.live_surf = pygame.transform.smoothscale(ship_img, icon_size)
+            self.live_x_start_pos = SCREEN_WIDTH - (icon_size[0] * 3 + 10 * 2 + 20)
+        except Exception:
             self.live_surf = None
             self.live_x_start_pos = SCREEN_WIDTH - 100
         self.score = 0
@@ -861,13 +863,6 @@ class Game:
         subtitle = self.font.render("Treasure claimed after destroying the mystery ship!", True, (255, 255, 255))
         subtitle_rect = subtitle.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 120))
         screen.blit(subtitle, subtitle_rect)
-
-    def display_lives(self):
-        """Display player lives"""
-        if self.live_surf:
-            for live_index in range(self.lives):
-                x = self.live_x_start_pos + (live_index * (self.live_surf.get_size()[0] + 10))
-                screen.blit(self.live_surf, (x, 8))
 
     def display_score(self):
         """Display current score"""
