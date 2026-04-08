@@ -374,6 +374,9 @@ class Game:
         self.mystery_bounty_duration_ms = 2500
         self._mystery_bounty_image = None
         
+        # "Need key!" HUD hint state
+        self._need_key_hint_end = 0
+
         # Wallet treasure chest inventory — chests stored here after they land
         self.wallet_chests = []
         
@@ -634,21 +637,25 @@ class Game:
                 key.collect()
                 self.player_has_key = True
         
-        # Player collision with treasure chests (no key required)
+        # Player collision with treasure chests (key required)
         for chest in list(self.treasure_chests):
             if pygame.sprite.collide_rect(self.player.sprite, chest) and chest.locked:
-                rewards = chest.unlock()
-                if rewards:
-                    randomized_bonus = rewards.get('coins', 0)
-                    if randomized_bonus > 0:
-                        self.score += randomized_bonus
-                        self.economy.add_coins(randomized_bonus)
-                        self.economy.save_session_coins()
-                        self.economy.sync_wallet()
-                    if rewards.get('health_packs', 0) > 0:
-                        health_gain = rewards['health_packs'] * 10
-                        self.player.sprite.health = min(100, self.player.sprite.health + health_gain)
-                    chest.kill()
+                if self.player_has_key:
+                    rewards = chest.unlock()
+                    if rewards:
+                        randomized_bonus = rewards.get('coins', 0)
+                        if randomized_bonus > 0:
+                            self.score += randomized_bonus
+                            self.economy.add_coins(randomized_bonus)
+                            self.economy.save_session_coins()
+                            self.economy.sync_wallet()
+                        if rewards.get('health_packs', 0) > 0:
+                            health_gain = rewards['health_packs'] * 10
+                            self.player.sprite.health = min(100, self.player.sprite.health + health_gain)
+                        chest.kill()
+                    self.player_has_key = False
+                else:
+                    self._show_need_key_hint()
 
         # direct alien collision with player (aliens touching player) - check all groups
         aliens_touching_player = pygame.sprite.spritecollide(self.player.sprite, self.aliens, True)
@@ -900,6 +907,17 @@ class Game:
             key_text = self.font.render("🔑 KEY", True, (255, 215, 0))
             screen.blit(key_text, (10, 100))
 
+    def show_need_key_hint(self):
+        """Trigger a brief 'NEED KEY!' message on the HUD."""
+        self._need_key_hint_end = pygame.time.get_ticks() + 1500
+
+    def draw_need_key_hint(self, screen):
+        """Render the 'NEED KEY!' hint if the timer is still active."""
+        if pygame.time.get_ticks() < self._need_key_hint_end:
+            hint = self.font.render("NEED KEY! Destroy the Mystery Ship first!", True, (255, 80, 80))
+            hint_rect = hint.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 160))
+            screen.blit(hint, hint_rect)
+
     def collect_chests_to_wallet(self):
         """Move treasure chests that finished spawning into the player's wallet inventory."""
         for chest in list(self.treasure_chests):
@@ -1089,6 +1107,11 @@ class Game:
                 # Save earned coins to wallet immediately so they persist
                 self.economy.save_session_coins()
                 
+                # Reset key/chest state for the new level
+                self.player_has_key = False
+                self.keys.empty()
+                self.treasure_chests.empty()
+
                 # Advance to next level
                 Level.increment_level()
                 # Setup aliens for the new level
@@ -1201,6 +1224,7 @@ class Game:
         self.display_level()
         self.display_health()
         self.display_key_indicator()
+        self.draw_need_key_hint(screen)
         self.draw_mystery_bounty_overlay(screen)
         self.victory_message()
         
