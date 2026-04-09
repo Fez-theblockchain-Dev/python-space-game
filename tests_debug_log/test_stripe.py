@@ -35,17 +35,17 @@ from backend_apis.stripe_service import (
 from backend_apis.stripe_payment_handler import CreditResult, StripePaymentHandler
 
 
-def _make_engine():
+def make_engine():
     engine = create_engine("sqlite:///:memory:")
     Base.metadata.create_all(engine)
     return engine
 
 
-class _DBTestCase(unittest.TestCase):
+class DBTestCase(unittest.TestCase):
     """Base class that provides a fresh in-memory DB for every test."""
 
     def setUp(self):
-        self.engine = _make_engine()
+        self.engine = make_engine()
         self.Session = sessionmaker(bind=self.engine)
         self.db = self.Session()
 
@@ -56,7 +56,7 @@ class _DBTestCase(unittest.TestCase):
         self.db.close()
         Base.metadata.drop_all(self.engine)
 
-    def _seed_player(self, uuid: str = "player-abc-1234") -> Player:
+    def seed_player(self, uuid: str = "player-abc-1234") -> Player:
         player = Player(player_uuid=uuid)
         player.wallet = PlayerWallet()
         self.db.add(player)
@@ -65,7 +65,7 @@ class _DBTestCase(unittest.TestCase):
         return player
 
 
-class TestGetOrCreatePlayer(_DBTestCase):
+class TestGetOrCreatePlayer(DBTestCase):
 
     def test_creates_new_player_with_wallet(self):
         player = self.handler.get_or_create_player(self.db, "new-uuid")
@@ -74,12 +74,12 @@ class TestGetOrCreatePlayer(_DBTestCase):
         self.assertIsNotNone(player.wallet)
 
     def test_returns_existing_player(self):
-        existing = self._seed_player("existing-uuid")
+        existing = self.seed_player("existing-uuid")
         returned = self.handler.get_or_create_player(self.db, "existing-uuid")
         self.assertEqual(returned.id, existing.id)
 
 
-class TestInitiatePurchasePaymentIntent(_DBTestCase):
+class TestInitiatePurchasePaymentIntent(DBTestCase):
 
     def test_success(self):
         self.mock_stripe.create_payment_intent.return_value = StripePaymentResult(
@@ -122,7 +122,7 @@ class TestInitiatePurchasePaymentIntent(_DBTestCase):
         self.assertEqual(self.db.query(Transaction).count(), 0)
 
 
-class TestInitiatePurchaseCheckout(_DBTestCase):
+class TestInitiatePurchaseCheckout(DBTestCase):
 
     def test_success(self):
         self.mock_stripe.create_checkout_session.return_value = StripePaymentResult(
@@ -144,10 +144,10 @@ class TestInitiatePurchaseCheckout(_DBTestCase):
         self.assertEqual(txn.gold_coins_reward, PACKAGES[PackageType.PREMIUM]["gold_coins"])
 
 
-class TestProcessWebhookNotification(_DBTestCase):
+class TestProcessWebhookNotification(DBTestCase):
 
-    def _create_pending_transaction(self, merchant_ref="ref_100", psp_ref="pi_100"):
-        player = self._seed_player()
+    def create_pending_transaction(self, merchant_ref="ref_100", psp_ref="pi_100"):
+        player = self.seed_player()
         txn = Transaction(
             player_id=player.id,
             merchant_reference=merchant_ref,
@@ -164,7 +164,7 @@ class TestProcessWebhookNotification(_DBTestCase):
         return txn
 
     def test_successful_payment_credits_wallet(self):
-        txn = self._create_pending_transaction()
+        txn = self.create_pending_transaction()
 
         self.mock_stripe.process_webhook.return_value = StripeWebhookResult(
             valid=True,
@@ -191,7 +191,7 @@ class TestProcessWebhookNotification(_DBTestCase):
         self.assertEqual(wallet.health_packs, 1)
 
     def test_idempotency_prevents_double_credit(self):
-        txn = self._create_pending_transaction()
+        txn = self.create_pending_transaction()
         txn.status = TransactionStatus.CAPTURED
         self.db.commit()
 
@@ -216,7 +216,7 @@ class TestProcessWebhookNotification(_DBTestCase):
         self.assertEqual(wallet.gold_coins, 0)
 
     def test_failed_payment_sets_error(self):
-        txn = self._create_pending_transaction()
+        txn = self.create_pending_transaction()
 
         self.mock_stripe.process_webhook.return_value = StripeWebhookResult(
             valid=True,
@@ -269,10 +269,10 @@ class TestProcessWebhookNotification(_DBTestCase):
         self.assertIn("Transaction not found", msg)
 
 
-class TestVerifyPaymentResult(_DBTestCase):
+class TestVerifyPaymentResult(DBTestCase):
 
     def test_already_captured_returns_balance(self):
-        player = self._seed_player()
+        player = self.seed_player()
         player.wallet.gold_coins = 500
         txn = Transaction(
             player_id=player.id,
@@ -296,7 +296,7 @@ class TestVerifyPaymentResult(_DBTestCase):
         self.assertEqual(result.gold_coins_added, 500)
 
     def test_pending_checks_stripe_and_credits(self):
-        player = self._seed_player()
+        player = self.seed_player()
         txn = Transaction(
             player_id=player.id,
             merchant_reference="ref_300",
@@ -335,7 +335,7 @@ class TestVerifyPaymentResult(_DBTestCase):
         self.assertIn("No reference", result.error)
 
 
-class TestGetAvailablePackages(_DBTestCase):
+class TestGetAvailablePackages(DBTestCase):
 
     def test_returns_all_packages(self):
         packages = self.handler.get_available_packages()

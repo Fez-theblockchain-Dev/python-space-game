@@ -95,12 +95,12 @@ def save_player_id(player_id: str):
 
 
 # Initialize player ID on module load
-_player_id = get_or_create_player_id()
+player_id = get_or_create_player_id()
 
 
 def get_player_id() -> str:
     """Get the current player's ID."""
-    return _player_id
+    return player_id
 
 
 # ============================================================================
@@ -147,10 +147,10 @@ class BackendClient:
     def __init__(self, base_url: str = None, player_uuid: str = None):
         self.base_url = (base_url or BACKEND_URL).rstrip('/')
         self.player_uuid = player_uuid or get_player_id()
-        self._cached_wallet: Optional[WalletBalance] = None
-        self._pending_requests = []  # For async browser requests
+        self.cached_wallet: Optional[WalletBalance] = None
+        self.pending_requests = []  # For async browser requests
     
-    def _request(self, method: str, endpoint: str, **kwargs) -> Optional[dict]:
+    def request(self, method: str, endpoint: str, **kwargs) -> Optional[dict]:
         """Make an HTTP request to the backend.
         
         Uses requests library on desktop, JavaScript fetch in browser.
@@ -158,11 +158,11 @@ class BackendClient:
         url = f"{self.base_url}{endpoint}"
         
         if IS_BROWSER:
-            return self._browser_request_sync(method, url, **kwargs)
+            return self.browser_request_sync(method, url, **kwargs)
         else:
-            return self._desktop_request(method, url, **kwargs)
+            return self.desktop_request(method, url, **kwargs)
     
-    def _desktop_request(self, method: str, url: str, **kwargs) -> Optional[dict]:
+    def desktop_request(self, method: str, url: str, **kwargs) -> Optional[dict]:
         """Desktop HTTP request using requests library."""
         try:
             response = requests.request(method, url, timeout=10, **kwargs)
@@ -172,7 +172,7 @@ class BackendClient:
             print(f"Backend request failed: {e}")
             return None
     
-    def _browser_request_sync(self, method: str, url: str, **kwargs) -> Optional[dict]:
+    def browser_request_sync(self, method: str, url: str, **kwargs) -> Optional[dict]:
         """Browser HTTP request using JavaScript fetch (synchronous wrapper).
         
         Note: In browser, we use a synchronous XMLHttpRequest for compatibility
@@ -223,26 +223,26 @@ class BackendClient:
         Returns:
             WalletBalance or None if request failed
         """
-        if not force_refresh and self._cached_wallet:
-            return self._cached_wallet
+        if not force_refresh and self.cached_wallet:
+            return self.cached_wallet
         
-        data = self._request("GET", f"/api/wallet/{self.player_uuid}")
+        data = self.request("GET", f"/api/wallet/{self.player_uuid}")
         
         if data:
-            self._cached_wallet = WalletBalance(
+            self.cached_wallet = WalletBalance(
                 gold_coins=data.get("gold_coins", 0),
                 health_packs=data.get("health_packs", 0),
                 total_earned_coins=data.get("total_earned_coins", 0),
                 total_earned_health_packs=data.get("total_earned_health_packs", 0),
                 total_spent_usd=data.get("total_spent_usd", 0.0),
             )
-            return self._cached_wallet
+            return self.cached_wallet
         
         return None
     
     def get_packages(self) -> list[Package]:
         """Get available purchase packages."""
-        data = self._request("GET", "/api/packages")
+        data = self.request("GET", "/api/packages")
         
         if data:
             return [
@@ -275,7 +275,7 @@ class BackendClient:
         Returns:
             PurchaseSession with checkout details
         """
-        data = self._request(
+        data = self.request(
             "POST",
             "/api/payment/create-session",
             json={
@@ -343,7 +343,7 @@ class BackendClient:
         Returns:
             True if successful
         """
-        data = self._request(
+        data = self.request(
             "POST",
             "/api/wallet/spend",
             json={
@@ -354,7 +354,7 @@ class BackendClient:
         
         if data and data.get("success"):
             # Invalidate cache
-            self._cached_wallet = None
+            self.cached_wallet = None
             return True
         
         return False
@@ -366,14 +366,14 @@ class BackendClient:
         Returns:
             True if successful
         """
-        data = self._request(
+        data = self.request(
             "POST",
             "/api/wallet/use-health-pack",
             json={"player_uuid": self.player_uuid}
         )
         
         if data and data.get("success"):
-            self._cached_wallet = None
+            self.cached_wallet = None
             return True
         
         return False
@@ -391,7 +391,7 @@ class BackendClient:
         if amount <= 0:
             return {"success": False, "error": "Amount must be positive"}
         
-        data = self._request(
+        data = self.request(
             "POST",
             "/api/wallet/add-earned-coins",
             json={
@@ -401,7 +401,7 @@ class BackendClient:
         )
         
         if data and data.get("success"):
-            self._cached_wallet = None  # Invalidate cache
+            self.cached_wallet = None  # Invalidate cache
             return {
                 "success": True,
                 "coins_added": data.get("coins_added", amount),
@@ -413,11 +413,11 @@ class BackendClient:
     def get_transaction_history(self, limit: int = 20) -> list[dict]:
         """Get recent transaction history."""
         global trans_id
-        data = self._request(
+        data = self.request(
             "GET",
             f"/api/payment/transactions/{self.player_uuid}?limit={limit}"
         )
-        trans_id = self._request("GET")
+        trans_id = self.request("GET")
         
         return data if data else []
     
@@ -505,7 +505,7 @@ class GameEconomy:
         self.active_avatar: str = "default"
 
         # Sync with backend on init
-        self._synced_wallet: Optional[WalletBalance] = None
+        self.synced_wallet: Optional[WalletBalance] = None
         self.sync_wallet()
     
     @property
@@ -516,13 +516,13 @@ class GameEconomy:
     @property
     def coins(self) -> int:
         """Get total coins (from backend wallet)."""
-        if self._synced_wallet:
-            return self._synced_wallet.gold_coins
+        if self.synced_wallet:
+            return self.synced_wallet.gold_coins
         return 0
 
-# This method leverages the existing coins 
-# property which already fetches the gold_coins 
-# from the backend wallet. 
+    # This method leverages the existing coins
+    # property which already fetches the gold_coins
+    # from the backend wallet.
 
     def get_total_coins(self) -> int:
         """Get total coins from the player's wallet."""
@@ -541,9 +541,9 @@ class GameEconomy:
         if amount > 0:
             self.session_coins_earned += amount 
             pass
-       
-# save session analytics function for gold coins 
-    
+
+    # save session analytics function for gold coins
+
     def save_session_coins(self) -> dict:
         """
         Save coins earned during the current session to the player's wallet.
@@ -582,8 +582,8 @@ class GameEconomy:
             "coins_added": 0,
             "error": result.get("error", "Failed to save coins")
         }
-    
-# pause feature 
+
+    # pause feature
     def pause_game(self, game_state: dict) -> dict:
         """
         Pause the game and save the current game state.
@@ -752,15 +752,15 @@ class GameEconomy:
     @property
     def health_packs(self) -> int:
         """Get health packs count (from backend wallet)."""
-        if self._synced_wallet:
-            return self._synced_wallet.health_packs
+        if self.synced_wallet:
+            return self.synced_wallet.health_packs
         return 0
     
     def sync_wallet(self) -> bool:
         """Sync wallet balance from backend."""
         wallet = self.backend.sync_wallet()
         if wallet:
-            self._synced_wallet = wallet
+            self.synced_wallet = wallet
             return True
         return False
     
@@ -837,12 +837,12 @@ class GameEconomy:
     
     def get_wallet_balance(self) -> dict:
         """Get current wallet balance as dictionary."""
-        if self._synced_wallet:
+        if self.synced_wallet:
             return {
-                "gold_coins": self._synced_wallet.gold_coins,
-                "health_packs": self._synced_wallet.health_packs,
-                "total_earned_coins": self._synced_wallet.total_earned_coins,
-                "total_earned_health_packs": self._synced_wallet.total_earned_health_packs,
+                "gold_coins": self.synced_wallet.gold_coins,
+                "health_packs": self.synced_wallet.health_packs,
+                "total_earned_coins": self.synced_wallet.total_earned_coins,
+                "total_earned_health_packs": self.synced_wallet.total_earned_health_packs,
             }
         return {
             "gold_coins": 0,

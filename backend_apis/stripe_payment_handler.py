@@ -255,7 +255,7 @@ class StripePaymentHandler:
 
         # Credit the player on successful payment
         if self.stripe.should_credit_player(webhook_result.event_type, webhook_result.success or False):
-            credit_result = self._credit_player_for_transaction(db, transaction)
+            credit_result = self.credit_player_for_transaction(db, transaction)
 
             if credit_result.success:
                 transaction.completed_at = datetime.now(timezone.utc)
@@ -266,7 +266,7 @@ class StripePaymentHandler:
 
         return True, f"Processed {webhook_result.event_type} for {merchant_reference}"
     
-    def _credit_player_for_transaction(
+    def credit_player_for_transaction(
         self,
         db: Session,
         transaction: Transaction,
@@ -355,7 +355,7 @@ class StripePaymentHandler:
             
             if intent_data and intent_data["status"] == "succeeded":
                 # Credit the player
-                credit_result = self._credit_player_for_transaction(db, transaction)
+                credit_result = self.credit_player_for_transaction(db, transaction)
                 transaction.status = TransactionStatus.CAPTURED
                 transaction.completed_at = datetime.utcnow()
                 db.commit()

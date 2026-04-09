@@ -41,7 +41,7 @@ except Exception:
             self.initial_health = initial_health
             self.score = 0
             self.session_coins_earned = 0
-            self._wallet = {
+            self.wallet = {
                 "gold_coins": 0,
                 "health_packs": 0,
                 "total_earned_coins": 0,
@@ -53,14 +53,14 @@ except Exception:
         def add_coins(self, value):
             coins = int(value)
             self.session_coins_earned += coins
-            self._wallet["gold_coins"] += coins
-            self._wallet["total_earned_coins"] += coins
+            self.wallet["gold_coins"] += coins
+            self.wallet["total_earned_coins"] += coins
 
         def get_total_coins(self):
-            return int(self._wallet.get("gold_coins", 0))
+            return int(self.wallet.get("gold_coins", 0))
 
         def get_wallet_balance(self):
-            return dict(self._wallet)
+            return dict(self.wallet)
 
         def save_session_coins(self):
             return None
@@ -68,17 +68,17 @@ except Exception:
         def sync_wallet(self):
             return None
 
-        def update_health(self, _health):
+        def update_health(self, health):
             return None
 
-        def pause_game(self, _game_state):
+        def pause_game(self, game_state):
             return None
 
         def resume_game(self):
             return None
 
 #region agent log
-def _agent_log(payload):
+def agent_log(payload):
     """Write NDJSON debug log entry; skip in browser environment."""
     # Skip file logging in browser - no filesystem access
     if IS_BROWSER:
@@ -372,10 +372,10 @@ class Game:
         self.player_has_key = False
         self.mystery_bounty_end_time = 0
         self.mystery_bounty_duration_ms = 2500
-        self._mystery_bounty_image = None
+        self.mystery_bounty_image = None
         
         # "Need key!" HUD hint state
-        self._need_key_hint_end = 0
+        self.need_key_hint_end = 0
 
         # Wallet treasure chest inventory — chests stored here after they land
         self.wallet_chests = []
@@ -446,14 +446,14 @@ class Game:
         self.is_muted = False
         self.mute_button_size = 30
         self.mute_button_pos = (SCREEN_WIDTH - 280, 30)
-        self._create_speaker_icons()
+        self.create_speaker_icons()
 
         # Background theme setup
         self.current_theme = "PURPLE_NEBULA"  # Default theme
         self.backgrounds = {}
-        self._load_backgrounds()
+        self.load_backgrounds()
 
-    def _create_speaker_icons(self):
+    def create_speaker_icons(self):
         """Create speaker icons for mute/unmute button"""
         size = self.mute_button_size
         
@@ -517,7 +517,7 @@ class Game:
             return True
         return False
 
-    def _load_backgrounds(self):
+    def load_backgrounds(self):
         """Load all available background themes"""
         # Flat black background
         black_bg = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
@@ -567,7 +567,7 @@ class Game:
 
     def collision_checks(self):
         #region agent log
-        _agent_log({
+        agent_log({
             "runId": "pre-fix",
             "hypothesisId": "A",
             "location": "game/__main__.py:collision_checks:entry",
@@ -655,7 +655,7 @@ class Game:
                         chest.kill()
                     self.player_has_key = False
                 else:
-                    self._show_need_key_hint()
+                    self.show_need_key_hint()
 
         # direct alien collision with player (aliens touching player) - check all groups
         aliens_touching_player = pygame.sprite.spritecollide(self.player.sprite, self.aliens, True)
@@ -671,7 +671,7 @@ class Game:
             self.economy.update_health(int(self.player.sprite.health))
 
             #region agent log
-            _agent_log({
+            agent_log({
                 "runId": "pre-fix",
                 "hypothesisId": "A",
                 "location": "game/__main__.py:collision_checks:alien_player_collision",
@@ -686,7 +686,7 @@ class Game:
 
             if self.player.sprite.health <= 0:
                 #region agent log
-                _agent_log({
+                agent_log({
                     "runId": "pre-fix",
                     "hypothesisId": "A",
                     "location": "game/__main__.py:collision_checks:game_over",
@@ -697,7 +697,7 @@ class Game:
                 return False  # Signal game over
 
         #region agent log
-        _agent_log({
+        agent_log({
             "runId": "pre-fix",
             "hypothesisId": "A",
             "location": "game/__main__.py:collision_checks:exit",
@@ -820,20 +820,20 @@ class Game:
             self.mystery_ship.add(mystery)
             self.mystery_ship_spawn_time = random.randint(600, 1200)  # Reset timer
 
-    def _load_mystery_bounty_image(self):
+    def load_mystery_bounty_image(self):
         """Load and cache center-screen bounty chest image."""
-        if self._mystery_bounty_image is not None:
-            return self._mystery_bounty_image
+        if self.mystery_bounty_image is not None:
+            return self.mystery_bounty_image
 
         chest_path = resource_path("assets", "treasure_chest.png")
         try:
             image = pygame.image.load(chest_path).convert_alpha()
-            self._mystery_bounty_image = pygame.transform.scale(image, (180, 180))
+            self.mystery_bounty_image = pygame.transform.scale(image, (180, 180))
         except (pygame.error, FileNotFoundError):
             fallback = pygame.Surface((180, 180), pygame.SRCALPHA)
             pygame.draw.rect(fallback, (218, 165, 32), (0, 0, 180, 180), border_radius=16)
-            self._mystery_bounty_image = fallback
-        return self._mystery_bounty_image
+            self.mystery_bounty_image = fallback
+        return self.mystery_bounty_image
         
 
     def draw_mystery_bounty_overlay(self, screen):
@@ -846,7 +846,7 @@ class Game:
         overlay.fill((0, 0, 0, 90))
         screen.blit(overlay, (0, 0))
 
-        chest_image = self._load_mystery_bounty_image().copy()
+        chest_image = self.load_mystery_bounty_image().copy()
         pulse = 210 + int(45 * pygame.math.Vector2(0, 1).rotate(now * 0.25).y)
         chest_image.set_alpha(max(120, min(255, pulse)))
         chest_rect = chest_image.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 20))
@@ -909,11 +909,11 @@ class Game:
 
     def show_need_key_hint(self):
         """Trigger a brief 'NEED KEY!' message on the HUD."""
-        self._need_key_hint_end = pygame.time.get_ticks() + 1500
+        self.need_key_hint_end = pygame.time.get_ticks() + 1500
 
     def draw_need_key_hint(self, screen):
         """Render the 'NEED KEY!' hint if the timer is still active."""
-        if pygame.time.get_ticks() < self._need_key_hint_end:
+        if pygame.time.get_ticks() < self.need_key_hint_end:
             hint = self.font.render("NEED KEY! Destroy the Mystery Ship first!", True, (255, 80, 80))
             hint_rect = hint.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 160))
             screen.blit(hint, hint_rect)
@@ -997,14 +997,14 @@ class Game:
             screen.blit(header, (panel_x + 14, line_y))
             line_y += line_gap
 
-            self._wallet_chest_rects = []
+            self.wallet_chest_rects = []
             for i, chest in enumerate(self.wallet_chests):
                 status = "LOCKED" if chest.locked else "OPEN"
                 hp_text = f" + {chest.health_packs} HP" if chest.health_packs > 0 else ""
                 label = f"  Chest #{i+1}: {chest.value:,} coins{hp_text} [{status}]"
 
                 btn_rect = pygame.Rect(panel_x + 10, line_y - 2, panel_width - 20, 26)
-                self._wallet_chest_rects.append(btn_rect)
+                self.wallet_chest_rects.append(btn_rect)
 
                 mouse_pos = pygame.mouse.get_pos()
                 hovering = btn_rect.collidepoint(mouse_pos)
@@ -1023,7 +1023,7 @@ class Game:
                 hint = self.font.render("Click a chest to open it!", True, (200, 200, 100))
                 screen.blit(hint, (panel_x + 14, line_y))
         else:
-            self._wallet_chest_rects = []
+            self.wallet_chest_rects = []
 
     def toggle_pause(self):
         """Toggle game pause state and sync with economy"""
@@ -1254,8 +1254,8 @@ class Game:
                 if self.show_wallet_panel:
                     self.economy.sync_wallet()
             # Handle clicks on treasure chests inside the wallet panel
-            if self.show_wallet_panel and hasattr(self, '_wallet_chest_rects'):
-                for i, rect in enumerate(self._wallet_chest_rects):
+            if self.show_wallet_panel and hasattr(self, 'wallet_chest_rects'):
+                for i, rect in enumerate(self.wallet_chest_rects):
                     if rect.collidepoint(mouse_pos):
                         rewards = self.activate_wallet_chest(i)
                         if rewards:

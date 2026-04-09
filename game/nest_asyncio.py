@@ -26,15 +26,15 @@ def run_main(async_main):
 
 def apply(loop=None):
     """Patch asyncio to make its event loop reentrant."""
-    _patch_asyncio()
-    _patch_policy()
-    _patch_tornado()
+    patch_asyncio()
+    patch_policy()
+    patch_tornado()
 
     loop = loop or asyncio.get_event_loop()
-    _patch_loop(loop)
+    patch_loop(loop)
 
 
-def _patch_asyncio():
+def patch_asyncio():
     """Patch asyncio module to use pure Python tasks and futures."""
 
     def run(main, *, debug=False):
@@ -49,7 +49,7 @@ def _patch_asyncio():
                 with suppress(asyncio.CancelledError):
                     loop.run_until_complete(task)
 
-    def _get_event_loop(stacklevel=3):
+    def nest_get_event_loop(stacklevel=3):
         loop = events._get_running_loop()
         if loop is None:
             loop = events.get_event_loop_policy().get_event_loop()
@@ -68,18 +68,18 @@ def _patch_asyncio():
         asyncio.all_tasks = asyncio.tasks.Task.all_tasks
     if sys.version_info >= (3, 9, 0):
         events._get_event_loop = events.get_event_loop = \
-            asyncio.get_event_loop = _get_event_loop
+            asyncio.get_event_loop = nest_get_event_loop
     asyncio.run = run
     asyncio._nest_patched = True
 
 
-def _patch_policy():
+def patch_policy():
     """Patch the policy to always return a patched loop."""
 
     def get_event_loop(self):
         if self._local._loop is None:
             loop = self.new_event_loop()
-            _patch_loop(loop)
+            patch_loop(loop)
             self.set_event_loop(loop)
         return self._local._loop
 
@@ -87,7 +87,7 @@ def _patch_policy():
     policy.__class__.get_event_loop = get_event_loop
 
 
-def _patch_loop(loop):
+def patch_loop(loop):
     """Patch loop to make it reentrant."""
 
     def run_forever(self):
@@ -112,7 +112,7 @@ def _patch_loop(loop):
                     'Event loop stopped before Future completed.')
             return f.result()
 
-    def _run_once(self):
+    def run_once_reentrant(self):
         """
         Simplified re-implementation of asyncio's _run_once that
         runs handles as they become ready.
@@ -198,7 +198,7 @@ def _patch_loop(loop):
             if self._asyncgens is not None:
                 sys.set_asyncgen_hooks(*old_agen_hooks)
 
-    def _check_running(self):
+    def check_running_reentrant(self):
         """Do not throw exception if loop is already running."""
         pass
 
@@ -209,9 +209,9 @@ def _patch_loop(loop):
     cls = loop.__class__
     cls.run_forever = run_forever
     cls.run_until_complete = run_until_complete
-    cls._run_once = _run_once
-    cls._check_running = _check_running
-    cls._check_runnung = _check_running  # typo in Python 3.7 source
+    cls._run_once = run_once_reentrant
+    cls._check_running = check_running_reentrant
+    cls._check_runnung = check_running_reentrant  # typo in Python 3.7 source
     cls._num_runs_pending = 1 if loop.is_running() else 0
     cls._is_proactorloop = (
         os.name == 'nt' and issubclass(cls, asyncio.ProactorEventLoop))
@@ -222,7 +222,7 @@ def _patch_loop(loop):
     cls._nest_patched = True
 
 
-def _patch_tornado():
+def patch_tornado():
     """
     If tornado is imported before nest_asyncio, make tornado aware of
     the pure-Python asyncio Future.

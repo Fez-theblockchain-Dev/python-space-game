@@ -16,7 +16,7 @@ import importlib.util
 import os
 
 
-def _load_runtime_module():
+def load_runtime_module():
     main_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "__main__.py")
     spec = importlib.util.spec_from_file_location("game_runtime", main_path)
     if spec is None or spec.loader is None:
@@ -26,14 +26,14 @@ def _load_runtime_module():
     return module
 
 
-_runtime = _load_runtime_module()
-main = _runtime.main
+runtime = load_runtime_module()
+main = runtime.main
 
 
 if __name__ == "__main__":
     import nest_asyncio
 
-    async def _boot():
-        await _runtime.main_menu(main)
+    async def boot():
+        await runtime.main_menu(main)
 
-    nest_asyncio.run_main(_boot)
+    nest_asyncio.run_main(boot)
