@@ -344,7 +344,14 @@ class Game:
         # Economy system setup
         self.economy = GameEconomy(initial_health=100)
 
-        # health and score setup (game over at 0% health; 4 alien collisions = -25% each)
+        # health and score setup
+        self.lives = 3
+        try:
+            self.live_surf = pygame.image.load(DEFAULT_BACKGROUND_THEME).convert_alpha()
+            self.live_x_start_pos = SCREEN_WIDTH - (self.live_surf.get_size()[0] * 2 + 20)
+        except:
+            self.live_surf = None
+            self.live_x_start_pos = SCREEN_WIDTH - 100
         self.score = 0
         self.font = pygame.font.Font(resource_path("assets", "Fonts", "hyperspace", "Hyperspace Bold Italic.otf"), 20)
         # Obstacle setup
