@@ -205,10 +205,67 @@ main {
 /* Footer */
 footer {
     padding: 3rem 0;
-    text-align: center;
     color: var(--text-secondary);
     border-top: 1px solid rgba(255, 255, 255, 0.05);
     margin-top: 4rem;
+}
+
+.footer-inner {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 1.25rem 2rem;
+    text-align: center;
+}
+
+.footer-copy {
+    flex: 1 1 280px;
+    min-width: 0;
+}
+
+.footer-social {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+}
+
+.footer-social-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-secondary);
+    transition: color 0.2s ease, filter 0.2s ease, transform 0.2s ease;
+}
+
+.footer-social-link:hover {
+    color: #00f0ff;
+    filter: drop-shadow(0 0 8px rgba(0, 240, 255, 0.45));
+    transform: translateY(-2px);
+}
+
+.footer-social-icon {
+    width: 1.5rem;
+    height: 1.5rem;
+    display: block;
+}
+
+.footer-social-icon--route {
+    width: 1.625rem;
+    height: 1.625rem;
+}
+
+.visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
 }
 
 /* Stripe Elements styling */
