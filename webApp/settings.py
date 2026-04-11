@@ -40,6 +40,7 @@ TEMPLATES = [
             'context_processors': [
                 'django.template.context_processors.debug',
                 'django.template.context_processors.request',
+                'webApp.context_processors.social_links',
             ],
         },
     },
