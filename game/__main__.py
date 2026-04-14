@@ -12,6 +12,7 @@ sys.path.insert(0, game_dir)
 import time
 import random
 import json
+import uuid
 from pygame.locals import * #For useful variables
 from typing import Any
 from config import SCREEN_WIDTH, SCREEN_HEIGHT, DEFAULT_BACKGROUND_THEME, resource_path
@@ -37,24 +38,27 @@ try:
 except Exception:
     # Browser/APK fallback: keep gameplay alive without backend dependency.
     class GameEconomy:
+        wallet_store: dict[str, dict[str, int]] = {}
+
         def __init__(self, initial_health=100):
             self.initial_health = initial_health
             self.score = 0
             self.session_coins_earned = 0
-            self.wallet = {
+            self.player_uuid = str(uuid.uuid4())
+            self.wallet = self._wallet_store.setdefault(self.player_uuid, {
                 "gold_coins": 0,
                 "health_packs": 0,
                 "total_earned_coins": 0,
-            }
+            })
 
         def add_score(self, value):
             self.score += int(value)
 
         def add_coins(self, value):
             coins = int(value)
+            if coins <= 0:
+                return
             self.session_coins_earned += coins
-            self.wallet["gold_coins"] += coins
-            self.wallet["total_earned_coins"] += coins
 
         def get_total_coins(self):
             return int(self.wallet.get("gold_coins", 0))
@@ -62,8 +66,34 @@ except Exception:
         def get_wallet_balance(self):
             return dict(self.wallet)
 
+        def update_coins(self, amount):
+            coins = int(amount)
+            if coins <= 0:
+                return dict(self.wallet)
+
+            self.wallet["gold_coins"] = int(self.wallet.get("gold_coins", 0)) + coins
+            self.wallet["total_earned_coins"] = int(self.wallet.get("total_earned_coins", 0)) + coins
+            return dict(self.wallet)
+
         def save_session_coins(self):
-            return None
+            if self.session_coins_earned <= 0:
+                return {
+                    "success": False,
+                    "player_uuid": self.player_uuid,
+                    "coins_added": 0,
+                    "new_balance": self.get_total_coins(),
+                    "error": "No session coins to save",
+                }
+
+            saved_coins = self.session_coins_earned
+            wallet_state = self.update_coins(saved_coins)
+            self.session_coins_earned = 0
+            return {
+                "success": True,
+                "player_uuid": self.player_uuid,
+                "coins_added": saved_coins,
+                "new_balance": int(wallet_state.get("gold_coins", 0)),
+            }
 
         def sync_wallet(self):
             return None
