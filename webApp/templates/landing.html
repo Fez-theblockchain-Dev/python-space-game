@@ -17,9 +17,10 @@
                     <a href="#packages" class="btn btn-secondary">View Packages</a>
                 </div>
                 <!-- Player Wallet Display -->
-                <div id="wallet-display" class="wallet-display" style="margin-top: 16px; display: flex; gap: 16px; font-size: 14px;">
+                <div id="wallet-display" class="wallet-display" style="margin-top: 16px; display: flex; gap: 18px; font-size: 14px; flex-wrap: wrap;">
                     <span>🪙 <span id="wallet-gold">0</span> Gold</span>
-                    <span>💚 <span id="wallet-health">0</span> Health</span>
+                    <span>💚 <span id="wallet-health">0</span> Health Packs</span>
+                    <span>💎 <span id="wallet-gems">0</span> Gems</span>
                 </div>
             </div>
             <div class="hero-visual">
@@ -204,7 +205,8 @@
       window.SpaceGameStripe.setupWalletDisplay({
         walletUrl: "/api/wallet/balance/",
         goldDisplayId: "wallet-gold",
-        healthDisplayId: "wallet-health"
+        healthDisplayId: "wallet-health",
+        gemsDisplayId: "wallet-gems"
       });
     }
   });

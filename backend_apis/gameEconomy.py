@@ -112,6 +112,7 @@ class WalletBalance:
     """Wallet balance from backend."""
     gold_coins: int
     health_packs: int
+    gems: int
     total_earned_coins: int
     total_earned_health_packs: int
     total_spent_usd: float
@@ -232,6 +233,7 @@ class BackendClient:
             self.cached_wallet = WalletBalance(
                 gold_coins=data.get("gold_coins", 0),
                 health_packs=data.get("health_packs", 0),
+                gems=data.get("gems", 0),
                 total_earned_coins=data.get("total_earned_coins", 0),
                 total_earned_health_packs=data.get("total_earned_health_packs", 0),
                 total_spent_usd=data.get("total_spent_usd", 0.0),
@@ -421,8 +423,33 @@ class BackendClient:
         
         return data if data else []
     
-    def sync_wallet(self) -> Optional[WalletBalance]:
-        """Force sync wallet from backend."""
+    def sync_wallet(self, local_wallet: dict | None = None) -> Optional[WalletBalance]:
+        """Push local wallet state to the backend and pull the merged result.
+
+        If *local_wallet* is provided the backend merges it (max-wins) with
+        the stored wallet and returns the result.  Otherwise falls back to a
+        plain GET refresh.
+        """
+        if local_wallet:
+            payload = {
+                "player_uuid": self.player_uuid,
+                "gold_coins": int(local_wallet.get("gold_coins", 0)),
+                "health_packs": int(local_wallet.get("health_packs", 0)),
+                "gems": int(local_wallet.get("gems", 0)),
+                "total_earned_coins": int(local_wallet.get("total_earned_coins", 0)),
+            }
+            data = self.request("POST", "/api/wallet/sync", json=payload)
+            if data:
+                wallet_data = data.get("wallet", data)
+                self.cached_wallet = WalletBalance(
+                    gold_coins=wallet_data.get("gold_coins", 0),
+                    health_packs=wallet_data.get("health_packs", 0),
+                    gems=wallet_data.get("gems", 0),
+                    total_earned_coins=wallet_data.get("total_earned_coins", 0),
+                    total_earned_health_packs=wallet_data.get("total_earned_health_packs", 0),
+                    total_spent_usd=wallet_data.get("total_spent_usd", 0.0),
+                )
+                return self.cached_wallet
         return self.get_wallet(force_refresh=True)
 
 
@@ -755,10 +782,18 @@ class GameEconomy:
         if self.synced_wallet:
             return self.synced_wallet.health_packs
         return 0
+
+    @property
+    def gems(self) -> int:
+        """Get gems count (from backend wallet)."""
+        if self.synced_wallet:
+            return self.synced_wallet.gems
+        return 0
     
     def sync_wallet(self) -> bool:
-        """Sync wallet balance from backend."""
-        wallet = self.backend.sync_wallet()
+        """Push local wallet state to the backend and pull the merged result."""
+        local = self.get_wallet_balance()
+        wallet = self.backend.sync_wallet(local_wallet=local)
         if wallet:
             self.synced_wallet = wallet
             return True
@@ -841,12 +876,14 @@ class GameEconomy:
             return {
                 "gold_coins": self.synced_wallet.gold_coins,
                 "health_packs": self.synced_wallet.health_packs,
+                "gems": self.synced_wallet.gems,
                 "total_earned_coins": self.synced_wallet.total_earned_coins,
                 "total_earned_health_packs": self.synced_wallet.total_earned_health_packs,
             }
         return {
             "gold_coins": 0,
             "health_packs": 0,
+            "gems": 0,
             "total_earned_coins": 0,
             "total_earned_health_packs": 0,
         }

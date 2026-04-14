@@ -6,6 +6,8 @@ Documentation: https://docs.stripe.com/apple-pay?platform=web
 import json
 import uuid
 import os
+from urllib.request import Request, urlopen
+from urllib.error import HTTPError, URLError
 from django.shortcuts import render, redirect
 from django.http import JsonResponse, HttpResponse
 from django.views.decorators.csrf import csrf_exempt
@@ -431,35 +433,33 @@ def payment_cancelled(request):
 @require_http_methods(["GET"])
 def get_wallet_balance(request):
     """
-    Get player's wallet balance.
-    
+    Get player's wallet balance by proxying to the FastAPI backend.
+
     Query params:
         player_uuid: Player's unique identifier
-    
+
     Returns:
-        JSON with gold_coins and health_packs balance
+        JSON with gold_coins, health_packs, gems and totals
     """
     player_uuid = request.GET.get('player_uuid') or get_or_create_player_uuid(request)
-    
-    # For now, return mock data
-    # TODO: Integrate with backend_apis/stripe_payment_handler.py for real wallet data
-    # You can integrate with the FastAPI backend or use the SQLAlchemy models directly
-    
-    # Example integration with FastAPI backend:
-    # try:
-    #     import requests
-    #     response = requests.get(
-    #         f"{settings.BACKEND_API_URL}/api/wallet/{player_uuid}"
-    #     )
-    #     if response.ok:
-    #         return JsonResponse(response.json())
-    # except Exception:
-    #     pass
-    
+    backend_url = getattr(settings, 'BACKEND_API_URL', 'http://localhost:8000')
+
+    try:
+        url = f"{backend_url}/api/wallet/{player_uuid}"
+        req = Request(url, method="GET")
+        req.add_header("Content-Type", "application/json")
+        with urlopen(req, timeout=3) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+            data.setdefault("gems", 0)
+            return JsonResponse(data)
+    except (HTTPError, URLError, TimeoutError, OSError, json.JSONDecodeError):
+        pass
+
     return JsonResponse({
         'player_uuid': player_uuid,
         'gold_coins': 0,
         'health_packs': 0,
+        'gems': 0,
         'total_earned_coins': 0,
         'total_earned_health_packs': 0,
         'total_spent_usd': 0.0,

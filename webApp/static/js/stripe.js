@@ -288,13 +288,16 @@
    * @param {string} opts.walletUrl - API endpoint for wallet data
    * @param {string} opts.goldDisplayId - Element ID to display gold coins
    * @param {string} opts.healthDisplayId - Element ID to display health packs
+   * @param {string} [opts.gemsDisplayId] - Element ID to display gems
+   * @param {number} [opts.pollIntervalMs] - If set, re-fetch every N ms
    */
   function setupWalletDisplay(opts) {
     const goldEl = byId(opts.goldDisplayId);
     const healthEl = byId(opts.healthDisplayId);
+    const gemsEl = opts.gemsDisplayId ? byId(opts.gemsDisplayId) : null;
     const walletUrl = opts.walletUrl;
 
-    if (!walletUrl || (!goldEl && !healthEl)) return;
+    if (!walletUrl || (!goldEl && !healthEl && !gemsEl)) return;
 
     async function fetchWallet() {
       try {
@@ -311,12 +314,19 @@
         if (healthEl && data.health_packs !== undefined) {
           healthEl.textContent = data.health_packs.toLocaleString();
         }
+        if (gemsEl && data.gems !== undefined) {
+          gemsEl.textContent = data.gems.toLocaleString();
+        }
       } catch (err) {
         console.error("Failed to fetch wallet:", err);
       }
     }
 
     fetchWallet();
+
+    if (opts.pollIntervalMs && opts.pollIntervalMs > 0) {
+      setInterval(fetchWallet, opts.pollIntervalMs);
+    }
   }
 
   // Export functions to global namespace

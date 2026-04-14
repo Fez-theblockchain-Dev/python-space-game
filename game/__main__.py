@@ -37,6 +37,42 @@ try:
     from backend_apis.gameEconomy import GameEconomy
 except Exception:
     # Browser/APK fallback: keep gameplay alive without backend dependency.
+    from urllib.request import Request, urlopen
+    from urllib.error import HTTPError, URLError
+
+    def _load_shared_player_id() -> str:
+        """Load player_uuid from player_id.json so the game and storefront share an identity."""
+        id_path = os.path.join(os.path.dirname(game_dir), "player_id.json")
+        try:
+            with open(id_path, "r", encoding="utf-8") as fh:
+                data = json.load(fh)
+                pid = data.get("player_id")
+                if pid:
+                    return pid
+        except (FileNotFoundError, json.JSONDecodeError, OSError):
+            pass
+        new_id = str(uuid.uuid4())
+        try:
+            with open(id_path, "w", encoding="utf-8") as fh:
+                json.dump({"player_id": new_id}, fh)
+        except OSError:
+            pass
+        return new_id
+
+    _BACKEND_URL = os.getenv("GAME_BACKEND_URL", "http://localhost:8000")
+
+    def _backend_request(method: str, path: str, body: dict | None = None, timeout: int = 3):
+        """Fire a JSON request to the FastAPI backend; return parsed dict or None."""
+        url = f"{_BACKEND_URL}{path}"
+        headers = {"Content-Type": "application/json"}
+        data = json.dumps(body).encode("utf-8") if body else None
+        try:
+            req = Request(url, data=data, headers=headers, method=method)
+            with urlopen(req, timeout=timeout) as resp:
+                return json.loads(resp.read().decode("utf-8"))
+        except (HTTPError, URLError, TimeoutError, OSError, json.JSONDecodeError):
+            return None
+
     class GameEconomy:
         wallet_store: dict[str, dict[str, int]] = {}
 
@@ -44,12 +80,14 @@ except Exception:
             self.initial_health = initial_health
             self.score = 0
             self.session_coins_earned = 0
-            self.player_uuid = str(uuid.uuid4())
-            self.wallet = self._wallet_store.setdefault(self.player_uuid, {
+            self.player_uuid = _load_shared_player_id()
+            self.wallet = self.wallet_store.setdefault(self.player_uuid, {
                 "gold_coins": 0,
                 "health_packs": 0,
+                "gems": 0,
                 "total_earned_coins": 0,
             })
+            self.sync_wallet()
 
         def add_score(self, value):
             self.score += int(value)
@@ -96,6 +134,27 @@ except Exception:
             }
 
         def sync_wallet(self):
+            """Push local wallet to backend, pull merged result back.
+
+            The backend merges by taking the max of each balance field so that
+            coins earned in-game and items purchased on the storefront both
+            survive the merge.  If the backend is unreachable the local wallet
+            is left unchanged.
+            """
+            payload = {
+                "player_uuid": self.player_uuid,
+                "gold_coins": int(self.wallet.get("gold_coins", 0)),
+                "health_packs": int(self.wallet.get("health_packs", 0)),
+                "gems": int(self.wallet.get("gems", 0)),
+                "total_earned_coins": int(self.wallet.get("total_earned_coins", 0)),
+            }
+            merged = _backend_request("POST", "/api/wallet/sync", body=payload)
+            if merged and isinstance(merged, dict):
+                wallet_data = merged.get("wallet", merged)
+                for key in ("gold_coins", "health_packs", "gems", "total_earned_coins"):
+                    if key in wallet_data:
+                        self.wallet[key] = int(wallet_data[key])
+                return dict(self.wallet)
             return None
 
         def update_health(self, health):
@@ -1029,6 +1088,7 @@ class Game:
             f"Wallet ID: {wallet_id}",
             f"Gold Coins: {wallet.get('gold_coins', 0):,}",
             f"Health Packs: {wallet.get('health_packs', 0):,}",
+            f"Gems: {wallet.get('gems', 0):,}",
             f"Total Earned Coins: {wallet.get('total_earned_coins', 0):,}",
             f"Session Coins: {self.economy.session_coins_earned:,}",
         ]

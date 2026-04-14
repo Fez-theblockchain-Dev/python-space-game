@@ -7,6 +7,12 @@
         <div class="checkout-header">
             <h1>Checkout</h1>
             <p>Review your order and complete your purchase</p>
+            <!-- Player Wallet Balance -->
+            <div id="wallet-display" style="margin-top: 12px; display: flex; gap: 18px; font-size: 14px; flex-wrap: wrap; justify-content: center; opacity: 0.85;">
+                <span>🪙 <span id="wallet-gold">0</span> Gold</span>
+                <span>💚 <span id="wallet-health">0</span> Health Packs</span>
+                <span>💎 <span id="wallet-gems">0</span> Gems</span>
+            </div>
         </div>
 
         <div class="checkout-layout">
@@ -447,6 +453,16 @@ function setupEventListeners() {
 document.addEventListener("DOMContentLoaded", function() {
     renderCart();
     setupEventListeners();
+
+    // Fetch and display wallet balances
+    if (window.SpaceGameStripe && typeof window.SpaceGameStripe.setupWalletDisplay === "function") {
+        window.SpaceGameStripe.setupWalletDisplay({
+            walletUrl: "/api/wallet/balance/",
+            goldDisplayId: "wallet-gold",
+            healthDisplayId: "wallet-health",
+            gemsDisplayId: "wallet-gems"
+        });
+    }
     
     // Check for success redirect (clear cart)
     const urlParams = new URLSearchParams(window.location.search);

@@ -323,6 +323,15 @@ class AddEarnedCoinsRequest(BaseModel):
     amount: int
 
 
+class SyncWalletRequest(BaseModel):
+    """Request to sync wallet state between the game client and backend."""
+    player_uuid: str
+    gold_coins: int = 0
+    health_packs: int = 0
+    gems: int = 0
+    total_earned_coins: int = 0
+
+
 # ============================================================================
 # Step 5: API Routes - Health Check
 # ============================================================================
@@ -519,11 +528,14 @@ def get_or_create_wallet(player_uuid: str) -> dict:
             "player_uuid": player_uuid,
             "gold_coins": 0,
             "health_packs": 0,
+            "gems": 0,
             "total_earned_coins": 0,
             "total_earned_health_packs": 0,
             "total_spent_usd": 0.0,
             "created_at": datetime.now().isoformat(),
         }
+    else:
+        player_wallets[player_uuid].setdefault("gems", 0)
     return player_wallets[player_uuid]
 
 
@@ -603,6 +615,37 @@ def add_earned_coins(request: AddEarnedCoinsRequest):
         "success": True,
         "coins_added": request.amount,
         "new_balance": new_balance,
+    }
+
+
+@app.post("/api/wallet/sync")
+def sync_wallet(request: SyncWalletRequest):
+    """
+    Sync wallet state between the game client and the backend.
+
+    The merge strategy takes the **maximum** of each balance field from
+    the client snapshot and the stored backend wallet.  This ensures coins
+    earned in-game and items purchased on the storefront both survive.
+
+    Example request body:
+    {
+        "player_uuid": "abc-123",
+        "gold_coins": 150,
+        "health_packs": 2,
+        "gems": 5,
+        "total_earned_coins": 300
+    }
+    """
+    wallet = get_or_create_wallet(request.player_uuid)
+
+    wallet["gold_coins"] = max(wallet["gold_coins"], request.gold_coins)
+    wallet["health_packs"] = max(wallet["health_packs"], request.health_packs)
+    wallet["gems"] = max(wallet.get("gems", 0), request.gems)
+    wallet["total_earned_coins"] = max(wallet["total_earned_coins"], request.total_earned_coins)
+
+    return {
+        "success": True,
+        "wallet": wallet,
     }
 
 
