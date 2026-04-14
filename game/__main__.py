@@ -102,9 +102,21 @@ def agent_log(payload):
 pygame.init()
 
 
+def get_active_screen():
+    """
+    Always draw to the current active display surface.
+    In browser/Pygbag, the display surface can be recreated after menu transitions.
+    """
+    surf = pygame.display.get_surface()
+    if surf is None:
+        pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+        pygame.display.set_caption("Space Cowboys")
+        return pygame.display.get_surface()
+    return surf
+
+
 # Set up the display
-screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-pygame.display.set_caption("Space Cowboys")
+screen = get_active_screen()
 
 # Colors
 YELLOW = (255, 255, 100) #Yellow for alien_ships
@@ -1282,6 +1294,7 @@ class Game:
 # main game loop init function
 async def main():
     """Main game entry point - creates game instance and runs game loop (async for Pygbag)"""
+    global screen
     print("game is starting...")
     
     # Create game instance
@@ -1306,6 +1319,9 @@ async def main():
     game.create_multiple_obstacles(*game.obstacle_x_positions, x_start=SCREEN_WIDTH / 15, y_start=480)
 
     while running:
+        # Rebind the module-level screen each frame so helper methods that blit
+        # to the global `screen` always target the live display surface.
+        screen = get_active_screen()
         mouse_pos = pygame.mouse.get_pos()
         mouse_clicked = False
         
