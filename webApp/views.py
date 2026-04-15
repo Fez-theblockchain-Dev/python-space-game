@@ -12,12 +12,20 @@ from django.shortcuts import render, redirect
 from django.http import JsonResponse, HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
-from django.conf import settings
 
 import stripe
 
-# Initialize Stripe
-stripe.api_key = settings.STRIPE_SECRET_KEY
+def get_django_settings():
+    """Import settings lazily so this module can be imported safely."""
+    from django.conf import settings
+    return settings
+
+
+def configure_stripe():
+    """Set Stripe API key from Django settings at request time."""
+    settings = get_django_settings()
+    stripe.api_key = settings.STRIPE_SECRET_KEY
+    return settings
 
 # Package definitions (mirror from backend)
 PACKAGES = {
@@ -41,6 +49,7 @@ def landing_page(request):
     """
     Main landing page for the Space Game.
     """
+    settings = get_django_settings()
     player_uuid = get_or_create_player_uuid(request)
     context = {
         'stripe_publishable_key': settings.STRIPE_PUBLISHABLE_KEY,
@@ -63,6 +72,7 @@ def shop_page(request):
     """
     Shop page with all available packages.
     """
+    settings = get_django_settings()
     player_uuid = get_or_create_player_uuid(request)
     
     context = {
@@ -89,6 +99,7 @@ def package_detail(request, package_id):
     if package_id not in PACKAGES:
         return redirect('shop')
     
+    settings = get_django_settings()
     player_uuid = get_or_create_player_uuid(request)
     package = PACKAGES[package_id]
     
@@ -122,6 +133,7 @@ def create_payment_intent(request):
     3. Use Express Checkout Element on frontend
     """
     try:
+        configure_stripe()
         data = json.loads(request.body)
         package_id = data.get('package_id')
         player_uuid = data.get('player_uuid') or get_or_create_player_uuid(request)
@@ -180,6 +192,7 @@ def create_checkout_session(request):
     Apple Pay is automatically available in Checkout when enabled in Dashboard.
     """
     try:
+        configure_stripe()
         data = json.loads(request.body)
         player_uuid = data.get('player_uuid') or get_or_create_player_uuid(request)
 
@@ -347,6 +360,7 @@ def stripe_webhook(request):
     sig_header = request.META.get('HTTP_STRIPE_SIGNATURE', '')
     
     try:
+        settings = configure_stripe()
         if settings.STRIPE_WEBHOOK_SECRET:
             event = stripe.Webhook.construct_event(
                 payload, sig_header, settings.STRIPE_WEBHOOK_SECRET
@@ -441,6 +455,7 @@ def get_wallet_balance(request):
     Returns:
         JSON with gold_coins, health_packs, gems and totals
     """
+    settings = get_django_settings()
     player_uuid = request.GET.get('player_uuid') or get_or_create_player_uuid(request)
     backend_url = getattr(settings, 'BACKEND_API_URL', 'http://localhost:8000')
 
