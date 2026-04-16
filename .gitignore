@@ -46,4 +46,6 @@ Thumbs.db
 
 # Local config
 *.local
+.env
+.env.*
 
