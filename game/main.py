@@ -31,9 +31,6 @@ main = runtime.main
 
 
 if __name__ == "__main__":
-    import nest_asyncio
+    import asyncio
 
-    async def boot():
-        await runtime.main_menu(main)
-
-    nest_asyncio.run_main(boot)
+    asyncio.run(runtime.main_menu(main))

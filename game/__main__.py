@@ -1495,9 +1495,10 @@ async def main():
 class StrictStartError(Exception):
     pass
 
-# Entry point - start from main menu for full playable flow in DOM (Pygbag/Emscripten)
+# Entry point - start from main menu for full playable flow in DOM (Pygbag/Emscripten).
+# IMPORTANT: Pygbag intercepts `asyncio.run(...)` to splice the user coroutine into
+# the browser's already-running event loop. Using a custom loop bootstrap (e.g.
+# `loop.run_until_complete` via nest_asyncio) bypasses that hook and prevents the
+# game coroutine from ever being driven, producing a blank canvas in the browser.
 if __name__ == "__main__":
-    import nest_asyncio
-    async def boot():
-        await main_menu(main)
-    nest_asyncio.run_main(boot)
+    asyncio.run(main_menu(main))
