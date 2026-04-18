@@ -8,7 +8,7 @@
         <div class="hero-content">
             <div class="hero-text">
                 <h1>Conquer the <span>Galaxy</span></h1>
-                <p>Battle alien forces across the cosmos in this action-packed space shooter. Upgrade your ship, collect gold coins, and become the ultimate space commander.</p>
+                <p>Battle alien forces across the cosmos in this action-packed space shooter. Upgrade your ship, collect gold coins, 💎 gems, and health packs — become the ultimate space commander.</p>
                 <div class="hero-buttons">
                     <a href="/shop/" class="btn btn-primary">
                         <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M21 4H3a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1h18a1 1 0 0 0 1-1V5a1 1 0 0 0-1-1zm-1 11H4v-2h16v2zm0-4H4V8h16v3z"/></svg>
@@ -18,9 +18,9 @@
                 </div>
                 <!-- Player Wallet Display -->
                 <div id="wallet-display" class="wallet-display" style="margin-top: 16px; display: flex; gap: 18px; font-size: 14px; flex-wrap: wrap;">
-                    <span>🪙 <span id="wallet-gold">0</span> Gold</span>
-                    <span>💚 <span id="wallet-health">0</span> Health Packs</span>
-                    <span>💎 <span id="wallet-gems">0</span> Gems</span>
+                    <span class="wallet-stat"><span class="currency-emoji" aria-hidden="true">🪙</span><span id="wallet-gold">0</span> Gold</span>
+                    <span class="wallet-stat"><span class="currency-emoji" aria-hidden="true">💚</span><span id="wallet-health">0</span> Health Packs</span>
+                    <span class="wallet-stat"><span class="currency-emoji" aria-hidden="true">💎</span><span id="wallet-gems">0</span> Gems</span>
                 </div>
             </div>
             <div class="hero-visual">
@@ -41,7 +41,7 @@
         <div class="card" style="margin-bottom: 24px;">
             <h3 style="margin-top: 0;">Quick Checkout</h3>
             <p style="color: #a0a0a0; margin-bottom: 16px; font-size: 14px;">
-                Select packages from each category to add to your cart.
+                Pick gold, health, and/or gem packages. Quantity applies to each line you select.
             </p>
             <form id="quick-checkout-form" style="display: grid; gap: 12px; max-width: 520px;">
                 <label for="select-gold-coins">Gold Coins Package</label>
@@ -64,6 +64,16 @@
                     {% endfor %}
                 </select>
 
+                <label for="select-gems">Gems Package</label>
+                <select id="select-gems" name="gems">
+                    <option value="">-- Select Gems Package (optional) --</option>
+                    {% for package in packages %}
+                    {% if package.gems > 0 %}
+                    <option value="{{ package.id }}">{{ package.name }} — ${{ package.price }} (💎 {{ package.gems }})</option>
+                    {% endif %}
+                    {% endfor %}
+                </select>
+
                 <label for="checkout-quantity">Quantity (applies to each)</label>
                 <input id="checkout-quantity" name="quantity" type="number" min="1" max="99" value="1" required>
 
@@ -78,25 +88,36 @@
         <div class="packages-grid">
             {% for package in packages %}
             <div class="card package-card {% if package.id == 'starter_bundle' %}featured{% endif %}">
-                <div class="package-icon {% if package.gold_coins > 0 and package.health_packs > 0 %}bundle{% elif package.gold_coins > 0 %}gold{% else %}health{% endif %}">
-                    <div></div>
+                <div class="package-icon {% if package.gold_coins > 0 and package.health_packs > 0 %}bundle{% elif package.gold_coins > 0 and package.gems > 0 %}bundle{% elif package.health_packs > 0 and package.gems > 0 %}bundle{% elif package.gold_coins > 0 %}gold{% elif package.health_packs > 0 %}health{% else %}gems{% endif %}">
+                    <span class="package-icon-emoji" aria-hidden="true">{% if package.gold_coins > 0 and package.health_packs > 0 %}✨{% elif package.gold_coins > 0 and package.gems > 0 %}✨{% elif package.health_packs > 0 and package.gems > 0 %}✨{% elif package.gold_coins > 0 %}🪙{% elif package.health_packs > 0 %}💚{% else %}💎{% endif %}</span>
                 </div>
                 <h3 class="package-name">{{ package.name }}</h3>
                 <p class="package-desc">
                     {% if package.gold_coins > 0 and package.health_packs > 0 %}
-                    The ultimate starter pack
+                    The ultimate starter pack{% if package.gems > 0 %} — includes 💎 gems{% endif %}
+                    {% elif package.gold_coins > 0 and package.gems > 0 %}
+                    Gold and gems for your fleet
+                    {% elif package.health_packs > 0 and package.gems > 0 %}
+                    Recovery and premium currency
                     {% elif package.gold_coins > 0 %}
                     Upgrade your arsenal
-                    {% else %}
+                    {% elif package.health_packs > 0 %}
                     Stay in the fight longer
+                    {% elif package.gems > 0 %}
+                    Premium currency for the shop
+                    {% else %}
+                    Power up your run
                     {% endif %}
                 </p>
                 <div class="package-rewards">
                     {% if package.gold_coins > 0 %}
-                    <span class="reward-badge gold">🪙 {{ package.gold_coins }} Gold</span>
+                    <span class="reward-badge gold"><span class="currency-emoji" aria-hidden="true">🪙</span> {{ package.gold_coins }} Gold</span>
                     {% endif %}
                     {% if package.health_packs > 0 %}
-                    <span class="reward-badge health">💚 {{ package.health_packs }} Health</span>
+                    <span class="reward-badge health"><span class="currency-emoji" aria-hidden="true">💚</span> {{ package.health_packs }} Health</span>
+                    {% endif %}
+                    {% if package.gems > 0 %}
+                    <span class="reward-badge gems"><span class="currency-emoji" aria-hidden="true">💎</span> {{ package.gems }} Gems</span>
                     {% endif %}
                 </div>
                 <div class="package-price">${{ package.price }} <span>USD</span></div>
@@ -138,7 +159,7 @@
             <div class="card feature-card">
                 <div class="feature-icon">⚡</div>
                 <h3>Instant Delivery</h3>
-                <p>Your gold coins and health packs are credited to your account immediately after purchase.</p>
+                <p>Your gold coins, gems, and health packs are credited to your account immediately after purchase.</p>
             </div>
             <div class="card feature-card">
                 <div class="feature-icon">🌍</div>
@@ -179,12 +200,13 @@
   window.addEventListener("DOMContentLoaded", function () {
     var API = window.__SPACEGAME_API__;
 
-    // Setup dual-select checkout form (Gold Coins + Health Packs)
+    // Setup triple-select checkout form (Gold + Health + Gems)
     if (window.SpaceGameStripe && typeof window.SpaceGameStripe.setupDualSelectCheckout === "function") {
       window.SpaceGameStripe.setupDualSelectCheckout({
         formId: "quick-checkout-form",
         goldSelectId: "select-gold-coins",
         healthSelectId: "select-health-packs",
+        gemsSelectId: "select-gems",
         quantityInputId: "checkout-quantity",
         errorId: "checkout-error",
         createCheckoutUrl: API.createCheckoutSession

@@ -92,12 +92,12 @@
   }
 
   /**
-   * Setup checkout for dual-select form (Gold Coins + Health Packs).
-   * This form allows users to select packages from two categories.
+   * Setup checkout for multi-select form (Gold + Health + optional Gems).
    * @param {Object} opts - Configuration options
    * @param {string} opts.formId - Form element ID
    * @param {string} opts.goldSelectId - Gold coins select element ID
    * @param {string} opts.healthSelectId - Health packs select element ID
+   * @param {string} [opts.gemsSelectId] - Gems package select element ID
    * @param {string} opts.quantityInputId - Quantity input element ID
    * @param {string} opts.errorId - Error display element ID
    * @param {string} opts.createCheckoutUrl - API endpoint: /api/create-checkout-session/
@@ -106,6 +106,7 @@
     const form = byId(opts.formId);
     const goldSelect = byId(opts.goldSelectId);
     const healthSelect = byId(opts.healthSelectId);
+    const gemsSelect = opts.gemsSelectId ? byId(opts.gemsSelectId) : null;
     const qtyInput = byId(opts.quantityInputId);
     const errorEl = byId(opts.errorId);
     const createCheckoutUrl = opts.createCheckoutUrl;
@@ -128,6 +129,10 @@
       
       if (healthSelect && healthSelect.value) {
         items.push({ id: healthSelect.value, quantity: quantity });
+      }
+
+      if (gemsSelect && gemsSelect.value) {
+        items.push({ id: gemsSelect.value, quantity: quantity });
       }
 
       if (items.length === 0) {

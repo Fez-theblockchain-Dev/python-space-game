@@ -8,10 +8,10 @@
             <h1>Checkout</h1>
             <p>Review your order and complete your purchase</p>
             <!-- Player Wallet Balance -->
-            <div id="wallet-display" style="margin-top: 12px; display: flex; gap: 18px; font-size: 14px; flex-wrap: wrap; justify-content: center; opacity: 0.85;">
-                <span>🪙 <span id="wallet-gold">0</span> Gold</span>
-                <span>💚 <span id="wallet-health">0</span> Health Packs</span>
-                <span>💎 <span id="wallet-gems">0</span> Gems</span>
+            <div id="wallet-display" class="wallet-display" style="margin-top: 12px; display: flex; gap: 18px; font-size: 14px; flex-wrap: wrap; justify-content: center; opacity: 0.85;">
+                <span class="wallet-stat"><span class="currency-emoji" aria-hidden="true">🪙</span><span id="wallet-gold">0</span> Gold</span>
+                <span class="wallet-stat"><span class="currency-emoji" aria-hidden="true">💚</span><span id="wallet-health">0</span> Health Packs</span>
+                <span class="wallet-stat"><span class="currency-emoji" aria-hidden="true">💎</span><span id="wallet-gems">0</span> Gems</span>
             </div>
         </div>
 
@@ -45,11 +45,14 @@
                         </div>
                         <div class="quick-add-grid">
                             {% for package in packages %}
-                            <button class="quick-add-btn" data-package-id="{{ package.id }}" data-name="{{ package.name }}" data-price="{{ package.price }}" data-gold="{{ package.gold_coins }}" data-health="{{ package.health_packs }}">
+                            <button class="quick-add-btn" data-package-id="{{ package.id }}" data-name="{{ package.name }}" data-price="{{ package.price }}" data-gold="{{ package.gold_coins }}" data-health="{{ package.health_packs }}" data-gems="{{ package.gems }}" >
                                 <span class="quick-add-icon">
                                     {% if package.gold_coins > 0 and package.health_packs > 0 %}✨
+                                    {% elif package.gold_coins > 0 and package.gems > 0 %}✨
+                                    {% elif package.health_packs > 0 and package.gems > 0 %}✨
                                     {% elif package.gold_coins > 0 %}🪙
-                                    {% else %}💚{% endif %}
+                                    {% elif package.health_packs > 0 %}💚
+                                    {% else %}💎{% endif %}
                                 </span>
                                 <span class="quick-add-name">{{ package.name }}</span>
                                 <span class="quick-add-price">${{ package.price }}</span>
@@ -162,10 +165,11 @@ const PACKAGES = {
     {% for package in packages %}
     "{{ package.id }}": {
         id: "{{ package.id }}",
-        name: "{{ package.name|escapejs }}",,
+        name: "{{ package.name|escapejs }}",
         price: {{ package.price }},
         gold_coins: {{ package.gold_coins }},
-        health_packs: {{ package.health_packs }}
+        health_packs: {{ package.health_packs }},
+        gems: {{ package.gems }}
     }{% if not forloop.last %},{% endif %}
     {% endfor %}
 };
@@ -279,9 +283,12 @@ function renderCart() {
             const pkg = PACKAGES[item.id];
             if (!pkg) return "";
             
-            const iconType = pkg.gold_coins > 0 && pkg.health_packs > 0 ? "bundle" : 
-                            pkg.gold_coins > 0 ? "gold" : "health";
-            const emoji = iconType === "bundle" ? "✨" : iconType === "gold" ? "🪙" : "💚";
+            const iconType = (pkg.gold_coins > 0 && pkg.health_packs > 0) ? "bundle" :
+                (pkg.gold_coins > 0 && pkg.gems > 0) ? "bundle" :
+                (pkg.health_packs > 0 && pkg.gems > 0) ? "bundle" :
+                pkg.gold_coins > 0 ? "gold" :
+                pkg.health_packs > 0 ? "health" : "gems";
+            const emoji = iconType === "bundle" ? "✨" : iconType === "gold" ? "🪙" : iconType === "health" ? "💚" : "💎";
             const lineTotal = (pkg.price * item.quantity).toFixed(2);
             
             return `
@@ -292,6 +299,7 @@ function renderCart() {
                         <div class="cart-item-rewards">
                             ${pkg.gold_coins > 0 ? `<span class="gold">🪙 ${pkg.gold_coins}</span>` : ""}
                             ${pkg.health_packs > 0 ? `<span class="health">💚 ${pkg.health_packs}</span>` : ""}
+                            ${pkg.gems > 0 ? `<span class="gems">💎 ${pkg.gems}</span>` : ""}
                         </div>
                     </div>
                     <div class="cart-item-quantity">

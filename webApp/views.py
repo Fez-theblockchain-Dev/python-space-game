@@ -29,13 +29,23 @@ def configure_stripe():
 
 # Package definitions (mirror from backend)
 PACKAGES = {
-    "gold_100": {"price": 0.99, "gold_coins": 100, "health_packs": 0, "name": "100 Gold Coins"},
-    "gold_500": {"price": 3.99, "gold_coins": 500, "health_packs": 0, "name": "500 Gold Coins"},
-    "gold_1000": {"price": 6.99, "gold_coins": 1000, "health_packs": 0, "name": "1000 Gold Coins"},
-    "health_pack_5": {"price": 1.99, "gold_coins": 0, "health_packs": 5, "name": "5 Health Packs"},
-    "health_pack_10": {"price": 2.99, "gold_coins": 0, "health_packs": 10, "name": "10 Health Packs"},
-    "starter_bundle": {"price": 9.99, "gold_coins": 1500, "health_packs": 20, "name": "Starter Bundle"},
+    "gold_100": {"price": 0.99, "gold_coins": 100, "health_packs": 0, "gems": 0, "name": "100 Gold Coins"},
+    "gold_500": {"price": 3.99, "gold_coins": 500, "health_packs": 0, "gems": 0, "name": "500 Gold Coins"},
+    "gold_1000": {"price": 6.99, "gold_coins": 1000, "health_packs": 0, "gems": 0, "name": "1000 Gold Coins"},
+    "health_pack_5": {"price": 1.99, "gold_coins": 0, "health_packs": 5, "gems": 0, "name": "5 Health Packs"},
+    "health_pack_10": {"price": 2.99, "gold_coins": 0, "health_packs": 10, "gems": 0, "name": "10 Health Packs"},
+    "gems_50": {"price": 0.99, "gold_coins": 0, "health_packs": 0, "gems": 50, "name": "50 Gems"},
+    "gems_200": {"price": 2.99, "gold_coins": 0, "health_packs": 0, "gems": 200, "name": "200 Gems"},
+    "gems_500": {"price": 6.99, "gold_coins": 0, "health_packs": 0, "gems": 500, "name": "500 Gems"},
+    "starter_bundle": {"price": 9.99, "gold_coins": 1500, "health_packs": 20, "gems": 50, "name": "Starter Bundle"},
 }
+
+
+def _package_stripe_description(pkg):
+    """Single line for Stripe Checkout product description."""
+    return (
+        f"Gold Coins: {pkg['gold_coins']}, Health Packs: {pkg['health_packs']}, Gems: {pkg.get('gems', 0)}"
+    )
 
 
 def get_or_create_player_uuid(request):
@@ -61,6 +71,7 @@ def landing_page(request):
                 'price': pkg['price'],
                 'gold_coins': pkg['gold_coins'],
                 'health_packs': pkg['health_packs'],
+                'gems': pkg.get('gems', 0),
             }
             for pkg_id, pkg in PACKAGES.items()
         ],
@@ -85,6 +96,7 @@ def shop_page(request):
                 'price': pkg['price'],
                 'gold_coins': pkg['gold_coins'],
                 'health_packs': pkg['health_packs'],
+                'gems': pkg.get('gems', 0),
             }
             for pkg_id, pkg in PACKAGES.items()
         ],
@@ -113,6 +125,7 @@ def package_detail(request, package_id):
             'price': package['price'],
             'gold_coins': package['gold_coins'],
             'health_packs': package['health_packs'],
+            'gems': package.get('gems', 0),
         },
     }
     return render(request, 'package_detail.html', context)
@@ -162,6 +175,7 @@ def create_payment_intent(request):
                 'merchant_reference': merchant_reference,
                 'gold_coins': str(package['gold_coins']),
                 'health_packs': str(package['health_packs']),
+                'gems': str(package.get('gems', 0)),
             },
             'description': package['name'],
         }
@@ -200,18 +214,19 @@ def create_checkout_session(request):
         # - package_id: "gold_100" (single item)
         # - quantity: 1..99 (optional, defaults to 1)
         # - items: [{ "id": "gold_100", "quantity": 2 }, ...] (optional)
-        # - gold_coins + health_packs: two separate package IDs (optional)
+        # - gold_coins + health_packs + gems: separate package IDs (optional)
         package_id = data.get('package_id')
         quantity = data.get('quantity', 1)
         items = data.get('items')
         gold_package_id = data.get('gold_coins') or data.get('gold_package_id') or data.get('Gold Coins')
         health_package_id = data.get('health_packs') or data.get('health_package_id') or data.get('Health Packs')
+        gem_package_id = data.get('gems') or data.get('gem_package_id') or data.get('Gems')
 
         line_items = []
         normalized_items = []
 
-        # If the frontend sent separate selectors (gold + health), turn them into a multi-item checkout.
-        if items is None and (gold_package_id or health_package_id):
+        # If the frontend sent separate selectors (gold + health + gems), turn them into a multi-item checkout.
+        if items is None and (gold_package_id or health_package_id or gem_package_id):
             try:
                 quantity = int(quantity)
             except Exception:
@@ -220,7 +235,7 @@ def create_checkout_session(request):
                 return JsonResponse({'error': 'Quantity must be between 1 and 99'}, status=400)
 
             combined: dict[str, int] = {}
-            for selected_id in [gold_package_id, health_package_id]:
+            for selected_id in [gold_package_id, health_package_id, gem_package_id]:
                 if not selected_id:
                     continue
                 if selected_id not in PACKAGES:
@@ -239,7 +254,7 @@ def create_checkout_session(request):
                             'currency': 'usd',
                             'product_data': {
                                 'name': pkg['name'],
-                                'description': f"Gold Coins: {pkg['gold_coins']}, Health Packs: {pkg['health_packs']}",
+                                'description': _package_stripe_description(pkg),
                             },
                             'unit_amount': amount_cents,
                         },
@@ -275,7 +290,7 @@ def create_checkout_session(request):
                             'currency': 'usd',
                             'product_data': {
                                 'name': pkg['name'],
-                                'description': f"Gold Coins: {pkg['gold_coins']}, Health Packs: {pkg['health_packs']}",
+                                'description': _package_stripe_description(pkg),
                             },
                             'unit_amount': amount_cents,
                         },
@@ -301,7 +316,7 @@ def create_checkout_session(request):
                         'currency': 'usd',
                         'product_data': {
                             'name': package['name'],
-                            'description': f"Gold Coins: {package['gold_coins']}, Health Packs: {package['health_packs']}",
+                            'description': _package_stripe_description(package),
                         },
                         'unit_amount': amount_cents,
                     },
@@ -496,6 +511,7 @@ def get_packages(request):
             'price': pkg['price'],
             'gold_coins': pkg['gold_coins'],
             'health_packs': pkg['health_packs'],
+            'gems': pkg.get('gems', 0),
         }
         for pkg_id, pkg in PACKAGES.items()
     ]

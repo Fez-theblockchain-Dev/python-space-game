@@ -16,6 +16,7 @@
     /* Game colors */
     --gold: #ffd700;
     --health-green: #22c55e;
+    --gem-sapphire: #38bdf8;
 }
 
 * {
@@ -452,6 +453,19 @@ footer {
     box-shadow: var(--glow-cyan);
 }
 
+.package-icon.gems {
+    background: linear-gradient(135deg, #38bdf8, #6366f1);
+    box-shadow: 0 0 20px rgba(56, 189, 248, 0.35);
+}
+
+.package-icon .package-icon-emoji {
+    font-size: 2rem;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
 .package-name {
     font-family: 'Orbitron', monospace;
     font-size: 1.25rem;
@@ -492,6 +506,29 @@ footer {
     background: rgba(34, 197, 94, 0.15);
     color: var(--health-green);
     border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+.reward-badge.gems {
+    background: rgba(56, 189, 248, 0.12);
+    color: var(--gem-sapphire);
+    border: 1px solid rgba(56, 189, 248, 0.35);
+}
+
+.reward-badge .currency-emoji,
+.wallet-display .currency-emoji {
+    font-size: 1em;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.15em;
+    flex-shrink: 0;
+}
+
+.wallet-display .wallet-stat {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
 }
 
 .package-price {
@@ -760,6 +797,11 @@ footer {
     border: 1px solid rgba(0, 240, 255, 0.3);
 }
 
+.cart-item-icon.gems {
+    background: linear-gradient(135deg, rgba(56, 189, 248, 0.2), rgba(99, 102, 241, 0.2));
+    border: 1px solid rgba(56, 189, 248, 0.35);
+}
+
 .cart-item-details {
     flex: 1;
     min-width: 0;
@@ -784,6 +826,10 @@ footer {
 
 .cart-item-rewards .health {
     color: var(--health-green);
+}
+
+.cart-item-rewards .gems {
+    color: var(--gem-sapphire);
 }
 
 .cart-item-quantity {
