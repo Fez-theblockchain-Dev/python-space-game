@@ -25,6 +25,17 @@
     box-sizing: border-box;
 }
 
+html {
+    /* Smoothly animate anchor jumps (e.g. Shop nav link -> #packages). */
+    scroll-behavior: smooth;
+}
+
+/* Offset anchored sections so the fixed .nav bar (~80px tall) doesn't cover
+   the section heading when scrolled to from in-page links. */
+#packages {
+    scroll-margin-top: 90px;
+}
+
 body {
     font-family: 'Exo 2', sans-serif;
     background-size: cover;
