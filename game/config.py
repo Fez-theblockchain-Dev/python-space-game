@@ -79,4 +79,11 @@ DEFAULT_BACKGROUND_THEME = resource_path("assets", "512x512_purple_nebula_1.png"
 
 # Server constants/paths
 GAME_BUILD_PATH = os.path.join(os.path.dirname(__file__), "build", "web")
-PYGBAG_PORT = 8666
+# IMPORTANT: pygbag hardcodes http://localhost:8000/archives/repo/ as the
+# pygame-wheel source whenever the browser origin matches `http://localhost:8*`
+# (see pygbag/support/cross/aio/pep0723.py ~line 233). On this project port
+# 8000 is already occupied by the Django dev server, so that hardcoded URL
+# 404s, blocks pygame from installing, and leaves the canvas stuck on the
+# purple CSS body forever. Using a port OUTSIDE the 8xxx range sidesteps the
+# heuristic so pygbag downloads pygame directly from pygame-web.github.io.
+PYGBAG_PORT = 9666

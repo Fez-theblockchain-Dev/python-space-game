@@ -84,7 +84,14 @@ Configuration:
 -The backend API base URL is configurable via the GAME_BACKEND_URL environment variable (defaults to http://localhost:8000).
 
 -** Pygbag server for playing the space cowboys🚀 game through DOM browser can be run using:
-python -m pygbag --template custom.tmpl --port 8666 game **
+python -m pygbag --template custom.tmpl --port 9666 game **
+
+  Note: port 9666 (not 8xxx) is deliberate. Pygbag 0.9.2 hardcodes
+  http://localhost:8000/archives/repo/ as the pygame-wheel source whenever the
+  browser origin matches localhost:8* (pygbag/support/cross/aio/pep0723.py
+  ~line 233). On this project port 8000 is the Django dev server, which 404s
+  for wheel URLs and blocks pygame from loading in the browser. Staying off
+  8xxx avoids that collision.
 
 Troubleshooting:
 -Ensure Python and Pygame are installed correctly.

@@ -157,7 +157,7 @@ ws_manager = GameConnectionManager()
 @app.websocket("/ws/{player_id}")
 async def websocket_endpoint(websocket: WebSocket, player_id: str):
     """
-    Persistent WebSocket session for a game client served by Pygbag (port 8666).
+    Persistent WebSocket session for a game client served by Pygbag (port 9666).
 
     Connect from the browser:
         const ws = new WebSocket("ws://localhost:8000/ws/<player_id>");
@@ -403,7 +403,7 @@ def game_status():
         "game_path": GAME_BUILD_PATH,
         "game_url": "/play" if game_available else None,
         "files": files,
-        "instructions": "Access the game at http://localhost:8666/play" if game_available else "Run 'pygbag .' from the project root to build the game"
+        "instructions": f"Access the game at http://localhost:{PYGBAG_PORT}/play" if game_available else "Run 'pygbag .' from the project root to build the game"
     }
 
 
