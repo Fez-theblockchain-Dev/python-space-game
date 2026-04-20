@@ -510,7 +510,9 @@ class Game:
         self.treasure_chests = pygame.sprite.Group()
         self.keys = pygame.sprite.Group()
         self.mystery_ship_spawn_time = random.randint(400, 800)  # Frames until mystery ship spawns
-        self.player_has_key = False
+        # Key inventory: each key unlocks exactly one treasure chest, whether
+        # the chest is grabbed in-world or opened later from the wallet panel.
+        self.player_keys = 0
         self.mystery_bounty_end_time = 0
         self.mystery_bounty_duration_ms = 2500
         self.mystery_bounty_image = None
@@ -772,16 +774,17 @@ class Game:
                     if self.explosion_sound:
                         self.explosion_sound.play()
         
-        # Player collision with keys
+        # Player collision with keys — each pickup adds one consumable key
         for key in list(self.keys):
             if pygame.sprite.collide_rect(self.player.sprite, key):
                 key.collect()
-                self.player_has_key = True
+                self.player_keys += 1
         
-        # Player collision with treasure chests (key required)
+        # Player collision with treasure chests (key required). Consumes exactly
+        # one key per chest unlocked in-world; extra keys remain in inventory.
         for chest in list(self.treasure_chests):
             if pygame.sprite.collide_rect(self.player.sprite, chest) and chest.locked:
-                if self.player_has_key:
+                if self.player_keys > 0:
                     rewards = chest.unlock()
                     if rewards:
                         randomized_bonus = rewards.get('coins', 0)
@@ -794,7 +797,7 @@ class Game:
                             health_gain = rewards['health_packs'] * 10
                             self.player.sprite.health = min(100, self.player.sprite.health + health_gain)
                         chest.kill()
-                    self.player_has_key = False
+                        self.player_keys -= 1
                 else:
                     self.show_need_key_hint()
 
@@ -1043,9 +1046,9 @@ class Game:
         screen.blit(health_text, text_rect)
     
     def display_key_indicator(self):
-        """Display key indicator if player has a key"""
-        if self.player_has_key:
-            key_text = self.font.render("🔑 KEY", True, (255, 215, 0))
+        """Display the player's key count on the HUD when at least one is held."""
+        if self.player_keys > 0:
+            key_text = self.font.render(f"Keys x {self.player_keys}", True, (255, 215, 0))
             screen.blit(key_text, (10, 100))
 
     def show_need_key_hint(self):
@@ -1068,7 +1071,12 @@ class Game:
                 print(f"Treasure Chest stored in wallet! ({chest.value} coins inside)")
 
     def activate_wallet_chest(self, index):
-        """Open a chest from the wallet inventory and grant rewards to the player."""
+        """Open a chest from the wallet inventory and grant rewards to the player.
+
+        Requires one key — if the player has none, the click is rejected and the
+        'need key' hint is flashed on the HUD. This closes the original hole
+        where wallet chests unlocked for free, bypassing the in-world gate.
+        """
         if index < 0 or index >= len(self.wallet_chests):
             return None
         
@@ -1076,7 +1084,11 @@ class Game:
         
         if not chest.locked:
             return None
-        
+
+        if self.player_keys <= 0:
+            self.show_need_key_hint()
+            return None
+
         rewards = chest.unlock()
         if rewards:
             bonus = rewards.get('coins', 0)
@@ -1089,6 +1101,7 @@ class Game:
                 health_gain = rewards['health_packs'] * 10
                 self.player.sprite.health = min(100, self.player.sprite.health + health_gain)
             self.wallet_chests.pop(index)
+            self.player_keys -= 1
             return rewards
         return None
 
@@ -1122,6 +1135,7 @@ class Game:
             f"Gold Coins: {wallet.get('gold_coins', 0):,}",
             f"Health Packs: {wallet.get('health_packs', 0):,}",
             f"Gems: {wallet.get('gems', 0):,}",
+            f"Keys: {self.player_keys}",
             f"Total Earned Coins: {wallet.get('total_earned_coins', 0):,}",
             f"Session Coins: {self.economy.session_coins_earned:,}",
         ]
@@ -1140,8 +1154,14 @@ class Game:
             line_y += line_gap
 
             self.wallet_chest_rects = []
+            can_open = self.player_keys > 0
             for i, chest in enumerate(self.wallet_chests):
-                status = "LOCKED" if chest.locked else "OPEN"
+                if not chest.locked:
+                    status = "OPEN"
+                elif can_open:
+                    status = "LOCKED - click to use 1 key"
+                else:
+                    status = "LOCKED - key required"
                 hp_text = f" + {chest.health_packs} HP" if chest.health_packs > 0 else ""
                 label = f"  Chest #{i+1}: {chest.value:,} coins{hp_text} [{status}]"
 
@@ -1151,9 +1171,13 @@ class Game:
                 mouse_pos = pygame.mouse.get_pos()
                 hovering = btn_rect.collidepoint(mouse_pos)
 
-                if hovering and chest.locked:
+                if hovering and chest.locked and can_open:
+                    # Clickable: highlight green so the user knows a key will be spent.
                     pygame.draw.rect(screen, (60, 80, 40, 180), btn_rect, border_radius=4)
                     label_color = (100, 255, 100)
+                elif chest.locked and not can_open:
+                    # Gated: dim so it's visually obvious the player needs a key.
+                    label_color = (200, 120, 120)
                 else:
                     label_color = (255, 255, 255)
 
@@ -1162,7 +1186,13 @@ class Game:
                 line_y += 50
 
             if chest_count > 0:
-                hint = self.font.render("Click a chest to open it!", True, (200, 200, 100))
+                if can_open:
+                    hint_text = f"Click a chest to spend a key ({self.player_keys} left)"
+                    hint_color = (200, 200, 100)
+                else:
+                    hint_text = "No keys! Destroy a Mystery Ship to earn one."
+                    hint_color = (255, 150, 150)
+                hint = self.font.render(hint_text, True, hint_color)
                 screen.blit(hint, (panel_x + 14, line_y))
         else:
             self.wallet_chest_rects = []
@@ -1249,8 +1279,9 @@ class Game:
                 # Save earned coins to wallet immediately so they persist
                 self.economy.save_session_coins()
                 
-                # Reset key/chest state for the new level
-                self.player_has_key = False
+                # Reset key/chest state for the new level. Unused keys don't
+                # carry over so each level is self-contained on the loot loop.
+                self.player_keys = 0
                 self.keys.empty()
                 self.treasure_chests.empty()
 

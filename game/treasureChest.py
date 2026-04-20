@@ -14,7 +14,12 @@ class TreasureChest(pygame.sprite.Sprite):
     TreasureChest that can be unlocked with a Key for bonus rewards.
     Spawns after defeating a MysteryShip.
     """
-    def __init__(self, x, y, scale_size=(80, 80)):
+    # Key-to-chest contract: every chest requires one key to unlock, regardless
+    # of whether it is opened in-world or from the wallet panel. See
+    # Game.collision_checks / Game.activate_wallet_chest for the consumption logic.
+    unlock_requires_key = True
+
+    def __init__(self, x, y, scale_size=(80, 80), wallet_grace_ms=5000):
         super().__init__()
         path = resource_path("assets", "treasure_chest.png")
         if os.path.exists(path):
@@ -39,6 +44,12 @@ class TreasureChest(pygame.sprite.Sprite):
         self.fall_speed = 2  # Speed at which chest falls down
         self.target_y = y  # Final resting position
         self.rect.y = y - 100  # Start above target position
+
+        # How long the chest lingers in-world (floating + locked) after landing
+        # before auto-migrating to the wallet. Gives the player a real window
+        # to run over with a key and unlock it directly on the battlefield.
+        self.wallet_grace_ms = wallet_grace_ms
+        self.landed_at = None
 
     def unlock(self):
         """Unlock the treasure chest and return its rewards."""
@@ -90,12 +101,19 @@ class TreasureChest(pygame.sprite.Sprite):
                 if self.rect.centery >= self.target_y:
                     self.rect.centery = self.target_y
                     self.is_spawning = False
-                    self.ready_for_wallet = True
+                    self.landed_at = pygame.time.get_ticks()
         
-        # Floating animation when idle (locked and not spawning)
+        # Floating animation when idle (locked and not spawning). The chest
+        # hovers in-world during the grace window so the player can try to
+        # grab it with a key before it gets stashed in the wallet.
         if not self.is_spawning and self.locked and not self.ready_for_wallet:
             float_offset = int(3 * pygame.math.Vector2(0, 1).rotate(pygame.time.get_ticks() * 0.1).y)
             self.rect.centery = self.target_y + float_offset
+
+            if self.landed_at is not None:
+                elapsed_since_land = pygame.time.get_ticks() - self.landed_at
+                if elapsed_since_land >= self.wallet_grace_ms:
+                    self.ready_for_wallet = True
         
         # Remove if off screen (fell through)
         if self.rect.top > SCREEN_HEIGHT:
