@@ -37,11 +37,21 @@ try:
     from backend_apis.gameEconomy import GameEconomy
 except Exception:
     # Browser/APK fallback: keep gameplay alive without backend dependency.
-    from urllib.request import Request, urlopen
-    from urllib.error import HTTPError, URLError
+    # In Pygbag/Emscripten, urllib.request.urlopen() is unreliable: it may raise
+    # uncaught exception types (e.g. NotImplementedError, AttributeError from
+    # the socket shim) or block the event loop. Importing lazily and guarding
+    # with bare `Exception` keeps the game playable when the backend is absent.
+    if not IS_BROWSER:
+        from urllib.request import Request, urlopen  # noqa: F401
+        from urllib.error import HTTPError, URLError  # noqa: F401
 
-    def _load_shared_player_id() -> str:
+    def load_shared_player_id() -> str:
         """Load player_uuid from player_id.json so the game and storefront share an identity."""
+        # Browser (Pygbag) has no writable filesystem outside the read-only APK
+        # mount, so just mint a fresh UUID each session instead of touching disk.
+        if IS_BROWSER:
+            return str(uuid.uuid4())
+
         id_path = os.path.join(os.path.dirname(game_dir), "player_id.json")
         try:
             with open(id_path, "r", encoding="utf-8") as fh:
@@ -59,18 +69,28 @@ except Exception:
             pass
         return new_id
 
-    _BACKEND_URL = os.getenv("GAME_BACKEND_URL", "http://localhost:8000")
+    BACKEND_URL = os.getenv("GAMEBACKEND_URL", "http://localhost:8000")
 
-    def _backend_request(method: str, path: str, body: dict | None = None, timeout: int = 3):
-        """Fire a JSON request to the FastAPI backend; return parsed dict or None."""
-        url = f"{_BACKEND_URL}{path}"
+    def backend_request(method: str, path: str, body: dict | None = None, timeout: int = 3):
+        """Fire a JSON request to the FastAPI backend; return parsed dict or None.
+
+        Short-circuits to None in the browser: Pygbag's emscripten runtime does
+        not support blocking BSD sockets, so invoking urlopen() there can hang
+        the event loop or raise exception types that aren't in our usual catch
+        tuple (e.g. NotImplementedError). That's exactly the silent crash we
+        saw after pressing PLAY -- Game.__init__ -> GameEconomy.__init__ ->
+        sync_wallet -> backend_request -> crash inside urlopen.
+        """
+        if IS_BROWSER:
+            return None
+        url = f"{BACKEND_URL}{path}"
         headers = {"Content-Type": "application/json"}
         data = json.dumps(body).encode("utf-8") if body else None
         try:
             req = Request(url, data=data, headers=headers, method=method)
             with urlopen(req, timeout=timeout) as resp:
                 return json.loads(resp.read().decode("utf-8"))
-        except (HTTPError, URLError, TimeoutError, OSError, json.JSONDecodeError):
+        except Exception:
             return None
 
     class GameEconomy:
@@ -80,14 +100,23 @@ except Exception:
             self.initial_health = initial_health
             self.score = 0
             self.session_coins_earned = 0
-            self.player_uuid = _load_shared_player_id()
+            try:
+                self.player_uuid = load_shared_player_id()
+            except Exception as exc:
+                print(f"[GameEconomy] Could not load player id: {exc}")
+                self.player_uuid = str(uuid.uuid4())
             self.wallet = self.wallet_store.setdefault(self.player_uuid, {
                 "gold_coins": 0,
                 "health_packs": 0,
                 "gems": 0,
                 "total_earned_coins": 0,
             })
-            self.sync_wallet()
+            # sync_wallet() is a best-effort network call; swallow any failure
+            # so an unreachable backend can never block the game from starting.
+            try:
+                self.sync_wallet()
+            except Exception as exc:
+                print(f"[GameEconomy] sync_wallet skipped: {exc}")
 
         def add_score(self, value):
             self.score += int(value)
@@ -141,6 +170,10 @@ except Exception:
             survive the merge.  If the backend is unreachable the local wallet
             is left unchanged.
             """
+            # Skip entirely in the browser: backend_request already short-circuits,
+            # but avoiding the call keeps the hot path free of network work.
+            if IS_BROWSER:
+                return None
             payload = {
                 "player_uuid": self.player_uuid,
                 "gold_coins": int(self.wallet.get("gold_coins", 0)),
@@ -148,7 +181,7 @@ except Exception:
                 "gems": int(self.wallet.get("gems", 0)),
                 "total_earned_coins": int(self.wallet.get("total_earned_coins", 0)),
             }
-            merged = _backend_request("POST", "/api/wallet/sync", body=payload)
+            merged = backend_request("POST", "/api/wallet/sync", body=payload)
             if merged and isinstance(merged, dict):
                 wallet_data = merged.get("wallet", merged)
                 for key in ("gold_coins", "health_packs", "gems", "total_earned_coins"):
@@ -1386,9 +1419,19 @@ async def main():
     """Main game entry point - creates game instance and runs game loop (async for Pygbag)"""
     global screen
     print("game is starting...")
-    
-    # Create game instance
-    game = Game(None)
+
+    # Game(None) does a lot of synchronous work (image loads, font loads, audio,
+    # economy sync). Any exception here would surface as a "silent crash" in the
+    # browser unless we log it explicitly. Catch + re-raise so mainMenu's outer
+    # handler can still recover the menu, but the cause is visible in the
+    # Pygbag xterm console.
+    try:
+        game = Game(None)
+    except Exception as exc:
+        print(f"[main] Game() failed to initialize: {exc}")
+        import traceback
+        traceback.print_exc()
+        return
     print(game)
     
     # Apply the theme selected in main menu to the game
