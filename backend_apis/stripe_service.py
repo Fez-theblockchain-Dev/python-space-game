@@ -72,7 +72,11 @@ class StripePaymentService:
         self.api_key = api_key or os.getenv("STRIPE_SECRET_KEY")
         self.publishable_key = publishable_key or os.getenv("STRIPE_PUBLISHABLE_KEY")
         self.webhook_secret = webhook_secret or os.getenv("STRIPE_WEBHOOK_SECRET")
-        self.return_url = return_url or os.getenv("STRIPE_RETURN_URL", "http://localhost:8000/payment/result")
+        # STRIPE_RETURN_URL wins; otherwise derive from FRONTEND_BASE_URL so
+        # production redirects land on https://spacecowboys.dev/payment/result
+        # instead of localhost.
+        frontend_base = os.getenv("FRONTEND_BASE_URL", "http://localhost:8000").rstrip("/")
+        self.return_url = return_url or os.getenv("STRIPE_RETURN_URL", f"{frontend_base}/payment/result")
         
         # Initialize Stripe with the API key
         stripe.api_key = self.api_key

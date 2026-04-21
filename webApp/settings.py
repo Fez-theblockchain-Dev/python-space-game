@@ -30,7 +30,53 @@ load_env_file(BASE_DIR / ".env")
 SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'dev-secret-key-change-in-production')
 DEBUG = os.getenv('DJANGO_DEBUG', 'True').lower() == 'true'
 
-ALLOWED_HOSTS = os.getenv('DJANGO_ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
+# Hosts allowed to reach this Django app.  Production always includes the
+# Vercel domain; additional hosts (staging, preview deploys) can be added
+# via DJANGO_ALLOWED_HOSTS (comma-separated).
+DEFAULT_ALLOWED_HOSTS = [
+    'localhost',
+    '127.0.0.1',
+    'spacecowboys.dev',
+    'www.spacecowboys.dev',
+    '.spacecowboys.dev',
+    '.vercel.app',
+]
+
+extra_hosts = os.getenv('DJANGO_ALLOWED_HOSTS', '')
+ALLOWED_HOSTS = list(DEFAULT_ALLOWED_HOSTS)
+if extra_hosts:
+    ALLOWED_HOSTS.extend(host.strip() for host in extra_hosts.split(',') if host.strip())
+
+# POST/PUT/DELETE from the Vercel-hosted pages must pass the CSRF origin
+# check.  Without this, Django returns 403 for every non-GET request that
+# originates from https://spacecowboys.dev.
+CSRF_TRUSTED_ORIGINS = [
+    'https://spacecowboys.dev',
+    'https://www.spacecowboys.dev',
+    'https://*.spacecowboys.dev',
+    'https://*.vercel.app',
+]
+
+extra_trusted = os.getenv('DJANGO_CSRF_TRUSTED_ORIGINS', '')
+if extra_trusted:
+    CSRF_TRUSTED_ORIGINS.extend(
+        origin.strip() for origin in extra_trusted.split(',') if origin.strip()
+    )
+
+# Behind Vercel's TLS terminator Django sees HTTP, not HTTPS.  Trust the
+# X-Forwarded-Proto header the proxy sets so request.is_secure() is correct
+# and CSRF / cookie flags line up.
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+USE_X_FORWARDED_HOST = True
+
+# In production (DEBUG off) require secure cookies and HTTPS redirects.
+if not DEBUG:
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_SSL_REDIRECT = True
+    SECURE_HSTS_SECONDS = 60 * 60 * 24 * 30
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
 
 # Application definition
 INSTALLED_APPS = [
@@ -89,6 +135,14 @@ STRIPE_SECRET_KEY = os.getenv('STRIPE_SECRET_KEY') or os.getenv('STRIPE_SECRETE_
 
 STRIPE_WEBHOOK_SECRET = os.getenv('STRIPE_WEBHOOK_SECRET', '')
 
-# Backend API URL (FastAPI server)
-BACKEND_API_URL = os.getenv('BACKEND_API_URL', 'http://localhost:8000')
+# Backend API URL (FastAPI server).  In production this should point to
+# https://api.spacecowboys.dev; locally it stays on the FastAPI dev server.
+BACKEND_API_URL = os.getenv(
+    'BACKEND_API_URL',
+    'https://api.spacecowboys.dev' if not DEBUG else 'http://localhost:8000',
+)
+
+# Canonical public origin for the Vercel-hosted frontend -- referenced by
+# Stripe return URLs, social share cards, etc.
+FRONTEND_BASE_URL = os.getenv('FRONTEND_BASE_URL', 'https://spacecowboys.dev')
 

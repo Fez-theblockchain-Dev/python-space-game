@@ -1,25 +1,12 @@
 import json
 import os
 import sys
-from http.client import RemoteDisconnected
-from urllib.error import HTTPError, URLError
-from urllib.request import Request, urlopen
 
 import pygame
-from config import resource_path
+from config import resource_path, BACKEND_API_URL
+from web_http import fetch_json, kick_off_background_json
 
-
-def fetch_json(url, timeout=5):
-    """Fetch JSON safely. Returns parsed dict/list or None on failure."""
-    try:
-        request = Request(url, method="GET")
-        request.add_header("Content-Type", "application/json")
-        with urlopen(request, timeout=timeout) as response:
-            if getattr(response, "status", 200) != 200:
-                return None
-            return json.loads(response.read().decode("utf-8"))
-    except (HTTPError, URLError, json.JSONDecodeError, RemoteDisconnected, TimeoutError, OSError, ValueError):
-        return None
+IS_BROWSER = sys.platform == "emscripten"
 
 
 class SpaceShip(pygame.sprite.Sprite):
@@ -33,11 +20,17 @@ class SpaceShip(pygame.sprite.Sprite):
         self.health = health
         self.speed = 5
 
-        # Wallet tracking (skip in browser - no player_id.json)
-        self.player_wallet_id = self.load_player_id(project_root) if sys.platform != "emscripten" else None
+        # Wallet tracking: desktop reads player_id.json; browser uses
+        # localStorage (populated by the fallback load_shared_player_id in
+        # __main__.py so all modules agree on the same UUID).
+        self.player_wallet_id = (
+            self.load_browser_player_id() if IS_BROWSER else self.load_player_id(project_root)
+        )
         self.gold_coins = 0
         self.wallet_last_fetched = 0
         self.wallet_fetch_interval = 5000  # Fetch wallet every 5 seconds (milliseconds)
+        # Guard so we only have one in-flight background refresh at a time.
+        self.wallet_refresh_inflight = False
 
         # Font for rendering wallet ID
         font_path = resource_path("assets", "Fonts", "hyperspace", "Hyperspace Bold.otf")
@@ -59,24 +52,67 @@ class SpaceShip(pygame.sprite.Sprite):
         except (FileNotFoundError, json.JSONDecodeError):
             return None
 
+    def load_browser_player_id(self):
+        """Read the player's wallet ID from browser localStorage, if any."""
+        try:
+            from platform import window  # type: ignore[import-not-found]
+            stored = window.localStorage.getItem("player_id")
+            if stored and stored != "null":
+                return str(stored)
+        except Exception as exc:
+            print(f"[SpaceShip] localStorage player_id read failed: {exc}")
+        return None
+
+    def apply_wallet_payload(self, data):
+        """Callback invoked by the background refresh with parsed JSON."""
+        self.wallet_refresh_inflight = False
+        if data and isinstance(data, dict):
+            try:
+                self.gold_coins = int(data.get("gold_coins", 0) or 0)
+            except (TypeError, ValueError):
+                pass
+
     def fetch_wallet_data(self):
-        """Fetch wallet data from backend API."""
+        """Blocking fetch used at init time (desktop) or as a fallback.
+
+        This path briefly blocks, which is acceptable before the game loop
+        starts.  The per-frame refresh in :meth:`update` goes through
+        :func:`kick_off_background_json` instead so the canvas never stalls.
+        """
         if not self.player_wallet_id:
             return
 
-        url = f"http://localhost:8000/api/wallet/{self.player_wallet_id}"
-        data = fetch_json(url, timeout=2)
-        if data:
-            self.gold_coins = data.get("gold_coins", 0)
+        url = f"{BACKEND_API_URL}/api/wallet/{self.player_wallet_id}"
+        data = fetch_json(url, timeout=2.0)
+        if data and isinstance(data, dict):
+            self.gold_coins = int(data.get("gold_coins", 0) or 0)
+
+    def refresh_wallet_background(self):
+        """Kick off a non-blocking wallet refresh; harmless if one is already in flight."""
+        if not self.player_wallet_id or self.wallet_refresh_inflight:
+            return
+        url = f"{BACKEND_API_URL}/api/wallet/{self.player_wallet_id}"
+        self.wallet_refresh_inflight = True
+        scheduled = kick_off_background_json(
+            "GET", url, on_result=self.apply_wallet_payload, timeout=3.0
+        )
+        if not scheduled:
+            # Fall back to sync call; mirror flag so we don't leak the guard.
+            self.wallet_refresh_inflight = False
+            self.fetch_wallet_data()
 
     def update(self):
-        """Update spaceship state, including periodic wallet data refresh."""
+        """Update spaceship state, including periodic wallet data refresh.
+
+        The refresh runs on an asyncio background task so a slow backend
+        can never freeze the render loop.  The next frame keeps drawing
+        with the last known ``gold_coins`` value until the response lands.
+        """
         current_time = pygame.time.get_ticks()
 
-        # Periodically fetch wallet data to keep gold_coins in sync
         if current_time - self.wallet_last_fetched >= self.wallet_fetch_interval:
-            self.fetch_wallet_data()
             self.wallet_last_fetched = current_time
+            self.refresh_wallet_background()
 
     def draw_wallet_id(self, screen):
         """Render the player's wallet ID on screen with a background rect."""

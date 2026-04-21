@@ -15,7 +15,14 @@ import json
 import uuid
 from pygame.locals import * #For useful variables
 from typing import Any
-from config import SCREEN_WIDTH, SCREEN_HEIGHT, DEFAULT_BACKGROUND_THEME, resource_path
+from config import (
+    SCREEN_WIDTH,
+    SCREEN_HEIGHT,
+    DEFAULT_BACKGROUND_THEME,
+    resource_path,
+    BACKEND_API_URL,
+)
+from web_http import request_json
 from treasureChest import TreasureChest
 from obstacle import Block, shape
 from spaceship import SpaceShip
@@ -41,16 +48,22 @@ except Exception:
     # uncaught exception types (e.g. NotImplementedError, AttributeError from
     # the socket shim) or block the event loop. Importing lazily and guarding
     # with bare `Exception` keeps the game playable when the backend is absent.
-    if not IS_BROWSER:
-        from urllib.request import Request, urlopen  # noqa: F401
-        from urllib.error import HTTPError, URLError  # noqa: F401
-
     def load_shared_player_id() -> str:
         """Load player_uuid from player_id.json so the game and storefront share an identity."""
-        # Browser (Pygbag) has no writable filesystem outside the read-only APK
-        # mount, so just mint a fresh UUID each session instead of touching disk.
+        # In the browser, persist the player id in localStorage so the same
+        # user keeps their wallet across reloads.  On desktop use the shared
+        # player_id.json file so the game and the Django storefront agree.
         if IS_BROWSER:
-            return str(uuid.uuid4())
+            try:
+                from platform import window  # type: ignore[import-not-found]
+                stored = window.localStorage.getItem("player_id")
+                if stored and stored != "null":
+                    return str(stored)
+                minted = str(uuid.uuid4())
+                window.localStorage.setItem("player_id", minted)
+                return minted
+            except Exception:
+                return str(uuid.uuid4())
 
         id_path = os.path.join(os.path.dirname(game_dir), "player_id.json")
         try:
@@ -69,29 +82,18 @@ except Exception:
             pass
         return new_id
 
-    BACKEND_URL = os.getenv("GAMEBACKEND_URL", "http://localhost:8000")
+    BACKEND_URL = BACKEND_API_URL
 
     def backend_request(method: str, path: str, body: dict | None = None, timeout: int = 3):
         """Fire a JSON request to the FastAPI backend; return parsed dict or None.
 
-        Short-circuits to None in the browser: Pygbag's emscripten runtime does
-        not support blocking BSD sockets, so invoking urlopen() there can hang
-        the event loop or raise exception types that aren't in our usual catch
-        tuple (e.g. NotImplementedError). That's exactly the silent crash we
-        saw after pressing PLAY -- Game.__init__ -> GameEconomy.__init__ ->
-        sync_wallet -> backend_request -> crash inside urlopen.
+        Uses web_http.request_json, which transparently dispatches to urllib
+        on desktop and to a synchronous XMLHttpRequest under pygbag/Emscripten.
+        The function never raises -- network failures return None so the game
+        can keep running against purely-local state.
         """
-        if IS_BROWSER:
-            return None
         url = f"{BACKEND_URL}{path}"
-        headers = {"Content-Type": "application/json"}
-        data = json.dumps(body).encode("utf-8") if body else None
-        try:
-            req = Request(url, data=data, headers=headers, method=method)
-            with urlopen(req, timeout=timeout) as resp:
-                return json.loads(resp.read().decode("utf-8"))
-        except Exception:
-            return None
+        return request_json(method, url, body=body, timeout=float(timeout))
 
     class GameEconomy:
         wallet_store: dict[str, dict[str, int]] = {}
@@ -168,12 +170,10 @@ except Exception:
             The backend merges by taking the max of each balance field so that
             coins earned in-game and items purchased on the storefront both
             survive the merge.  If the backend is unreachable the local wallet
-            is left unchanged.
+            is left unchanged.  Works in both desktop and browser builds
+            because ``backend_request`` dispatches through the pygbag XHR
+            bridge under Emscripten.
             """
-            # Skip entirely in the browser: backend_request already short-circuits,
-            # but avoiding the call keeps the hot path free of network work.
-            if IS_BROWSER:
-                return None
             payload = {
                 "player_uuid": self.player_uuid,
                 "gold_coins": int(self.wallet.get("gold_coins", 0)),

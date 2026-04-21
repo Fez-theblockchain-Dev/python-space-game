@@ -81,14 +81,37 @@ app = FastAPI(
 # ============================================================================
 # Step 2: Add CORS Middleware (allows connections from different origins)
 # ============================================================================
-# This is CRITICAL for allowing other computers/browsers to connect
+# The pygbag game, hosted on Vercel at https://spacecowboys.dev, talks to this
+# backend via cross-origin fetch/XHR.  Browsers reject ``allow_origins=["*"]``
+# whenever credentials are involved, so we enumerate the allowed origins
+# explicitly and allow additional hosts via ``BACKEND_CORS_ORIGINS``
+# (comma-separated) for staging / preview deploys.
+
+ALLOWED_CORS_ORIGINS = [
+    "https://spacecowboys.dev",
+    "https://www.spacecowboys.dev",
+    "https://api.spacecowboys.dev",
+    "http://localhost:8000",
+    "http://localhost:9000",
+    "http://localhost:9666",
+    "http://127.0.0.1:8000",
+    "http://127.0.0.1:9000",
+    "http://127.0.0.1:9666",
+]
+
+extra_origins = os.getenv("BACKEND_CORS_ORIGINS", "")
+if extra_origins:
+    ALLOWED_CORS_ORIGINS.extend(
+        origin.strip().rstrip("/") for origin in extra_origins.split(",") if origin.strip()
+    )
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Allow all origins (restrict in production)
+    allow_origins=ALLOWED_CORS_ORIGINS,
+    allow_origin_regex=r"https://.*\.vercel\.app",
     allow_credentials=True,
-    allow_methods=["*"],  # Allow all HTTP methods
-    allow_headers=["*"],  # Allow all headers
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+    allow_headers=["*"],
 )
 
 # ============================================================================

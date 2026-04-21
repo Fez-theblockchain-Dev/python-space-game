@@ -26,7 +26,39 @@ if not IS_BROWSER:
 # ============================================================================
 
 PLAYER_ID_FILE = "player_id.json"
-BACKEND_URL = os.getenv("GAME_BACKEND_URL", "http://localhost:8080")
+
+
+def default_backend_url() -> str:
+    """Pick a sane backend base URL based on the runtime.
+
+    * Env var ``GAME_BACKEND_URL`` always wins (for staging / tests).
+    * In the browser, if the page is served from spacecowboys.dev, talk to
+      ``https://api.spacecowboys.dev``.  Otherwise fall back to the page's
+      own origin so reverse-proxy setups keep working.
+    * On desktop, default to ``http://localhost:8000`` to match the
+      FastAPI dev server.
+    """
+    override = os.getenv("GAME_BACKEND_URL")
+    if override:
+        return override.rstrip("/")
+
+    if IS_BROWSER:
+        try:
+            from platform import window  # type: ignore[import-not-found]
+            host = str(getattr(window.location, "hostname", "") or "")
+            origin = str(getattr(window.location, "origin", "") or "").rstrip("/")
+            if host.endswith("spacecowboys.dev"):
+                return "https://api.spacecowboys.dev"
+            if origin:
+                return origin
+        except Exception:
+            pass
+        return "https://api.spacecowboys.dev"
+
+    return "http://localhost:8000"
+
+
+BACKEND_URL = default_backend_url()
 trans_id = None
 
 

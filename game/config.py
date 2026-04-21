@@ -87,3 +87,68 @@ GAME_BUILD_PATH = os.path.join(os.path.dirname(__file__), "build", "web")
 # purple CSS body forever. Using a port OUTSIDE the 8xxx range sidesteps the
 # heuristic so pygbag downloads pygame directly from pygame-web.github.io.
 PYGBAG_PORT = 9666
+
+# ============================================
+# PRODUCTION / DEPLOYMENT URLS
+# ============================================
+# The pygbag browser build is hosted on Vercel at this domain.
+VERCEL_DOMAIN_NAME = "https://spacecowboys.dev/"
+
+# Canonical origin (no trailing slash) for the static pygbag frontend.
+FRONTEND_ORIGIN = VERCEL_DOMAIN_NAME.rstrip("/")
+
+# The FastAPI backend (server.py) lives on a subdomain so that CORS, cookies
+# and Vercel routing stay clean.  Override via the GAME_BACKEND_URL env var
+# when running a local FastAPI server or a staging backend.
+PRODUCTION_BACKEND_URL = "https://api.spacecowboys.dev"
+LOCAL_BACKEND_URL = "http://localhost:8000"
+
+
+def running_in_browser() -> bool:
+    """True when executed inside the pygbag/Emscripten runtime."""
+    return sys.platform == "emscripten"
+
+
+def detect_browser_origin() -> str:
+    """Return the current browser page origin (scheme://host[:port]) or ""."""
+    if not running_in_browser():
+        return ""
+    try:
+        from platform import window  # type: ignore[import-not-found]
+        origin = getattr(window.location, "origin", None)
+        if origin:
+            return str(origin).rstrip("/")
+    except Exception:
+        pass
+    return ""
+
+
+def get_backend_api_url() -> str:
+    """Resolve the backend base URL for the current runtime.
+
+    Priority order:
+      1. GAME_BACKEND_URL env var (desktop dev / CI overrides).
+      2. If running in the browser and the page is served from a
+         spacecowboys.dev host, use https://api.spacecowboys.dev.
+      3. If running in the browser but on an unknown host (e.g. a preview
+         deploy), fall back to the same origin under /api so reverse-proxy
+         setups still work.
+      4. Desktop default: http://localhost:8000.
+    """
+    override = os.getenv("GAME_BACKEND_URL")
+    if override:
+        return override.rstrip("/")
+
+    if running_in_browser():
+        origin = detect_browser_origin()
+        host = origin.rsplit("://", 1)[-1] if origin else ""
+        if host.endswith("spacecowboys.dev"):
+            return PRODUCTION_BACKEND_URL
+        if origin:
+            return origin
+        return PRODUCTION_BACKEND_URL
+
+    return LOCAL_BACKEND_URL
+
+
+BACKEND_API_URL = get_backend_api_url()
