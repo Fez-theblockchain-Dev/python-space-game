@@ -22,7 +22,7 @@ from config import (
     resource_path,
     BACKEND_API_URL,
 )
-from web_http import request_json
+from web_http import request_json, kick_off_background_json
 from treasureChest import TreasureChest
 from obstacle import Block, shape
 from spaceship import SpaceShip
@@ -115,6 +115,8 @@ except Exception:
             })
             # sync_wallet() is a best-effort network call; swallow any failure
             # so an unreachable backend can never block the game from starting.
+            # In browser mode sync_wallet itself dispatches asynchronously,
+            # so startup stays fast even when the backend is cold.
             try:
                 self.sync_wallet()
             except Exception as exc:
@@ -164,15 +166,37 @@ except Exception:
                 "new_balance": int(wallet_state.get("gold_coins", 0)),
             }
 
+        def apply_sync_payload(self, merged):
+            """Merge a /api/wallet/sync response into the local wallet dict.
+
+            Runs inline on desktop (from the return value of sync_wallet) and
+            as an asyncio callback in the browser.  Always defensive: a None
+            or malformed payload leaves local state untouched.
+            """
+            if not merged or not isinstance(merged, dict):
+                return
+            wallet_data = merged.get("wallet", merged)
+            for key in ("gold_coins", "health_packs", "gems", "total_earned_coins"):
+                if key in wallet_data:
+                    try:
+                        self.wallet[key] = int(wallet_data[key])
+                    except (TypeError, ValueError):
+                        continue
+
         def sync_wallet(self):
             """Push local wallet to backend, pull merged result back.
 
             The backend merges by taking the max of each balance field so that
             coins earned in-game and items purchased on the storefront both
             survive the merge.  If the backend is unreachable the local wallet
-            is left unchanged.  Works in both desktop and browser builds
-            because ``backend_request`` dispatches through the pygbag XHR
-            bridge under Emscripten.
+            is left unchanged.
+
+            In the browser this call is fire-and-forget: the request is handed
+            to the asyncio loop via web_http.kick_off_background_json so the
+            pygame render loop never blocks on a slow/cold backend (e.g.
+            first hit to api.spacecowboys.dev after a Vercel deploy).  The
+            merged wallet lands a few frames later via ``apply_sync_payload``.
+            On desktop, the call remains synchronous for simplicity.
             """
             payload = {
                 "player_uuid": self.player_uuid,
@@ -181,12 +205,21 @@ except Exception:
                 "gems": int(self.wallet.get("gems", 0)),
                 "total_earned_coins": int(self.wallet.get("total_earned_coins", 0)),
             }
+            if IS_BROWSER:
+                try:
+                    kick_off_background_json(
+                        "POST",
+                        f"{BACKEND_URL}/api/wallet/sync",
+                        body=payload,
+                        on_result=self.apply_sync_payload,
+                        timeout=4.0,
+                    )
+                except Exception as exc:
+                    print(f"[GameEconomy] async sync_wallet skipped: {exc}")
+                return None
             merged = backend_request("POST", "/api/wallet/sync", body=payload)
-            if merged and isinstance(merged, dict):
-                wallet_data = merged.get("wallet", merged)
-                for key in ("gold_coins", "health_packs", "gems", "total_earned_coins"):
-                    if key in wallet_data:
-                        self.wallet[key] = int(wallet_data[key])
+            self.apply_sync_payload(merged)
+            if merged:
                 return dict(self.wallet)
             return None
 

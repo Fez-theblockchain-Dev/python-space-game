@@ -39,8 +39,14 @@ class SpaceShip(pygame.sprite.Sprite):
         except Exception:
             self.wallet_font = pygame.font.SysFont("arial", 14)
 
-        # Initial wallet fetch
-        self.fetch_wallet_data()
+        # Initial wallet fetch.  Using the background variant means a cold
+        # DNS lookup on api.spacecowboys.dev (or an undeployed backend) can
+        # never freeze the pygbag canvas at game start -- the render loop
+        # keeps drawing with gold_coins=0 and the response patches it in
+        # when it lands.  On desktop, kick_off_background_json short-circuits
+        # to a synchronous call when no asyncio loop is running, so the init
+        # path stays unchanged there.
+        self.refresh_wallet_background()
 
     def load_player_id(self, project_root):
         """Load the player's wallet ID from player_id.json."""

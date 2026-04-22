@@ -49,12 +49,19 @@ if extra_hosts:
 
 # POST/PUT/DELETE from the Vercel-hosted pages must pass the CSRF origin
 # check.  Without this, Django returns 403 for every non-GET request that
-# originates from https://spacecowboys.dev.
+# originates from https://spacecowboys.dev.  Localhost entries cover the
+# common dev ports: Django on 8000/9000, pygbag on 9666, Vite/Next on 3000.
 CSRF_TRUSTED_ORIGINS = [
     'https://spacecowboys.dev',
     'https://www.spacecowboys.dev',
     'https://*.spacecowboys.dev',
     'https://*.vercel.app',
+    'http://localhost:8000',
+    'http://localhost:9000',
+    'http://localhost:9666',
+    'http://127.0.0.1:8000',
+    'http://127.0.0.1:9000',
+    'http://127.0.0.1:9666',
 ]
 
 extra_trusted = os.getenv('DJANGO_CSRF_TRUSTED_ORIGINS', '')
