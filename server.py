@@ -410,7 +410,7 @@ async def serve_game_apk():
 def game_status():
     """
     Check if the pygbag game build is available.
-    Test with: curl http://localhost:8000/game-status
+    Test with: curl http://localhost:9666/game-status
     """
     game_available = os.path.exists(GAME_BUILD_PATH)
     files = []
