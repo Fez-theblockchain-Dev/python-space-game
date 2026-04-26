@@ -6,6 +6,8 @@ uvicorn[standard]>=0.24.0
 
 # Database
 sqlalchemy>=2.0.0
+# Postgres driver (psycopg v3). Required in production; tests use SQLite.
+psycopg[binary]>=3.1.0
 
 # Stripe Payment SDK
 stripe>=7.0.0

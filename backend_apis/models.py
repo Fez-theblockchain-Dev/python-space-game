@@ -14,6 +14,7 @@ from sqlalchemy import (
     Integer,
     String,
     Text,
+    UniqueConstraint,
     Enum as SqlEnum,
 )
 from sqlalchemy.orm import declarative_base, relationship
@@ -133,3 +134,49 @@ class Transaction(Base):
     completed_at = Column(DateTime)
 
     player = relationship("Player", back_populates="transactions")
+
+
+class PlayerIPRecord(Base):
+    """
+    Persistent record of the IP addresses new players connect from.
+
+    One row per (player_uuid, ip_address) pair. We upsert on every
+    `/api/player/join` call so operators can see:
+      - which IPs first introduced a given player UUID,
+      - how many times that pairing has been observed,
+      - when it was first and last seen.
+
+    IPv6 addresses can be up to 45 characters, so the column is sized 64.
+    """
+
+    __tablename__ = "player_ip_records"
+    __table_args__ = (
+        UniqueConstraint("player_uuid", "ip_address", name="uq_player_ip"),
+    )
+
+    id = Column(Integer, primary_key=True)
+    player_uuid = Column(String(64), nullable=False, index=True)
+    player_name = Column(String(128))
+    ip_address = Column(String(64), nullable=False, index=True)
+    user_agent = Column(String(512))
+    connection_count = Column(Integer, default=1, nullable=False)
+    first_seen_at = Column(
+        DateTime, default=lambda: datetime.now(timezone.utc), nullable=False
+    )
+    last_seen_at = Column(
+        DateTime,
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+        nullable=False,
+    )
+
+    def to_dict(self) -> dict:
+        return {
+            "player_uuid": self.player_uuid,
+            "player_name": self.player_name,
+            "ip_address": self.ip_address,
+            "user_agent": self.user_agent,
+            "connection_count": self.connection_count,
+            "first_seen_at": self.first_seen_at.isoformat() if self.first_seen_at else None,
+            "last_seen_at": self.last_seen_at.isoformat() if self.last_seen_at else None,
+        }

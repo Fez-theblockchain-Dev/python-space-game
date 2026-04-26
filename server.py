@@ -38,16 +38,19 @@ Payment (Stripe):
     POST /api/payments/webhook          - Stripe webhook handler
 """
 
+from __future__ import annotations
+
 from starlette.websockets import WebSocket
 import uuid
 from typing import Optional
 from datetime import datetime
 
-from fastapi import FastAPI, HTTPException, Request, Header
+from fastapi import Depends, FastAPI, HTTPException, Request, Header
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, FileResponse
 from pydantic import BaseModel
 from fastapi.staticfiles import StaticFiles
+from sqlalchemy.orm import Session
 import os
 import mimetypes
 
@@ -57,9 +60,10 @@ mimetypes.add_type("application/wasm", ".wasm")
 mimetypes.add_type("application/javascript", ".js")
 
 # Import payment models and services (from backend_apis package)
-from backend_apis.models import PackageType, PACKAGES, TransactionStatus
+from backend_apis.models import PackageType, PACKAGES, PlayerIPRecord, TransactionStatus
 from backend_apis.stripe_service import StripePaymentService
 from backend_apis.stripe_payment_handler import StripePaymentHandler
+from backend_apis.database import get_db, init_db
 
 # web socket (WS) implementation imports for persistent connection between pygbag server and client
 from fastapi import WebSocket, WebSocketDisconnect
@@ -129,6 +133,83 @@ player_wallets: dict[str, dict] = {}
 
 # Initialize Stripe service (uses environment variables)
 stripe_service = StripePaymentService()
+
+
+@app.on_event("startup")
+def bootstrap_database() -> None:
+    """Create SQL tables (players, wallets, transactions, player_ip_records)."""
+    try:
+        init_db()
+    except Exception as exc:  # pragma: no cover - startup diagnostics only
+        print(f"⚠️ Failed to initialize DB tables at startup: {exc}")
+
+
+def extract_client_ip(http_request: Request) -> str:
+    """
+    Extract the originating client IP from a FastAPI ``Request``.
+
+    Honors ``X-Forwarded-For`` (first hop) so the recorded value is the real
+    end-user IP when the server sits behind a proxy / CDN (Vercel, Cloudflare,
+    etc.). Falls back to the raw socket peer, and finally to ``"unknown"``.
+    """
+    forwarded_for = http_request.headers.get("x-forwarded-for")
+    if forwarded_for:
+        return forwarded_for.split(",")[0].strip()
+
+    real_ip = http_request.headers.get("x-real-ip")
+    if real_ip:
+        return real_ip.strip()
+
+    if http_request.client and http_request.client.host:
+        return http_request.client.host
+
+    return "unknown"
+
+
+def record_player_ip(
+    db: Session,
+    *,
+    player_uuid: str,
+    player_name: Optional[str],
+    ip_address: str,
+    user_agent: Optional[str],
+) -> PlayerIPRecord:
+    """
+    Upsert a ``PlayerIPRecord`` row for ``(player_uuid, ip_address)``.
+
+    On first sight the row is inserted; on repeat sightings the connection
+    count is incremented and ``last_seen_at`` is bumped via the column's
+    ``onupdate`` hook.
+    """
+    existing = (
+        db.query(PlayerIPRecord)
+        .filter(
+            PlayerIPRecord.player_uuid == player_uuid,
+            PlayerIPRecord.ip_address == ip_address,
+        )
+        .one_or_none()
+    )
+
+    if existing is None:
+        record = PlayerIPRecord(
+            player_uuid=player_uuid,
+            player_name=player_name,
+            ip_address=ip_address,
+            user_agent=user_agent,
+            connection_count=1,
+        )
+        db.add(record)
+    else:
+        record = existing
+        record.connection_count += 1
+        if player_name:
+            record.player_name = player_name
+        if user_agent:
+            record.user_agent = user_agent
+
+    db.commit()
+    db.refresh(record)
+    return record
 
 # ===================================================================================================================
 # Step 4: fastAPI web socket connection to help maintain persistent connections between client & server
@@ -435,33 +516,68 @@ def game_status():
 # ============================================================================
 
 @app.post("/api/player/join", response_model=PlayerJoinResponse)
-def player_join(request: PlayerJoinRequest):
+def player_join(
+    request: PlayerJoinRequest,
+    http_request: Request,
+    db: Session = Depends(get_db),
+):
     """
     Register a new player to the game.
-    
+
     Example request body:
     {"player_name": "SpaceHero42"}
+
+    As a side effect, the originating client IP (and user agent) is persisted
+    to the ``player_ip_records`` table so operators can keep a durable ledger
+    of every new player connection.
     """
-    # Generate unique player ID
-    player_id = str(uuid.uuid4())[:8]  # Short UUID for simplicity
-    
-    # Store player data
+    player_id = str(uuid.uuid4())[:8]
+
     connected_players[player_id] = {
         "name": request.player_name,
-        "x": 400,  # Starting position
+        "x": 400,
         "y": 300,
         "score": 0,
         "joined_at": datetime.now().isoformat(),
     }
-    
-    print(f"🎮 Player joined: {request.player_name} (ID: {player_id})")
-    
+
+    client_ip = extract_client_ip(http_request)
+    user_agent = http_request.headers.get("user-agent")
+    try:
+        record_player_ip(
+            db,
+            player_uuid=player_id,
+            player_name=request.player_name,
+            ip_address=client_ip,
+            user_agent=user_agent,
+        )
+    except Exception as exc:  # pragma: no cover - never block join on logging
+        print(f"⚠️ Failed to record IP for {player_id} ({client_ip}): {exc}")
+
+    print(f"🎮 Player joined: {request.player_name} (ID: {player_id}) from {client_ip}")
+
     return PlayerJoinResponse(
         success=True,
         player_id=player_id,
         player_name=request.player_name,
         message=f"Welcome to the game, {request.player_name}!"
     )
+
+
+@app.get("/api/player/ip-log/{player_uuid}")
+def get_player_ip_log(player_uuid: str, db: Session = Depends(get_db)):
+    """Return every recorded IP connection for ``player_uuid``."""
+    records = (
+        db.query(PlayerIPRecord)
+        .filter(PlayerIPRecord.player_uuid == player_uuid)
+        .order_by(PlayerIPRecord.first_seen_at.asc())
+        .all()
+    )
+    return {
+        "player_uuid": player_uuid,
+        "count": len(records),
+        "records": [r.to_dict() for r in records],
+    }
 
 
 @app.post("/api/player/leave/{player_id}")
