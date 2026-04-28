@@ -472,7 +472,7 @@ def get_wallet_balance(request):
     """
     settings = get_django_settings()
     player_uuid = request.GET.get('player_uuid') or get_or_create_player_uuid(request)
-    backend_url = getattr(settings, 'BACKEND_API_URL', 'http://localhost:8000')
+    backend_url = getattr(settings, 'BACKEND_API_URL', 'http://localhost:9666')
 
     try:
         url = f"{backend_url}/api/wallet/{player_uuid}"

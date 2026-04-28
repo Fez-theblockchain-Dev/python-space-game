@@ -92,7 +92,8 @@ class PlayerIPRecordingTestCase(unittest.TestCase):
         self.engine.dispose()
         server_module.connected_players.clear()
 
-    def join(self, name: str, *, ip: str | None = None, user_agent: str | None = None):
+    def join(self, name: str, *, ip: str |
+     None = None, user_agent: str | None = None):
         headers = {}
         if ip is not None:
             headers["X-Forwarded-For"] = ip

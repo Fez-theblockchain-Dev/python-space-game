@@ -7,7 +7,7 @@ Run with (from project root):
     python server.py
 
 Or with auto-reload for development:
-    uvicorn server:app --host 0.0.0.0 --port 8000 --reload
+    uvicorn server:app --host 0.0.0.0 --port 9666 --reload
 
 API Endpoints:
 ==============
@@ -95,12 +95,10 @@ ALLOWED_CORS_ORIGINS = [
     "https://spacecowboys.dev",
     "https://www.spacecowboys.dev",
     "https://api.spacecowboys.dev",
-    "http://localhost:8000",
+    f"http://localhost:{PYGBAG_PORT}",
+    f"http://127.0.0.1:{PYGBAG_PORT}",
     "http://localhost:9000",
-    "http://localhost:9666",
-    "http://127.0.0.1:8000",
     "http://127.0.0.1:9000",
-    "http://127.0.0.1:9666",
 ]
 
 extra_origins = os.getenv("BACKEND_CORS_ORIGINS", "")
@@ -264,7 +262,7 @@ async def websocket_endpoint(websocket: WebSocket, player_id: str):
     Persistent WebSocket session for a game client served by Pygbag (port 9666).
 
     Connect from the browser:
-        const ws = new WebSocket("ws://localhost:8000/ws/<player_id>");
+        const ws = new WebSocket("ws://localhost:9666/ws/<player_id>");
 
     Message protocol (JSON):
         -> { "type": "position", "x": 100, "y": 200 }
@@ -444,7 +442,7 @@ class SyncWalletRequest(BaseModel):
 def root():
     """
     Root endpoint - confirms server is running.
-    Test with: curl http://localhost:8000/
+    Test with: curl http://localhost:9666/
     """
     return {
         "status": "online",
@@ -458,7 +456,7 @@ def root():
 def health_check():
     """
     Health check endpoint for monitoring.
-    Test with: curl http://localhost:8000/health
+    Test with: curl http://localhost:9666/health
     """
     return {
         "status": "healthy",
@@ -993,10 +991,14 @@ if __name__ == "__main__":
     print("  1. Find your IP address:")
     print("     - Mac/Linux: ifconfig | grep 'inet '")
     print("     - Windows: ipconfig")
-    print("  2. Use that IP, e.g.: http://192.168.1.100:8000")
+    print(f"  2. Use that IP, e.g.: http://192.168.1.100:{PYGBAG_PORT}")
     print()
-    print("API Documentation: http://localhost:8000/docs")
+    print(f"API Documentation: http://localhost:{PYGBAG_PORT}/docs")
+    print(f"Local entry point:  http://localhost:{PYGBAG_PORT}")
+    print("Production entry:   https://spacecowboys.dev")
     print("=" * 60)
-    
-    # host="0.0.0.0" makes the server accessible from other computers
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+
+    # host="0.0.0.0" makes the server accessible from other computers.
+    # Port matches PYGBAG_PORT so the FastAPI backend and the pygbag-built
+    # game share a single URL during development.
+    uvicorn.run(app, host="0.0.0.0", port=PYGBAG_PORT)

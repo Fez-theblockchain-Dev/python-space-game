@@ -101,7 +101,9 @@ FRONTEND_ORIGIN = VERCEL_DOMAIN_NAME.rstrip("/")
 # and Vercel routing stay clean.  Override via the GAME_BACKEND_URL env var
 # when running a local FastAPI server or a staging backend.
 PRODUCTION_BACKEND_URL = "https://api.spacecowboys.dev"
-LOCAL_BACKEND_URL = "http://localhost:8000"
+# Local backend lives on the same port as the pygbag dev server so the game
+# has a single entry point during development: http://localhost:9666.
+LOCAL_BACKEND_URL = f"http://localhost:{PYGBAG_PORT}"
 
 
 def running_in_browser() -> bool:
@@ -133,7 +135,7 @@ def get_backend_api_url() -> str:
       3. If running in the browser but on an unknown host (e.g. a preview
          deploy), fall back to the same origin under /api so reverse-proxy
          setups still work.
-      4. Desktop default: http://localhost:8000.
+      4. Desktop default: ``http://localhost:9666`` (the pygbag port).
     """
     override = os.getenv("GAME_BACKEND_URL")
     if override:

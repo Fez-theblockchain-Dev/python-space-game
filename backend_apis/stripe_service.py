@@ -75,7 +75,7 @@ class StripePaymentService:
         # STRIPE_RETURN_URL wins; otherwise derive from FRONTEND_BASE_URL so
         # production redirects land on https://spacecowboys.dev/payment/result
         # instead of localhost.
-        frontend_base = os.getenv("FRONTEND_BASE_URL", "http://localhost:8000").rstrip("/")
+        frontend_base = os.getenv("FRONTEND_BASE_URL", "http://localhost:9666").rstrip("/")
         self.return_url = return_url or os.getenv("STRIPE_RETURN_URL", f"{frontend_base}/payment/result")
         
         # Initialize Stripe with the API key

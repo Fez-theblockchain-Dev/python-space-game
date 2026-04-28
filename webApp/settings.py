@@ -50,18 +50,17 @@ if extra_hosts:
 # POST/PUT/DELETE from the Vercel-hosted pages must pass the CSRF origin
 # check.  Without this, Django returns 403 for every non-GET request that
 # originates from https://spacecowboys.dev.  Localhost entries cover the
-# common dev ports: Django on 8000/9000, pygbag on 9666, Vite/Next on 3000.
+# unified dev entry point on the pygbag port (9666) plus a Django-only
+# alternate port (9000) for when you want the storefront standalone.
 CSRF_TRUSTED_ORIGINS = [
     'https://spacecowboys.dev',
     'https://www.spacecowboys.dev',
     'https://*.spacecowboys.dev',
     'https://*.vercel.app',
-    'http://localhost:8000',
-    'http://localhost:9000',
     'http://localhost:9666',
-    'http://127.0.0.1:8000',
-    'http://127.0.0.1:9000',
+    'http://localhost:9000',
     'http://127.0.0.1:9666',
+    'http://127.0.0.1:9000',
 ]
 
 extra_trusted = os.getenv('DJANGO_CSRF_TRUSTED_ORIGINS', '')
@@ -143,10 +142,11 @@ STRIPE_SECRET_KEY = os.getenv('STRIPE_SECRET_KEY') or os.getenv('STRIPE_SECRETE_
 STRIPE_WEBHOOK_SECRET = os.getenv('STRIPE_WEBHOOK_SECRET', '')
 
 # Backend API URL (FastAPI server).  In production this should point to
-# https://api.spacecowboys.dev; locally it stays on the FastAPI dev server.
+# https://api.spacecowboys.dev; locally it sits on the unified pygbag port
+# (9666) so dev only has one URL to remember.
 BACKEND_API_URL = os.getenv(
     'BACKEND_API_URL',
-    'https://api.spacecowboys.dev' if not DEBUG else 'http://localhost:8000',
+    'https://api.spacecowboys.dev' if not DEBUG else 'http://localhost:9666',
 )
 
 # Canonical public origin for the Vercel-hosted frontend -- referenced by

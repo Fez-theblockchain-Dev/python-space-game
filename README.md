@@ -81,7 +81,7 @@ FastAPI, SQLAlchemy, Requests, Pydantic (for the backend server)
 Configuration:
 -Gameplay and economy constants (screen size, coin rates, rewards) live in game/config.py.
 
--The backend API base URL is configurable via the GAME_BACKEND_URL environment variable (defaults to http://localhost:8000).
+-The backend API base URL is configurable via the GAME_BACKEND_URL environment variable. Locally it defaults to http://localhost:9666 (the pygbag port — single entry point for dev) and in production it resolves to https://api.spacecowboys.dev.
 
 -** Pygbag server for playing the space cowboys🚀 game through DOM browser can be run using:
 python -m pygbag --template custom.tmpl --port 9666 game **

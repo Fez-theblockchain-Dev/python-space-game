@@ -35,8 +35,8 @@ def default_backend_url() -> str:
     * In the browser, if the page is served from spacecowboys.dev, talk to
       ``https://api.spacecowboys.dev``.  Otherwise fall back to the page's
       own origin so reverse-proxy setups keep working.
-    * On desktop, default to ``http://localhost:8000`` to match the
-      FastAPI dev server.
+    * On desktop, default to ``http://localhost:9666`` so the FastAPI
+      dev server and the pygbag dev server share a single entry point.
     """
     override = os.getenv("GAME_BACKEND_URL")
     if override:
@@ -55,7 +55,7 @@ def default_backend_url() -> str:
             pass
         return "https://api.spacecowboys.dev"
 
-    return "http://localhost:8000"
+    return "http://localhost:9666"
 
 
 BACKEND_URL = default_backend_url()
