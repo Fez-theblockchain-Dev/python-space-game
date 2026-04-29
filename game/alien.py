@@ -31,12 +31,16 @@ class Alien(pygame.sprite.Sprite):
         self.rect = self.image.get_rect(center=(x, y))
         self.value = 100  # default value for all aliens
         self.speed = speed
+        # pygame.Rect coordinates are integers, so a fractional `speed` (e.g. 1.5)
+        # would silently truncate each frame. Track the precise x position as a
+        # float and round into rect.x so sub-pixel speeds advance correctly.
+        self.pos_x = float(self.rect.x)
 
     def update(self, direction=None):
         """Update alien position. If direction is provided, move horizontally."""
         if direction is not None:
-            # Move horizontally
-            self.rect.x += direction * self.speed
+            self.pos_x += direction * self.speed
+            self.rect.x = int(self.pos_x)
         else:
             # Default vertical movement (for backward compatibility)
             self.rect.y += 2
@@ -45,8 +49,9 @@ class Alien(pygame.sprite.Sprite):
 
     def update_horizontal(self, direction):
         """Move alien horizontally. Returns True if alien hits screen edge."""
-        self.rect.x += direction * self.speed
-        
+        self.pos_x += direction * self.speed
+        self.rect.x = int(self.pos_x)
+
         # Check if alien hits left or right edge
         if self.rect.left <= 0 or self.rect.right >= SCREEN_WIDTH:
             return True  # Signal that edge was hit
@@ -83,23 +88,29 @@ class AlienDiagonal(pygame.sprite.Sprite):
         self.speed = speed
         self.horizontal_direction = direction  # 1 = right, -1 = left
         self.vertical_speed = speed * 0.5  # Slower vertical descent
-    
+        # Float position trackers so fractional `speed` values produce smooth
+        # movement instead of being truncated by integer rect coordinates.
+        self.pos_x = float(self.rect.x)
+        self.pos_y = float(self.rect.y)
+
     def update(self, direction=None):
         """Move diagonally - bounces off walls while descending."""
-        # Horizontal movement
-        self.rect.x += self.horizontal_direction * self.speed
-        
+        self.pos_x += self.horizontal_direction * self.speed
+        self.rect.x = int(self.pos_x)
+
         # Bounce off edges
         if self.rect.left <= 0:
             self.rect.left = 0
+            self.pos_x = float(self.rect.x)
             self.horizontal_direction = 1
         elif self.rect.right >= SCREEN_WIDTH:
             self.rect.right = SCREEN_WIDTH
+            self.pos_x = float(self.rect.x)
             self.horizontal_direction = -1
-        
-        # Vertical descent
-        self.rect.y += self.vertical_speed
-        
+
+        self.pos_y += self.vertical_speed
+        self.rect.y = int(self.pos_y)
+
         # Remove if off screen
         if self.rect.top > SCREEN_HEIGHT:
             self.kill()
@@ -123,11 +134,15 @@ class AlienDiver(pygame.sprite.Sprite):
         self.base_speed = speed
         self.level_multiplier = level_multiplier
         self.speed = speed * (1 + (level_multiplier * 0.3))  # Speed increases 30% per level
-    
+        # Float y tracker so the 30%/level multiplier (which produces non-integer
+        # speeds) actually advances the sprite each frame instead of truncating.
+        self.pos_y = float(self.rect.y)
+
     def update(self, direction=None):
         """Move straight down at level-based speed."""
-        self.rect.y += self.speed
-        
+        self.pos_y += self.speed
+        self.rect.y = int(self.pos_y)
+
         # Remove if off screen
         if self.rect.top > SCREEN_HEIGHT:
             self.kill()

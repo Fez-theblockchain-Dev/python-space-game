@@ -388,13 +388,19 @@ class Level (pygame.sprite.Sprite):
     #   - speed: base alien movement speed
     #   - diagonal_count: number of alien_2 (diagonal) aliens
     #   - diver_count: number of alien_3 (diver) aliens
+    # NOTE on speed values:
+    # The game runs at clock.tick(60) but Pygbag in the browser frequently dips
+    # below 60 FPS, which makes early-level aliens feel sluggish vs the desktop
+    # build. The first two displayed levels (indices 0 and 1) get a small
+    # fractional bump to compensate. Fractional speeds are honored thanks to the
+    # float position trackers added in game/alien.py.
     level_dict = {
-        0: {"rows": 3, "cols": 8, "speed": 1, "diagonal_count": 0, "diver_count": 0},    # Level 0: Easy - only type 1
-        1: {"rows": 4, "cols": 8, "speed": 2, "diagonal_count": 4, "diver_count": 0},    # Level 1: +4 diagonal aliens
-        2: {"rows": 4, "cols": 9, "speed": 2, "diagonal_count": 6, "diver_count": 3},    # Level 2: +6 diagonal, +3 divers
-        3: {"rows": 5, "cols": 9, "speed": 3, "diagonal_count": 8, "diver_count": 5},    # Level 3: +8 diagonal, +5 divers
-        4: {"rows": 5, "cols": 10, "speed": 3, "diagonal_count": 10, "diver_count": 7},  # Level 4: +10 diagonal, +7 divers
-        5: {"rows": 6, "cols": 10, "speed": 4, "diagonal_count": 12, "diver_count": 10}  # Level 5: +12 diagonal, +10 divers
+        0: {"rows": 3, "cols": 8, "speed": 1.5, "diagonal_count": 0, "diver_count": 0},  # Level 1 (idx 0): bumped 1.0 -> 1.5
+        1: {"rows": 4, "cols": 8, "speed": 2.5, "diagonal_count": 4, "diver_count": 0},  # Level 2 (idx 1): bumped 2.0 -> 2.5
+        2: {"rows": 4, "cols": 9, "speed": 2, "diagonal_count": 6, "diver_count": 3},    # Level 3 (idx 2): unchanged
+        3: {"rows": 5, "cols": 9, "speed": 3, "diagonal_count": 8, "diver_count": 5},    # Level 4 (idx 3)
+        4: {"rows": 5, "cols": 10, "speed": 3, "diagonal_count": 10, "diver_count": 7}, # Level 5 (idx 4)
+        5: {"rows": 6, "cols": 10, "speed": 4, "diagonal_count": 12, "diver_count": 10} # Level 6 (idx 5)
     }
     
     def __init__(self, level_number = None):
