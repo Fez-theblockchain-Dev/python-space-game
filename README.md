@@ -5,34 +5,7 @@ Space Cowboys🚀 is a modern take on the classic retro arcade shooter, built us
 
 Designed as a showcase project for a Junior Python Developer, it also introduces a basic game economy, including gold coin collection through gameplay and an in-progress integration of in-app purchases via Apple Pay.
 
-📜 Table of Contents
-
-Installation:
-
-Prerequisites - Python 3.8+ and Pygame are required for the game client.
-
-Steps:
-
-1.Clone the repository:
-git clone https://github.com/Fez-theblockchain-Dev/python-space-game
-cd python-space-game
-
-2.(Recommended) Create and activate a virtual environment:
-python -m venv .venv
-source .venv/bin/activate  # macOS/Linux
-.venv\Scripts\activate     # Windows
-
-3.Install the game dependency (Pygame):
-pip install pygame
-
-
-4.Run the game:
-python -m game
-# or: python game/main.py
-
-5.Backend API dependencies - Install the backend API required software to get full bemefits of the game, such as, in-progress shop/payment features, install backend dependencies from the API folder:
-
-pip install -r backend_apis/requirements.txt
+Simply play the game on spacecowboys.dev on your laptop/desktop.
 
 Usage:
 Movement - Arrow keys move the ship.
