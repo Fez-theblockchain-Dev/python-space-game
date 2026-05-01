@@ -3,7 +3,7 @@
 🎮 Introduction
 Space Cowboys🚀 is a modern take on the classic retro arcade shooter, built using Python and Pygame. This project demonstrates object-oriented design principles, game development fundamentals, and a foundational understanding of rendering, event handling, and sprite-based animation.
 
-Designed as a showcase project for a Junior Python Developer, it also introduces a basic game economy, including gold coin collection through gameplay and an in-progress integration of in-app purchases via Apple Pay.
+Designed as a showcase project for a Junior Python Developer, it also introduces a basic game economy, including gold coin collection through gameplay and an in-progress integration of in-app purchases via Apple Pay.Okay, so we have to go through the
 
 Simply play the game on spacecowboys.dev on your laptop/desktop.
 
