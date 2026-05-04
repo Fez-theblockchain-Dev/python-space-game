@@ -50,7 +50,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, FileResponse
 from pydantic import BaseModel
 from fastapi.staticfiles import StaticFiles
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 import os
 import mimetypes
 
@@ -60,10 +60,9 @@ mimetypes.add_type("application/wasm", ".wasm")
 mimetypes.add_type("application/javascript", ".js")
 
 # Import payment models and services (from backend_apis package)
-from backend_apis.models import PackageType, PACKAGES, PlayerIPRecord, TransactionStatus
+from backend_apis.models import PackageType, PACKAGES, PlayerIPRecord, TransactionStatus, Player, PlayerWallet
 from backend_apis.stripe_service import StripePaymentService
-from backend_apis.stripe_payment_handler import StripePaymentHandler
-from backend_apis.database import get_db, init_db
+from backend_apis.database import get_db, init_db, SessionLocal
 
 # web socket (WS) implementation imports for persistent connection between pygbag server and client
 from fastapi import WebSocket, WebSocketDisconnect
@@ -124,10 +123,6 @@ app.add_middleware(
 # Global storage for connected players
 # Key: player_id (str), Value: dict with player info (name, x, y, score, joined_at)
 connected_players: dict[str, dict] = {}
-
-# In-memory wallet storage (replace with database in production)
-# Key: player_uuid (str), Value: dict with wallet info
-player_wallets: dict[str, dict] = {}
 
 # Initialize Stripe service (uses environment variables)
 stripe_service = StripePaymentService()
@@ -432,6 +427,7 @@ class SyncWalletRequest(BaseModel):
     health_packs: int = 0
     gems: int = 0
     total_earned_coins: int = 0
+    session_coins_earned: int = 0
 
 
 # ============================================================================
@@ -658,37 +654,45 @@ def get_leaderboard():
 # Step 8: Wallet & Economy Endpoints
 # ============================================================================
 
-def get_or_create_wallet(player_uuid: str) -> dict:
-    """Get existing wallet or create a new one."""
-    if player_uuid not in player_wallets:
-        player_wallets[player_uuid] = {
-            "player_uuid": player_uuid,
-            "gold_coins": 0,
-            "health_packs": 0,
-            "gems": 0,
-            "total_earned_coins": 0,
-            "total_earned_health_packs": 0,
-            "total_spent_usd": 0.0,
-            "created_at": datetime.now().isoformat(),
-        }
-    else:
-        player_wallets[player_uuid].setdefault("gems", 0)
-    return player_wallets[player_uuid]
+def db_get_or_create_player_wallet(db: Session, player_uuid: str) -> PlayerWallet:
+    """Load or create ``Player`` + ``PlayerWallet`` rows for ``player_uuid``."""
+    player = (
+        db.query(Player)
+        .options(joinedload(Player.wallet))
+        .filter(Player.player_uuid == player_uuid)
+        .one_or_none()
+    )
+    if player is None:
+        player = Player(player_uuid=player_uuid)
+        player.wallet = PlayerWallet()
+        db.add(player)
+        db.commit()
+        db.refresh(player)
+    elif player.wallet is None:
+        player.wallet = PlayerWallet()
+        db.add(player.wallet)
+        db.commit()
+        db.refresh(player)
+
+    wallet = player.wallet
+    if wallet.player is None:
+        wallet.player = player
+    return wallet
 
 
 @app.get("/api/wallet/{player_uuid}")
-def get_wallet(player_uuid: str):
+def get_wallet(player_uuid: str, db: Session = Depends(get_db)):
     """
     Get player's wallet balance.
     
     Example: GET /api/wallet/abc123
     """
-    wallet = get_or_create_wallet(player_uuid)
-    return wallet
+    wallet = db_get_or_create_player_wallet(db, player_uuid)
+    return wallet.to_dict()
 
 
 @app.post("/api/wallet/credit")
-def credit_wallet(request: CreditWalletRequest):
+def credit_wallet(request: CreditWalletRequest, db: Session = Depends(get_db)):
     """
     Credit gold coins and/or health packs to a player's wallet.
     
@@ -702,21 +706,23 @@ def credit_wallet(request: CreditWalletRequest):
         "transaction_id": "pi_xxx"
     }
     """
-    wallet = get_or_create_wallet(request.player_uuid)
+    wallet_row = db_get_or_create_player_wallet(db, request.player_uuid)
     
     if request.gold_coins > 0:
-        wallet["gold_coins"] += request.gold_coins
-        wallet["total_earned_coins"] += request.gold_coins
+        wallet_row.add_gold_coins(request.gold_coins)
     
     if request.health_packs > 0:
-        wallet["health_packs"] += request.health_packs
-        wallet["total_earned_health_packs"] += request.health_packs
+        wallet_row.add_health_packs(request.health_packs)
+    
+    db.commit()
+    db.refresh(wallet_row)
+    out = wallet_row.to_dict()
     
     print(f"💰 Credited {request.gold_coins} gold, {request.health_packs} health to {request.player_uuid}")
     
     return {
         "success": True,
-        "wallet": wallet,
+        "wallet": out,
         "credited": {
             "gold_coins": request.gold_coins,
             "health_packs": request.health_packs,
@@ -725,12 +731,12 @@ def credit_wallet(request: CreditWalletRequest):
 
 
 @app.post("/api/wallet/add-earned-coins")
-def add_earned_coins(request: AddEarnedCoinsRequest):
+def add_earned_coins(request: AddEarnedCoinsRequest, db: Session = Depends(get_db)):
     """
     Add coins earned from a Space Cowboys🚀 session to the player's wallet.
     
     Called by the game client when a session ends (e.g., level complete, game over).
-    Updates the player's wallet in player_wallets by their UUID.
+    Persists earned coins on the player's SQLAlchemy wallet row.
     
     Example request body:
     {
@@ -741,11 +747,12 @@ def add_earned_coins(request: AddEarnedCoinsRequest):
     if request.amount <= 0:
         raise HTTPException(status_code=400, detail="Amount must be positive")
     
-    wallet = get_or_create_wallet(request.player_uuid)
-    wallet["gold_coins"] += request.amount
-    wallet["total_earned_coins"] += request.amount
-    
-    new_balance = wallet["gold_coins"]
+    wallet_row = db_get_or_create_player_wallet(db, request.player_uuid)
+    wallet_row.add_gold_coins(request.amount)
+    db.commit()
+    db.refresh(wallet_row)
+
+    new_balance = wallet_row.gold_coins
     print(f"💰 Session coins: +{request.amount} for {request.player_uuid} (balance: {new_balance})")
     
     return {
@@ -756,13 +763,15 @@ def add_earned_coins(request: AddEarnedCoinsRequest):
 
 
 @app.post("/api/wallet/sync")
-def sync_wallet(request: SyncWalletRequest):
+def sync_wallet(request: SyncWalletRequest, db: Session = Depends(get_db)):
     """
     Sync wallet state between the game client and the backend.
 
     The merge strategy takes the **maximum** of each balance field from
     the client snapshot and the stored backend wallet.  This ensures coins
     earned in-game and items purchased on the storefront both survive.
+    ``session_coins_earned`` is taken from the client snapshot (non-negative)
+    so the pending session buffer matches what the game is displaying.
 
     Example request body:
     {
@@ -770,19 +779,24 @@ def sync_wallet(request: SyncWalletRequest):
         "gold_coins": 150,
         "health_packs": 2,
         "gems": 5,
-        "total_earned_coins": 300
+        "total_earned_coins": 300,
+        "session_coins_earned": 40
     }
     """
-    wallet = get_or_create_wallet(request.player_uuid)
+    wallet_row = db_get_or_create_player_wallet(db, request.player_uuid)
 
-    wallet["gold_coins"] = max(wallet["gold_coins"], request.gold_coins)
-    wallet["health_packs"] = max(wallet["health_packs"], request.health_packs)
-    wallet["gems"] = max(wallet.get("gems", 0), request.gems)
-    wallet["total_earned_coins"] = max(wallet["total_earned_coins"], request.total_earned_coins)
+    wallet_row.gold_coins = max(wallet_row.gold_coins, request.gold_coins)
+    wallet_row.health_packs = max(wallet_row.health_packs, request.health_packs)
+    wallet_row.gems = max(wallet_row.gems, request.gems)
+    wallet_row.total_earned_coins = max(wallet_row.total_earned_coins, request.total_earned_coins)
+    wallet_row.session_coins_earned = max(0, request.session_coins_earned)
+
+    db.commit()
+    db.refresh(wallet_row)
 
     return {
         "success": True,
-        "wallet": wallet,
+        "wallet": wallet_row.to_dict(),
     }
 
 
@@ -811,7 +825,7 @@ def get_packages():
 # ============================================================================
 
 @app.post("/api/payments/create-intent")
-def create_payment_intent(request: CreatePaymentIntentRequest):
+def create_payment_intent(request: CreatePaymentIntentRequest, db: Session = Depends(get_db)):
     """
     Create a Stripe PaymentIntent for Apple Pay / Express Checkout.
     
@@ -840,8 +854,8 @@ def create_payment_intent(request: CreatePaymentIntentRequest):
     if not result.success:
         raise HTTPException(status_code=400, detail=result.error)
     
-    # Ensure wallet exists
-    get_or_create_wallet(request.player_uuid)
+    # Ensure wallet row exists for this player
+    db_get_or_create_player_wallet(db, request.player_uuid)
     
     return {
         "success": True,
@@ -853,7 +867,7 @@ def create_payment_intent(request: CreatePaymentIntentRequest):
 
 
 @app.post("/api/payments/create-checkout")
-def create_checkout_session(request: CreateCheckoutRequest):
+def create_checkout_session(request: CreateCheckoutRequest, db: Session = Depends(get_db)):
     """
     Create a Stripe Checkout Session (hosted payment page).
     
@@ -904,8 +918,7 @@ def create_checkout_session(request: CreateCheckoutRequest):
     if not result.success:
         raise HTTPException(status_code=400, detail=result.error)
     
-    # Ensure wallet exists
-    get_or_create_wallet(request.player_uuid)
+    db_get_or_create_player_wallet(db, request.player_uuid)
     
     return {
         "success": True,
@@ -950,23 +963,31 @@ async def stripe_webhook(request: Request, stripe_signature: str = Header(None, 
         health_packs = int(metadata.get("health_packs", 0))
         
         if player_uuid:
-            # Credit the player's wallet
-            wallet = get_or_create_wallet(player_uuid)
-            wallet["gold_coins"] += gold_coins
-            wallet["health_packs"] += health_packs
-            wallet["total_earned_coins"] += gold_coins
-            wallet["total_earned_health_packs"] += health_packs
-            
-            # Calculate amount spent
-            package_type_str = metadata.get("package_type")
-            if package_type_str:
-                try:
-                    pkg = PACKAGES.get(PackageType(package_type_str))
-                    if pkg:
-                        wallet["total_spent_usd"] += pkg["price"]
-                except ValueError:
-                    pass
-            
+            db = SessionLocal()
+            try:
+                wallet_row = db_get_or_create_player_wallet(db, player_uuid)
+                if gold_coins > 0:
+                    wallet_row.add_gold_coins(gold_coins)
+                if health_packs > 0:
+                    wallet_row.add_health_packs(health_packs)
+
+                package_type_str = metadata.get("package_type")
+                if package_type_str:
+                    try:
+                        pkg = PACKAGES.get(PackageType(package_type_str))
+                        if pkg:
+                            wallet_row.total_spent_usd += pkg["price"]
+                    except ValueError:
+                        pass
+
+                db.commit()
+            except Exception as exc:
+                db.rollback()
+                print(f"⚠️ Wallet credit failed: {exc}")
+                raise
+            finally:
+                db.close()
+
             print(f"✅ Credited {gold_coins} gold, {health_packs} health to player {player_uuid}")
     
     # Handle failed payments

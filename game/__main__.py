@@ -111,6 +111,8 @@ except Exception:
                 "gold_coins": 0,
                 "health_packs": 0,
                 "gems": 0,
+                "keys": 0,
+                "session_coins_earned": 0,
                 "total_earned_coins": 0,
             })
             # sync_wallet() is a best-effort network call; swallow any failure
@@ -176,7 +178,14 @@ except Exception:
             if not merged or not isinstance(merged, dict):
                 return
             wallet_data = merged.get("wallet", merged)
-            for key in ("gold_coins", "health_packs", "gems", "total_earned_coins"):
+            for key in (
+                "gold_coins",
+                "health_packs",
+                "gems",
+                "keys",
+                "total_earned_coins",
+                "session_coins_earned",
+            ):
                 if key in wallet_data:
                     try:
                         self.wallet[key] = int(wallet_data[key])
@@ -204,6 +213,7 @@ except Exception:
                 "health_packs": int(self.wallet.get("health_packs", 0)),
                 "gems": int(self.wallet.get("gems", 0)),
                 "total_earned_coins": int(self.wallet.get("total_earned_coins", 0)),
+                "session_coins_earned": int(self.session_coins_earned),
             }
             if IS_BROWSER:
                 try:
@@ -1150,7 +1160,12 @@ class Game:
             return
 
         wallet = self.economy.get_wallet_balance()
-        wallet_id = spaceship.get_wallet_id() or "Not found"
+        wallet_id = (
+            spaceship.get_wallet_id()
+            or wallet.get("wallet_id")
+            or wallet.get("player_uuid")
+            or "Not found"
+        )
 
         chest_count = len(self.wallet_chests)
         chest_section_height = max(0, chest_count) * 50 + (30 if chest_count > 0 else 0)

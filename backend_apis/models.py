@@ -74,14 +74,24 @@ class Player(Base):
 
 
 class PlayerWallet(Base):
+    """
+    Persistent balances for one player. Public identity is ``Player.player_uuid``
+    (exposed in API payloads as ``wallet_id`` / ``player_uuid``).
+    """
+
     __tablename__ = "player_wallets"
 
     id = Column(Integer, primary_key=True)
     player_id = Column(Integer, ForeignKey("players.id"), unique=True, nullable=False)
     gold_coins = Column(Integer, default=0, nullable=False)
     health_packs = Column(Integer, default=0, nullable=False)
+    gems = Column(Integer, default=0, nullable=False)
+    inventory_keys = Column(Integer, default=0, nullable=False)
+    # Client-reported gold not yet folded into ``gold_coins`` (game session buffer).
+    session_coins_earned = Column(Integer, default=0, nullable=False)
     total_earned_coins = Column(Integer, default=0, nullable=False)
     total_earned_health_packs = Column(Integer, default=0, nullable=False)
+    total_earned_gems = Column(Integer, default=0, nullable=False)
     total_spent_usd = Column(Float, default=0.0, nullable=False)
     total_treasure_chests = Column(Integer, default=0, nullable=False)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
@@ -103,14 +113,33 @@ class PlayerWallet(Base):
         self.total_earned_health_packs += amount
         self.updated_at = datetime.now(timezone.utc)
 
+    def add_gems(self, amount: int) -> None:
+        if amount <= 0:
+            return
+        self.gems += amount
+        self.total_earned_gems += amount
+        self.updated_at = datetime.now(timezone.utc)
+
     def to_dict(self) -> dict:
-        return {
+        public_id = None
+        if self.player is not None:
+            public_id = self.player.player_uuid
+        base = {
             "gold_coins": self.gold_coins,
             "health_packs": self.health_packs,
+            "gems": self.gems,
+            "keys": self.inventory_keys,
+            "session_coins_earned": self.session_coins_earned,
             "total_earned_coins": self.total_earned_coins,
             "total_earned_health_packs": self.total_earned_health_packs,
+            "total_earned_gems": self.total_earned_gems,
             "total_spent_usd": self.total_spent_usd,
+            "total_treasure_chests": self.total_treasure_chests,
         }
+        if public_id is not None:
+            base["player_uuid"] = public_id
+            base["wallet_id"] = public_id
+        return base
 
 
 class Transaction(Base):
