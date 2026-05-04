@@ -17,7 +17,7 @@ from __future__ import annotations
 import os
 from typing import Iterator, Optional
 
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session, sessionmaker
 
@@ -57,9 +57,39 @@ engine: Engine = build_engine()
 SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False, future=True)
 
 
+def ensure_sqlite_player_wallet_columns(eng: Engine) -> None:
+    """
+    SQLite does not apply new columns from ``create_all`` on existing tables.
+
+    Add any columns introduced after the first deploy so local ``player_connections.db``
+    (and similar) stay compatible without a full reset.
+    """
+    url = str(eng.url)
+    if not url.startswith("sqlite"):
+        return
+    additions = [
+        ("gems", "INTEGER NOT NULL DEFAULT 0"),
+        ("total_earned_gems", "INTEGER NOT NULL DEFAULT 0"),
+        ("inventory_keys", "INTEGER NOT NULL DEFAULT 0"),
+        ("session_coins_earned", "INTEGER NOT NULL DEFAULT 0"),
+    ]
+    with eng.begin() as conn:
+        raw = conn.execute(text("PRAGMA table_info(player_wallets)"))
+        rows = raw.fetchall()
+        if not rows:
+            return
+        existing = {row[1] for row in rows}
+        for column_name, ddl_suffix in additions:
+            if column_name in existing:
+                continue
+            conn.execute(text(f"ALTER TABLE player_wallets ADD COLUMN {column_name} {ddl_suffix}"))
+
+
 def init_db(target_engine: Optional[Engine] = None) -> None:
     """Create all tables declared on ``Base.metadata`` if missing."""
-    Base.metadata.create_all(bind=target_engine or engine)
+    eng = target_engine or engine
+    Base.metadata.create_all(bind=eng)
+    ensure_sqlite_player_wallet_columns(eng)
 
 
 def get_db() -> Iterator[Session]:

@@ -469,6 +469,7 @@ class BackendClient:
                 "health_packs": int(local_wallet.get("health_packs", 0)),
                 "gems": int(local_wallet.get("gems", 0)),
                 "total_earned_coins": int(local_wallet.get("total_earned_coins", 0)),
+                "session_coins_earned": int(local_wallet.get("session_coins_earned", 0)),
             }
             data = self.request("POST", "/api/wallet/sync", json=payload)
             if data:
@@ -911,6 +912,7 @@ class GameEconomy:
                 "gems": self.synced_wallet.gems,
                 "total_earned_coins": self.synced_wallet.total_earned_coins,
                 "total_earned_health_packs": self.synced_wallet.total_earned_health_packs,
+                "session_coins_earned": self.session_coins_earned,
             }
         return {
             "gold_coins": 0,
@@ -918,6 +920,7 @@ class GameEconomy:
             "gems": 0,
             "total_earned_coins": 0,
             "total_earned_health_packs": 0,
+            "session_coins_earned": self.session_coins_earned,
         }
     
     def get_session_summary(self) -> dict:
