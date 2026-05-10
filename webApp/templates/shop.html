@@ -142,6 +142,35 @@
                 </div>
             </div>
         </div>
+
+        <!-- Newsletter Signup -->
+        <aside class="newsletter-section" aria-labelledby="newsletter-heading">
+            <div class="card newsletter-card">
+                <div class="newsletter-content">
+                    <div class="newsletter-icon" aria-hidden="true">🚀</div>
+                    <h3 id="newsletter-heading">Get Space Cowboys Updates</h3>
+                    <p>Be the first to hear about new packages, missions, and cosmic deals — delivered straight to your inbox.</p>
+                    <form id="newsletter-form" class="newsletter-form" novalidate>
+                        <label for="newsletter-email" class="visually-hidden">Email address</label>
+                        <input
+                            type="email"
+                            id="newsletter-email"
+                            name="email"
+                            class="newsletter-input"
+                            placeholder="cowboy@galaxy.io"
+                            autocomplete="email"
+                            required
+                        />
+                        <button type="submit" class="btn btn-primary newsletter-btn">
+                            <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M2.01 21 23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+                            <span class="newsletter-btn-label">Subscribe</span>
+                        </button>
+                    </form>
+                    <div id="newsletter-message" class="newsletter-message" role="status" aria-live="polite"></div>
+                    <p class="newsletter-fineprint">No spam. Unsubscribe anytime.</p>
+                </div>
+            </div>
+        </aside>
     </div>
 </section>
 {% endblock %}
@@ -455,12 +484,89 @@ function setupEventListeners() {
 }
 
 // ============================================================================
+// Newsletter Signup
+// ============================================================================
+
+const NEWSLETTER_STORAGE_KEY = "spacegame_newsletter_email";
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+function setupNewsletterForm() {
+    const form = document.getElementById("newsletter-form");
+    if (!form) return;
+
+    const input = document.getElementById("newsletter-email");
+    const button = form.querySelector(".newsletter-btn");
+    const buttonLabel = button.querySelector(".newsletter-btn-label");
+    const messageEl = document.getElementById("newsletter-message");
+
+    // If the user already subscribed on this device, show a friendly heads-up
+    // instead of asking them to sign up again.
+    let priorEmail = null;
+    try {
+        priorEmail = localStorage.getItem(NEWSLETTER_STORAGE_KEY);
+    } catch (e) {
+        priorEmail = null;
+    }
+    if (priorEmail) {
+        input.value = priorEmail;
+        messageEl.textContent = "You're on the crew list. Stay tuned, partner!";
+        messageEl.className = "newsletter-message success";
+    }
+
+    form.addEventListener("submit", function(e) {
+        e.preventDefault();
+
+        messageEl.className = "newsletter-message";
+        messageEl.textContent = "";
+
+        const email = input.value.trim();
+
+        if (!email) {
+            messageEl.textContent = "Please enter your email address.";
+            messageEl.classList.add("error");
+            input.focus();
+            return;
+        }
+
+        if (!EMAIL_PATTERN.test(email)) {
+            messageEl.textContent = "That email doesn't look right. Please try again.";
+            messageEl.classList.add("error");
+            input.focus();
+            return;
+        }
+
+        button.disabled = true;
+        input.disabled = true;
+        const originalLabel = buttonLabel.textContent;
+        buttonLabel.textContent = "Subscribing...";
+
+        // Stub: persist locally so the user gets immediate confirmation.
+        // Swap this for a fetch() POST to a real backend endpoint when one ships.
+        try {
+            localStorage.setItem(NEWSLETTER_STORAGE_KEY, email);
+        } catch (err) {
+            // Storage may be disabled (private mode); we still confirm to the user.
+        }
+
+        // Brief delay keeps the interaction from feeling instantaneous/jarring.
+        setTimeout(function() {
+            messageEl.textContent = "Welcome aboard! We'll send updates to " + email + ".";
+            messageEl.classList.add("success");
+            buttonLabel.textContent = originalLabel;
+            button.disabled = false;
+            input.disabled = false;
+        }, 500);
+    });
+}
+
+// ============================================================================
 // Initialize
 // ============================================================================
 
 document.addEventListener("DOMContentLoaded", function() {
     renderCart();
     setupEventListeners();
+    setupNewsletterForm();
 
     // Fetch and display wallet balances
     if (window.SpaceGameStripe && typeof window.SpaceGameStripe.setupWalletDisplay === "function") {
