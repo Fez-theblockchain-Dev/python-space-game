@@ -134,7 +134,7 @@ def bootstrap_database() -> None:
     try:
         init_db()
     except Exception as exc:  # pragma: no cover - startup diagnostics only
-        print(f"⚠️ Failed to initialize DB tables at startup: {exc}")
+        print(f" Failed to initialize DB tables at startup: {exc}")
 
 
 def extract_client_ip(http_request: Request) -> str:
