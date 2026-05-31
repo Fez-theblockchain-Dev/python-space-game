@@ -4,6 +4,7 @@ import pygame
 import os
 from button import Button
 from config import SCREEN_WIDTH, SCREEN_HEIGHT, DEFAULT_BACKGROUND_THEME, resource_path
+from settings import game_settings, settings_screen, sync_theme_manager
 
 # Initialize pygame
 pygame.init()
@@ -87,6 +88,7 @@ class ThemeManager:
 
 # Create global theme manager instance
 theme_manager = ThemeManager()
+sync_theme_manager(theme_manager)
 
 def get_font(size):
     """Font size function"""
@@ -113,25 +115,20 @@ async def main_menu(start_game_callback=None):
         MENU_RECT = MENU_TEXT.get_rect(center=(640, 100))
         screen.blit(MENU_TEXT, MENU_RECT)
         
-        # Current theme display
-        theme_text = get_font(30).render(f"Theme: {theme_manager.get_current_theme_name()}", True, "White")
-        theme_text_rect = theme_text.get_rect(center=(640, 180))
-        screen.blit(theme_text, theme_text_rect)
-        
         # Buttons
         PLAY_BUTTON = Button(
             image=None, 
-            pos=(640, 300), 
+            pos=(640, 280), 
             text_input="PLAY", 
             font=get_font(75), 
             base_color="#d7fcd4", 
             hovering_color="White"
         )
         
-        THEME_BUTTON = Button(
+        SETTINGS_BUTTON = Button(
             image=None, 
-            pos=(640, 400), 
-            text_input="THEME", 
+            pos=(640, 390), 
+            text_input="SETTINGS", 
             font=get_font(75), 
             base_color="#d7fcd4", 
             hovering_color="White"
@@ -147,7 +144,7 @@ async def main_menu(start_game_callback=None):
         )
         
         # Update button colors on hover
-        for button in [PLAY_BUTTON, THEME_BUTTON, QUIT_BUTTON]:
+        for button in [PLAY_BUTTON, SETTINGS_BUTTON, QUIT_BUTTON]:
             button.change_color(MENU_MOUSE_POS)
             button.update(screen)
         
@@ -177,10 +174,10 @@ async def main_menu(start_game_callback=None):
                         traceback.print_exc()
 
                 
-                if THEME_BUTTON.check_input(MENU_MOUSE_POS):
-                    # Cycle to next theme
-                    theme_manager.next_theme()
-                    print(f"Theme changed to: {theme_manager.get_current_theme_name()}")
+                if SETTINGS_BUTTON.check_input(MENU_MOUSE_POS):
+                    await settings_screen(theme_manager, get_screen)
+                    sync_theme_manager(theme_manager)
+                    game_settings.load()
                 
                 if QUIT_BUTTON.check_input(MENU_MOUSE_POS):
                     pygame.quit()
@@ -189,42 +186,6 @@ async def main_menu(start_game_callback=None):
         pygame.display.update()
         clock.tick(60)
         await asyncio.sleep(0)  # Yield control to browser (required for Pygbag)
-
-def play():
-    """Play screen (placeholder)"""
-    clock = pygame.time.Clock()
-    
-    while True:
-        screen = get_screen()
-        PLAY_MOUSE_POS = pygame.mouse.get_pos()
-        screen.fill("black")
-        
-        PLAY_TEXT = get_font(45).render("This is the PLAY screen.", True, "White")
-        PLAY_RECT = PLAY_TEXT.get_rect(center=(640, 260))
-        screen.blit(PLAY_TEXT, PLAY_RECT)
-        
-        PLAY_BACK = Button(
-            image=None, 
-            pos=(640, 460), 
-            text_input="BACK", 
-            font=get_font(75), 
-            base_color="White", 
-            hovering_color="Green"
-        )
-        
-        PLAY_BACK.change_color(PLAY_MOUSE_POS)
-        PLAY_BACK.update(screen)
-        
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
-                sys.exit()
-            if event.type == pygame.MOUSEBUTTONDOWN:
-                if PLAY_BACK.check_input(PLAY_MOUSE_POS):
-                    return
-        
-        pygame.display.update()
-        clock.tick(60)
 
 if __name__ == "__main__":
     asyncio.run(main_menu())

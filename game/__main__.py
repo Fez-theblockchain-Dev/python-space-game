@@ -33,6 +33,7 @@ from button import Button
 from player import Player
 from mainMenu import theme_manager
 from mainMenu import main_menu  # Entry point for web: menu -> play -> game
+from settings import game_settings
 
 
 # Detect if running in browser (Pygbag/Emscripten)
@@ -520,8 +521,13 @@ class Game:
     def __init__(self, game):
         # def run(self, screen, mouse_pos=None, mouse_clicked=False):
         # Player setup
-        player_sprite = Player((SCREEN_WIDTH / 2, SCREEN_HEIGHT), SCREEN_WIDTH, 5)
+        player_sprite = Player(
+            (SCREEN_WIDTH / 2, SCREEN_HEIGHT),
+            SCREEN_WIDTH,
+            game_settings.player_speed(),
+        )
         self.player = pygame.sprite.GroupSingle(player_sprite)
+        self.difficulty_multiplier = game_settings.alien_speed_multiplier()
         
         
         # Economy system setup
@@ -582,22 +588,25 @@ class Game:
         self.extra_spawn_time = random.randint(40,80)
 
         # Audio setup - handle missing files gracefully
+        self.music_sound = None
         try:
-            music = pygame.mixer.Sound(resource_path("audio", "music.wav"))
-            music.set_volume(0.2)
-            music.play(loops = -1)
-        except:
+            self.music_sound = pygame.mixer.Sound(resource_path("audio", "music.wav"))
+            self.music_sound.set_volume(game_settings.effective_music_volume())
+            self.music_sound.play(loops=-1)
+        except Exception:
             pass
         try:
             self.laser_sound = pygame.mixer.Sound(resource_path("audio", "audio_laser.ogg"))
-            self.laser_sound.set_volume(0.5)
-        except:
+            self.laser_sound.set_volume(game_settings.effective_sfx_volume())
+        except Exception:
             self.laser_sound = None
         try:
             self.explosion_sound = pygame.mixer.Sound(resource_path("audio", "explosion.wav"))
-            self.explosion_sound.set_volume(0.3)
-        except:
+            self.explosion_sound.set_volume(game_settings.effective_sfx_volume())
+        except Exception:
             self.explosion_sound = None
+        if self.player.sprite.laser_sound:
+            self.player.sprite.laser_sound.set_volume(game_settings.effective_sfx_volume())
         
         # Main menu button setup
         menu_button_font = pygame.font.Font(resource_path("assets", "Fonts", "hyperspace", "Hyperspace Bold Italic.otf"), 30)
@@ -635,7 +644,7 @@ class Game:
         self.is_paused = False
         
         # Mute button setup (speaker icon)
-        self.is_muted = False
+        self.is_muted = game_settings.muted
         self.mute_button_size = 30
         self.mute_button_pos = (SCREEN_WIDTH - 280, 30)
         self.create_speaker_icons()
@@ -676,15 +685,25 @@ class Game:
             size, size
         )
 
-    def toggle_mute(self):
-        """Toggle mute state for laser sound"""
-        self.is_muted = not self.is_muted
-        # Update player's laser sound
+    def apply_audio_settings(self):
+        """Apply persisted volume and mute preferences to active sounds."""
+        sfx_volume = game_settings.effective_sfx_volume()
+        music_volume = game_settings.effective_music_volume()
+        if self.laser_sound:
+            self.laser_sound.set_volume(sfx_volume)
+        if self.explosion_sound:
+            self.explosion_sound.set_volume(sfx_volume)
+        if self.music_sound:
+            self.music_sound.set_volume(music_volume)
         if self.player.sprite.laser_sound:
-            if self.is_muted:
-                self.player.sprite.laser_sound.set_volume(0)
-            else:
-                self.player.sprite.laser_sound.set_volume(0.5)
+            self.player.sprite.laser_sound.set_volume(sfx_volume)
+
+    def toggle_mute(self):
+        """Toggle mute state for game audio."""
+        self.is_muted = not self.is_muted
+        game_settings.muted = self.is_muted
+        game_settings.save()
+        self.apply_audio_settings()
         return self.is_muted
 
     def draw_mute_button(self, screen, mouse_pos=None):
@@ -925,7 +944,7 @@ class Game:
         if cols is None:
             cols = Level.get_alien_cols()
         if speed is None:
-            speed = Level.get_alien_speed()
+            speed = Level.get_alien_speed() * self.difficulty_multiplier
         
         # Clear existing aliens from all groups
         self.aliens.empty()
@@ -1528,7 +1547,12 @@ async def main():
     }
     game_theme = theme_mapping.get(menu_theme_name, "PURPLE_NEBULA")
     game.set_background_theme(game_theme)
+    game.apply_audio_settings()
     print(f"Game using theme: {game_theme}")
+    print(
+        f"Settings: difficulty={game_settings.difficulty}, "
+        f"ship_speed={game_settings.ship_speed}, muted={game_settings.muted}"
+    )
     
     clock = pygame.time.Clock()
     running = True
