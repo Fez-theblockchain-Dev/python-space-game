@@ -115,9 +115,6 @@ class GameSettings:
         return 0.0 if self.muted else self.music_volume
 
 
-game_settings = GameSettings().load()
-
-
 def clamp01(value: float) -> float:
     return max(0.0, min(1.0, value))
 
@@ -165,6 +162,11 @@ def write_settings_blob(data: dict) -> None:
             json.dump(data, fh, indent=2)
     except OSError as exc:
         print(f"[settings] file write failed: {exc}")
+
+
+# Instantiated after the helper functions above are defined, since
+# GameSettings.load() -> read_settings_blob() and apply_dict() -> clamp01().
+game_settings = GameSettings().load()
 
 
 def sync_theme_manager(theme_manager) -> None:
