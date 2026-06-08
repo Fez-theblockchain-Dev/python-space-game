@@ -240,12 +240,24 @@ class Slider:
 class CycleControl:
     """Previous / next control for discrete options."""
 
+    ARROW_W = 44
+
     def __init__(self, rect: pygame.Rect, options: tuple[str, ...], index: int):
         self.rect = rect
         self.options = options
         self.index = index % len(options) if options else 0
-        self.prev_rect = pygame.Rect(rect.x, rect.y, 36, rect.height)
-        self.next_rect = pygame.Rect(rect.right - 36, rect.y, 36, rect.height)
+
+    @property
+    def prev_rect(self) -> pygame.Rect:
+        # Computed from the live rect so the arrows track the box when rect.y
+        # is repositioned each frame (otherwise they stick at the initial y).
+        return pygame.Rect(self.rect.x, self.rect.y, self.ARROW_W, self.rect.height)
+
+    @property
+    def next_rect(self) -> pygame.Rect:
+        return pygame.Rect(
+            self.rect.right - self.ARROW_W, self.rect.y, self.ARROW_W, self.rect.height
+        )
 
     @property
     def value(self) -> str:
@@ -334,27 +346,36 @@ async def settings_screen(theme_manager, get_screen) -> None:
     working.apply_dict(game_settings.to_dict())
     working.theme_index %= max(1, len(theme_names))
 
-    sfx_slider = Slider(pygame.Rect(SCREEN_WIDTH // 2 - 40, 0, 280, 24), working.sfx_volume, accent)
-    music_slider = Slider(pygame.Rect(SCREEN_WIDTH // 2 - 40, 0, 280, 24), working.music_volume, accent)
+    # Horizontal layout (panel spans SCREEN_WIDTH // 2 +/- 420).
+    label_x = SCREEN_WIDTH // 2 - 380
+    slider_x = SCREEN_WIDTH // 2 - 60
+    slider_w = 210
+    percent_x = slider_x + slider_w + 20
+    mute_x = SCREEN_WIDTH // 2 + 335
+    control_x = SCREEN_WIDTH // 2 + 40
+    control_w = 300
+
+    sfx_slider = Slider(pygame.Rect(slider_x, 0, slider_w, 24), working.sfx_volume, accent)
+    music_slider = Slider(pygame.Rect(slider_x, 0, slider_w, 24), working.music_volume, accent)
     theme_control = CycleControl(
-        pygame.Rect(SCREEN_WIDTH // 2 + 40, 0, 300, 36),
+        pygame.Rect(control_x, 0, control_w, 36),
         theme_names,
         working.theme_index,
     )
     difficulty_control = CycleControl(
-        pygame.Rect(SCREEN_WIDTH // 2 + 40, 0, 300, 36),
+        pygame.Rect(control_x, 0, control_w, 36),
         DIFFICULTY_OPTIONS,
         DIFFICULTY_OPTIONS.index(working.difficulty),
     )
     speed_control = CycleControl(
-        pygame.Rect(SCREEN_WIDTH // 2 + 40, 0, 300, 36),
+        pygame.Rect(control_x, 0, control_w, 36),
         SHIP_SPEED_OPTIONS,
         SHIP_SPEED_OPTIONS.index(working.ship_speed),
     )
 
     mute_button = Button(
         image=None,
-        pos=(SCREEN_WIDTH // 2 + 360, 0),
+        pos=(mute_x, 0),
         text_input="MUTE: OFF",
         font=get_font(22),
         base_color="#d7fcd4",
@@ -363,9 +384,9 @@ async def settings_screen(theme_manager, get_screen) -> None:
 
     back_button = Button(
         image=None,
-        pos=(SCREEN_WIDTH // 2, SCREEN_HEIGHT - 95),
+        pos=(SCREEN_WIDTH // 2, 618),
         text_input="BACK",
-        font=get_font(56),
+        font=get_font(50),
         base_color="#d7fcd4",
         hovering_color="White",
     )
@@ -383,19 +404,19 @@ async def settings_screen(theme_manager, get_screen) -> None:
         title = title_font.render("GAME SETTINGS", True, accent)
         screen.blit(title, title.get_rect(center=(SCREEN_WIDTH // 2, 115)))
 
-        draw_section_header(screen, section_font, "AUDIO", 165)
-        draw_row_label(screen, row_font, "Sound Effects", 205)
-        sfx_slider.rect.y = 205
+        draw_section_header(screen, section_font, "AUDIO", 155)
+        draw_row_label(screen, row_font, "Sound Effects", 195)
+        sfx_slider.rect.y = 198
         sfx_slider.draw(screen)
-        draw_percent(screen, row_font, sfx_slider.value, SCREEN_WIDTH // 2 + 260, 205)
+        draw_percent(screen, row_font, sfx_slider.value, percent_x, 195)
 
-        draw_row_label(screen, row_font, "Music", 255)
-        music_slider.rect.y = 255
+        draw_row_label(screen, row_font, "Music", 235)
+        music_slider.rect.y = 238
         music_slider.draw(screen)
-        draw_percent(screen, row_font, music_slider.value, SCREEN_WIDTH // 2 + 260, 255)
+        draw_percent(screen, row_font, music_slider.value, percent_x, 235)
 
-        mute_button.x_pos = SCREEN_WIDTH // 2 + 360
-        mute_button.y_pos = 230
+        mute_button.x_pos = mute_x
+        mute_button.y_pos = 220
         mute_button.text_input = "MUTE: ON" if working.muted else "MUTE: OFF"
         mute_button.text = mute_button.font.render(
             mute_button.text_input,
@@ -407,28 +428,28 @@ async def settings_screen(theme_manager, get_screen) -> None:
         mute_button.change_color(mouse_pos)
         mute_button.update(screen)
 
-        draw_section_header(screen, section_font, "VISUALS", 315)
-        draw_row_label(screen, row_font, "Background", 355)
-        theme_control.rect.y = 350
+        draw_section_header(screen, section_font, "VISUALS", 288)
+        draw_row_label(screen, row_font, "Background", 325)
+        theme_control.rect.y = 319
         theme_control.draw(screen, row_font)
 
-        draw_section_header(screen, section_font, "GAMEPLAY", 425)
-        draw_row_label(screen, row_font, "Difficulty", 465)
-        difficulty_control.rect.y = 460
+        draw_section_header(screen, section_font, "GAMEPLAY", 378)
+        draw_row_label(screen, row_font, "Difficulty", 415)
+        difficulty_control.rect.y = 409
         difficulty_control.draw(screen, row_font)
 
-        draw_row_label(screen, row_font, "Ship Speed", 515)
-        speed_control.rect.y = 510
+        draw_row_label(screen, row_font, "Ship Speed", 455)
+        speed_control.rect.y = 449
         speed_control.draw(screen, row_font)
 
-        draw_section_header(screen, section_font, "CONTROLS", 575)
+        draw_section_header(screen, section_font, "CONTROLS", 508)
         controls = [
             "Move: Arrow Keys   |   Shoot: Spacebar",
             "Pause: P   |   Resume: Esc   |   Quit to Menu: Q (while paused)",
         ]
         for idx, line in enumerate(controls):
             hint = hint_font.render(line, True, (180, 180, 190))
-            screen.blit(hint, (SCREEN_WIDTH // 2 - 380, 610 + idx * 28))
+            screen.blit(hint, (SCREEN_WIDTH // 2 - 380, 540 + idx * 23))
 
         back_button.change_color(mouse_pos)
         back_button.update(screen)
