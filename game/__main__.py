@@ -85,7 +85,7 @@ except Exception:
 
     BACKEND_URL = BACKEND_API_URL
 
-    def backend_request(method: str, path: str, body: dict | None = None, timeout: int = 3):
+    def backend_request(method: str, path: str, body: dict, timeout: float = 3.0):
         """Fire a JSON request to the FastAPI backend; return parsed dict or None.
 
         Uses web_http.request_json, which transparently dispatches to urllib
