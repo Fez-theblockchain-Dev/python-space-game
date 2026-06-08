@@ -57,7 +57,19 @@ Configuration:
 -The backend API base URL is configurable via the GAME_BACKEND_URL environment variable. Locally it defaults to http://localhost:9666 (the pygbag port — single entry point for dev) and in production it resolves to https://api.spacecowboys.dev.
 
 -** Pygbag server for playing the space cowboys🚀 game through DOM browser can be run using:
-python -m pygbag --template custom.tmpl --port 9666 game **
+python -m pygbag --port 9666 game **
+
+  Note: the project's index.html template is custom.tmpl. A default.tmpl
+  symlink in the project root points to it, and pygbag's --template option
+  defaults to "default.tmpl" (resolved relative to the current directory).
+  So plain `python -m pygbag --port 9666 game` automatically builds with
+  custom.tmpl — no --template flag needed. (You may still pass
+  `--template custom.tmpl` explicitly; it is equivalent.) This prevents the
+  generic CDN template from overwriting build/web/index.html and producing a
+  black screen on Vercel.
+
+  To build the deploy bundle without starting the dev server:
+  python -m pygbag --build game
 
   Note: port 9666 (not 8xxx) is deliberate. Pygbag 0.9.2 hardcodes
   http://localhost:8000/archives/repo/ as the pygame-wheel source whenever the
