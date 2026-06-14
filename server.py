@@ -558,6 +558,66 @@ def player_join(
     )
 
 
+@app.get("/api/player/identify")
+def identify_player(http_request: Request, db: Session = Depends(get_db)):
+    """Resolve (or mint) a player UUID for the originating client IP.
+
+    This is the authority that hands out player identities for the web build
+    served from spacecowboys.dev:
+
+      * The first time a given IP plays we mint a brand-new UUID, provision the
+        ``Player`` + ``PlayerWallet`` rows in Postgres, and record the IP.
+      * Repeat visits from the same IP get the previously assigned UUID back,
+        so the player's wallet follows them across sessions.
+
+    IPs that can't be determined (``"unknown"``) always receive a fresh UUID,
+    so distinct anonymous clients never collapse onto a single shared wallet.
+
+    Example: GET /api/player/identify
+        -> {"player_uuid": "abc-123", "ip_address": "203.0.113.7", "is_new": true}
+    """
+    client_ip = extract_client_ip(http_request)
+    user_agent = http_request.headers.get("user-agent")
+
+    existing = None
+    if client_ip != "unknown":
+        existing = (
+            db.query(PlayerIPRecord)
+            .filter(PlayerIPRecord.ip_address == client_ip)
+            .order_by(PlayerIPRecord.first_seen_at.asc())
+            .first()
+        )
+
+    is_new = existing is None
+    player_uuid = existing.player_uuid if existing is not None else str(uuid.uuid4())
+
+    # Provision Player + PlayerWallet rows so the wallet exists immediately.
+    db_get_or_create_player_wallet(db, player_uuid)
+
+    # Persist / refresh the IP <-> UUID mapping ledger.
+    try:
+        record_player_ip(
+            db,
+            player_uuid=player_uuid,
+            player_name=None,
+            ip_address=client_ip,
+            user_agent=user_agent,
+        )
+    except Exception as exc:  # pragma: no cover - never block identify on logging
+        print(f"⚠️ Failed to record IP for {player_uuid} ({client_ip}): {exc}")
+
+    if is_new:
+        print(f"🆕 Minted player {player_uuid} for new IP {client_ip}")
+    else:
+        print(f"🔁 Returning player {player_uuid} for IP {client_ip}")
+
+    return {
+        "player_uuid": player_uuid,
+        "ip_address": client_ip,
+        "is_new": is_new,
+    }
+
+
 @app.get("/api/player/ip-log/{player_uuid}")
 def get_player_ip_log(player_uuid: str, db: Session = Depends(get_db)):
     """Return every recorded IP connection for ``player_uuid``."""

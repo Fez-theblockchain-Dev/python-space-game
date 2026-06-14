@@ -66,10 +66,51 @@ trans_id = None
 # Player ID Management
 # ============================================================================
 
+def fetch_ip_player_id() -> Optional[str]:
+    """Ask the backend for the player UUID bound to this client's IP address.
+
+    Hits ``GET {BACKEND_URL}/api/player/identify``. The backend inspects the
+    originating IP and returns the UUID assigned to it, minting and persisting
+    a brand-new UUID in Postgres the first time a given IP plays.
+
+    Returns the UUID string on success, or ``None`` when the backend is
+    unreachable or returns a malformed payload, so callers can fall back to a
+    locally generated UUID and keep the game playable offline.
+    """
+    url = f"{BACKEND_URL}/api/player/identify"
+
+    try:
+        if IS_BROWSER:
+            from platform import window  # type: ignore[import-not-found]
+            xhr = window.XMLHttpRequest.new()
+            xhr.open("GET", url, False)  # synchronous, matches BackendClient
+            xhr.send()
+            if 200 <= xhr.status < 300 and xhr.responseText:
+                data = json.loads(xhr.responseText)
+                pid = data.get("player_uuid")
+                return str(pid) if pid else None
+            return None
+
+        response = requests.get(url, timeout=5)
+        response.raise_for_status()
+        data = response.json()
+        pid = data.get("player_uuid")
+        return str(pid) if pid else None
+    except Exception as exc:
+        print(f"[player-id] backend identify failed, using local id: {exc}")
+        return None
+
+
 def generate_player_id(player_id=None) -> str:
-    """Generate a new unique player ID, or retrieve/create one if player_id is not provided."""
-    if player_id is None:
-        return get_or_create_player_id()
+    """Resolve a player UUID, assigning one per client IP via the backend."""
+    if player_id:
+        return str(player_id)
+
+    backend_id = fetch_ip_player_id()
+    if backend_id:
+        return backend_id
+
+    # Backend unreachable: mint a local UUID so play can continue.
     return str(uuid.uuid4())
 
 
@@ -443,17 +484,6 @@ class BackendClient:
             }
         
         return {"success": False, "error": "Failed to add coins to wallet"}
-    
-    def get_transaction_history(self, limit: int = 20) -> list[dict]:
-        """Get recent transaction history."""
-        global trans_id
-        data = self.request(
-            "GET",
-            f"/api/payment/transactions/{self.player_uuid}?limit={limit}"
-        )
-        trans_id = self.request("GET")
-        
-        return data if data else []
     
     def sync_wallet(self, local_wallet: dict | None = None) -> Optional[WalletBalance]:
         """Push local wallet state to the backend and pull the merged result.
